@@ -11,6 +11,12 @@ export interface Skin {
   min_float?: number;
   max_float?: number;
   price?: number;
+  collection?: {
+    id?: string;
+    name: string;
+    description?: string;
+    image?: string;
+  };
 }
 
 export interface InventoryItem extends Skin {
@@ -38,4 +44,3 @@ export interface SkinFilter {
   maxPrice?: number;
   search?: string;
 }
-

@@ -8,6 +8,7 @@ import { Layout } from "@/components/layout/layout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AddSkin from "./pages/AddSkin";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +25,7 @@ const App = () => (
             <Route path="/add" element={<Layout><AddSkin /></Layout>} />
             <Route path="/search" element={<Layout><Index /></Layout>} /> {/* Placeholder for future pages */}
             <Route path="/analytics" element={<Layout><Index /></Layout>} /> {/* Placeholder for future pages */}
-            <Route path="/settings" element={<Layout><Index /></Layout>} /> {/* Placeholder for future pages */}
+            <Route path="/settings" element={<Layout><Settings /></Layout>} />
             <Route path="/more" element={<Layout><Index /></Layout>} /> {/* Placeholder for future pages */}
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
