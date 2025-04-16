@@ -35,24 +35,48 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   const [currentTab, setCurrentTab] = useState<"inventory" | "search">(activeTab);
   const [userInventory, setUserInventory] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [inventoryStats, setInventoryStats] = useState({
+    totalSkins: 0,
+    totalValue: "$0",
+    mostValuable: {
+      weapon: "None",
+      skin: "None",
+      price: "$0"
+    }
+  });
+  const [isLoading, setIsLoading] = useState(true);
   
   const { toast } = useToast();
   
   // Fetch skins data from the API
-  const { data: skins, isLoading, error } = useSkins({
+  const { data: skins, isLoading: isSkinsLoading, error: skinsError } = useSkins({
     search: searchQuery.length > 2 ? searchQuery : undefined,
     onlyUserInventory: currentTab === "inventory"
   });
 
   // Load user inventory and transactions
-  const refreshUserData = () => {
-    console.log("Refreshing user data...");
-    const loadedInventory = getUserInventory();
-    console.log("Loaded inventory:", loadedInventory);
-    setUserInventory(loadedInventory);
-    
-    const loadedTransactions = getUserTransactions();
-    setTransactions(loadedTransactions);
+  const refreshUserData = async () => {
+    setIsLoading(true);
+    try {
+      console.log("Refreshing user data...");
+      const loadedInventory = await getUserInventory();
+      console.log("Loaded inventory:", loadedInventory);
+      setUserInventory(loadedInventory || []);
+      
+      const loadedTransactions = await getUserTransactions();
+      setTransactions(loadedTransactions || []);
+
+      await prepareStats();
+    } catch (error) {
+      console.error("Error refreshing user data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load user data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -70,36 +94,38 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       setDebugInfo(`Loaded ${userInventory.length} skins from user inventory`);
     } else if (skins) {
       setDebugInfo(`Loaded ${skins.length} skins from search`);
-    } else if (isLoading) {
+    } else if (isSkinsLoading) {
       setDebugInfo("Loading skins...");
-    } else if (error) {
-      setDebugInfo(`Error: ${error.toString()}`);
+    } else if (skinsError) {
+      setDebugInfo(`Error: ${skinsError.toString()}`);
     }
-  }, [skins, isLoading, error, userInventory, currentTab]);
+  }, [skins, isSkinsLoading, skinsError, userInventory, currentTab]);
 
   // Prepare stats from the fetched data
-  const prepareStats = () => {
-    const totalSkins = userInventory.length;
-    const totalValue = calculateInventoryValue();
-    const mostValuableSkin = findMostValuableSkin();
+  const prepareStats = async () => {
+    try {
+      const totalSkins = userInventory.length;
+      const totalValue = await calculateInventoryValue();
+      const mostValuableSkin = await findMostValuableSkin();
 
-    return {
-      totalSkins,
-      totalValue: `$${totalValue.toLocaleString()}`,
-      mostValuable: mostValuableSkin ? {
-        weapon: mostValuableSkin.weapon || "Unknown",
-        skin: mostValuableSkin.name,
-        price: mostValuableSkin.currentPrice || mostValuableSkin.price ? 
-          `$${(mostValuableSkin.currentPrice || mostValuableSkin.price || 0).toLocaleString()}` : "$0"
-      } : {
-        weapon: "None",
-        skin: "None",
-        price: "$0"
-      }
-    };
+      setInventoryStats({
+        totalSkins,
+        totalValue: `$${totalValue.toLocaleString()}`,
+        mostValuable: mostValuableSkin ? {
+          weapon: mostValuableSkin.weapon || "Unknown",
+          skin: mostValuableSkin.name,
+          price: mostValuableSkin.currentPrice || mostValuableSkin.price ? 
+            `$${(mostValuableSkin.currentPrice || mostValuableSkin.price || 0).toLocaleString()}` : "$0"
+        } : {
+          weapon: "None",
+          skin: "None",
+          price: "$0"
+        }
+      });
+    } catch (error) {
+      console.error("Error preparing stats:", error);
+    }
   };
-
-  const stats = prepareStats();
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,10 +162,10 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   };
 
   // Add skin to user's inventory
-  const handleAddToInventory = (skin: Skin) => {
+  const handleAddToInventory = async (skin: Skin) => {
     try {
       console.log("Adding skin to inventory:", skin);
-      const newItem = addSkinToInventory(skin, {
+      const newItem = await addSkinToInventory(skin, {
         purchasePrice: skin.price || 0,
         marketplace: "Steam Market",
         feePercentage: 13,
@@ -147,7 +173,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       });
       
       // Refresh inventory
-      refreshUserData();
+      await refreshUserData();
       
       toast({
         title: "Skin Added",
@@ -167,11 +193,11 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   };
 
   // Handle selling a skin
-  const handleSellSkin = (itemId: string, sellData: SellData) => {
+  const handleSellSkin = async (itemId: string, sellData: SellData) => {
     console.log("Selling skin:", itemId, sellData);
     
     try {
-      sellSkin(itemId, {
+      await sellSkin(itemId, {
         soldPrice: sellData.soldPrice,
         soldMarketplace: sellData.soldMarketplace,
         soldFeePercentage: sellData.soldFeePercentage,
@@ -179,7 +205,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       });
       
       // Refresh inventory and transactions
-      refreshUserData();
+      await refreshUserData();
       
       toast({
         title: "Skin Sold",
@@ -213,7 +239,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         </Tabs>
       </div>
 
-      {error && (
+      {skinsError && (
         <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400">
           Error loading skin data. Please try again later.
         </div>
@@ -227,21 +253,21 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 animate-fade-in">
         <StatsCard 
           title="Total Skins" 
-          value={isLoading && currentTab === "inventory" ? "Loading..." : stats.totalSkins} 
+          value={isLoading && currentTab === "inventory" ? "Loading..." : inventoryStats.totalSkins} 
           icon={<Boxes className="h-5 w-5" />}
           className="animate-fade-in" 
           style={{ animationDelay: "0.1s" }}
         />
         <StatsCard 
           title="Total Value" 
-          value={isLoading && currentTab === "inventory" ? "Loading..." : stats.totalValue} 
+          value={isLoading && currentTab === "inventory" ? "Loading..." : inventoryStats.totalValue} 
           icon={<DollarSign className="h-5 w-5" />} 
           className="animate-fade-in" 
           style={{ animationDelay: "0.2s" }}
         />
         <StatsCard 
           title="Most Valuable" 
-          value={isLoading && currentTab === "inventory" ? "Loading..." : `${stats.mostValuable.weapon} | ${stats.mostValuable.skin}`} 
+          value={isLoading && currentTab === "inventory" ? "Loading..." : `${inventoryStats.mostValuable.weapon} | ${inventoryStats.mostValuable.skin}`} 
           className="md:col-span-1 animate-fade-in" 
           style={{ animationDelay: "0.3s" }}
         />
@@ -249,7 +275,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       
       {currentTab === "inventory" && userInventory.length > 0 && (
         <InsightsCard 
-          message={`Your inventory has ${userInventory.length} skins worth ${stats.totalValue}`}
+          message={`Your inventory has ${userInventory.length} skins worth ${inventoryStats.totalValue}`}
           className="mt-6 animate-fade-in animate-pulse-glow"
           style={{ animationDelay: "0.4s" }}
         />
@@ -266,12 +292,25 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {userInventory.length === 0 ? (
+              {isLoading ? (
+                // Loading skeletons
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={`skeleton-${idx}`} className="cs-card p-3">
+                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                    <div className="w-full h-24 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                    <div className="flex justify-between mt-2">
+                      <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                      <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    </div>
+                  </div>
+                ))
+              ) : userInventory.length === 0 ? (
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   <p>Your inventory is empty.</p>
                   <p className="mt-2">Switch to "Search Skins" tab to find and add skins to your inventory.</p>
                 </div>
               ) : (
+                // Display inventory items
                 userInventory.map((skin, index) => (
                   <InventoryCard 
                     key={skin.inventoryId}
@@ -304,7 +343,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {isLoading ? (
+              {isSkinsLoading ? (
                 // Show skeletons while loading
                 Array.from({ length: 8 }).map((_, index) => (
                   <div key={index} className="cs-card p-3 flex flex-col">
@@ -358,7 +397,19 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         </div>
         
         <div className="cs-card divide-y divide-border/50">
-          {transactions.length > 0 ? (
+          {isLoading ? (
+            // Loading skeletons for transactions
+            Array.from({ length: 3 }).map((_, idx) => (
+              <div key={`trans-skeleton-${idx}`} className={`p-4 flex items-center gap-3`}>
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-40 mb-1" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))
+          ) : transactions.length > 0 ? (
             transactions.slice(0, 5).map((item, index) => (
               <ActivityItem 
                 key={item.id}
@@ -390,7 +441,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
         onSellSkin={handleSellSkin}
-        onAddToInventory={!selectedSkin?.isInUserInventory ? handleAddToInventory : undefined}
       />
     </>
   );

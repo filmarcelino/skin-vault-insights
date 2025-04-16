@@ -3,6 +3,49 @@ import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+// Helper function to convert Supabase inventory items to our app's model
+const mapSupabaseToInventoryItem = (item: any): InventoryItem => {
+  return {
+    id: item.skin_id,
+    inventoryId: item.inventory_id,
+    name: item.name,
+    weapon: item.weapon,
+    rarity: item.rarity,
+    wear: item.wear,
+    image: item.image,
+    price: item.price,
+    purchasePrice: item.purchase_price,
+    currentPrice: item.current_price,
+    acquiredDate: item.acquired_date,
+    isStatTrak: item.is_stat_trak,
+    tradeLockDays: item.trade_lock_days,
+    tradeLockUntil: item.trade_lock_until,
+    marketplace: item.marketplace,
+    feePercentage: item.fee_percentage,
+    floatValue: item.float_value,
+    notes: item.notes,
+    collection: item.collection_name ? {
+      id: item.collection_id,
+      name: item.collection_name
+    } : undefined,
+    isInUserInventory: true
+  };
+};
+
+// Helper function to convert Supabase transactions to our app's model
+const mapSupabaseToTransaction = (transaction: any): Transaction => {
+  return {
+    id: transaction.transaction_id,
+    type: transaction.type,
+    itemId: transaction.item_id,
+    weaponName: transaction.weapon_name,
+    skinName: transaction.skin_name,
+    date: transaction.date,
+    price: transaction.price,
+    notes: transaction.notes
+  };
+};
+
 // Recuperar o inventário do usuário do Supabase
 export const getUserInventory = async (): Promise<InventoryItem[]> => {
   try {
@@ -17,7 +60,7 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
     }
     
     console.log("Retrieved inventory:", data);
-    return data || [];
+    return (data || []).map(mapSupabaseToInventoryItem);
   } catch (error) {
     console.error("Error getting inventory:", error);
     return [];
@@ -35,23 +78,6 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
     const inventoryId = `inv-${Date.now()}-${skin.id}`;
     const tradeLockDays = Math.floor(Math.random() * 8); // Random trade lock for demo
     const tradeLockUntil = new Date(new Date().getTime() + tradeLockDays * 24 * 60 * 60 * 1000).toISOString();
-    
-    const inventoryItem: InventoryItem = {
-      ...skin,
-      inventoryId,
-      skin_id: skin.id,
-      acquiredDate: new Date().toISOString(),
-      purchasePrice: purchaseInfo.purchasePrice,
-      currentPrice: skin.price || purchaseInfo.purchasePrice,
-      marketplace: purchaseInfo.marketplace,
-      feePercentage: purchaseInfo.feePercentage || 0,
-      notes: purchaseInfo.notes || "",
-      isInUserInventory: true,
-      tradeLockDays,
-      tradeLockUntil
-    };
-    
-    console.log("Adding skin to inventory:", inventoryItem);
     
     // Inserir no Supabase
     const { data, error } = await supabase
@@ -75,7 +101,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
         trade_lock_until: tradeLockUntil,
         collection_id: skin.collection?.id,
         collection_name: skin.collection?.name,
-        float_value: skin.floatValue
+        float_value: skin.floatValue || 0
       })
       .select()
       .single();
@@ -104,7 +130,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
     
     console.log("Added skin to inventory:", data);
     
-    return data as InventoryItem;
+    return mapSupabaseToInventoryItem(data);
   } catch (error) {
     console.error("Error adding skin to inventory:", error);
     return null;
@@ -169,7 +195,7 @@ export const getUserTransactions = async (): Promise<Transaction[]> => {
       return [];
     }
     
-    return data as Transaction[] || [];
+    return (data || []).map(mapSupabaseToTransaction);
   } catch (error) {
     console.error("Error getting transactions:", error);
     return [];
@@ -187,7 +213,7 @@ export const addTransaction = async (transaction: Transaction): Promise<boolean>
         item_id: transaction.itemId,
         weapon_name: transaction.weaponName,
         skin_name: transaction.skinName,
-        price: transaction.price,
+        price: typeof transaction.price === 'string' ? parseFloat(transaction.price) : transaction.price,
         notes: transaction.notes
       });
     
@@ -295,7 +321,7 @@ export const findMostValuableSkin = async (): Promise<InventoryItem | null> => {
       return null;
     }
     
-    return data[0] as InventoryItem;
+    return mapSupabaseToInventoryItem(data[0]);
   } catch (error) {
     console.error("Error finding most valuable skin:", error);
     return null;

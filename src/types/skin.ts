@@ -11,6 +11,7 @@ export interface Skin {
   min_float?: number;
   max_float?: number;
   price?: number;
+  floatValue?: number; // Added to match what's used in the code
   isStatTrak?: boolean;
   tradeLockDays?: number;
   tradeLockUntil?: string;
@@ -41,6 +42,18 @@ export interface InventoryItem extends Skin {
   floatValue?: number;
   notes?: string;
   isInUserInventory: boolean; // Flag to indicate if the skin belongs to user's inventory
+  // Supabase fields mapping
+  inventory_id?: string; 
+  skin_id?: string;
+  acquired_date?: string;
+  purchase_price?: number;
+  current_price?: number;
+  fee_percentage?: number;
+  float_value?: number;
+  is_stat_trak?: boolean;
+  trade_lock_days?: number;
+  trade_lock_until?: string;
+  is_in_user_inventory?: boolean;
 }
 
 export interface Transaction {
@@ -52,6 +65,11 @@ export interface Transaction {
   date: string;
   price?: number | string;
   notes?: string;
+  // Supabase fields mapping
+  transaction_id?: string;
+  item_id?: string;
+  weapon_name?: string;
+  skin_name?: string;
 }
 
 export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';

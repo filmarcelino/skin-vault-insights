@@ -16,13 +16,15 @@ interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSellSkin?: (itemId: string, sellData: SellData) => void;
+  onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
 }
 
 export function InventorySkinModal({
   item,
   open,
   onOpenChange,
-  onSellSkin
+  onSellSkin,
+  onAddToInventory
 }: InventorySkinModalProps) {
   const [activeTab, setActiveTab] = useState("details");
   const { toast } = useToast();
@@ -33,6 +35,24 @@ export function InventorySkinModal({
 
     try {
       console.log("Adding item to inventory from modal:", item);
+      
+      if (onAddToInventory) {
+        onAddToInventory(item).then(() => {
+          toast({
+            title: "Skin Adicionada",
+            description: `${item.weapon || ""} | ${item.name} foi adicionada ao seu inventário.`,
+          });
+          onOpenChange(false);
+        }).catch(error => {
+          console.error("Error adding skin from modal:", error);
+          toast({
+            title: "Erro",
+            description: "Falha ao adicionar skin ao inventário",
+            variant: "destructive"
+          });
+        });
+        return;
+      }
       
       // Adicionar a skin ao inventário usando o hook de mutation
       addSkinMutation.mutate({
@@ -77,7 +97,7 @@ export function InventorySkinModal({
           <>
             <SkinDetailsCard item={item} />
 
-            {!item.isInUserInventory && (
+            {!item.isInUserInventory && (onAddToInventory || addSkinMutation) && (
               <div className="mb-4">
                 <Button 
                   onClick={handleAddToInventory} 
