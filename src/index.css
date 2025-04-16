@@ -186,6 +186,15 @@
   }
 }
 
+@keyframes glow-soft {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
+  50% {
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.9));
+  }
+}
+
 @keyframes neon-border-animation {
   0%, 100% {
     border-color: hsl(var(--primary));
@@ -199,6 +208,13 @@
   animation: glow-pulse 2s infinite ease-in-out;
 }
 
+.animate-glow-soft {
+  animation: glow-soft 2s infinite ease-in-out;
+}
+
 .animate-neon-border {
   animation: neon-border-animation 3s infinite ease-in-out;
 }
+
+/* Removida a classe .animate-pulse-glow para evitar o efeito pulsante */
+

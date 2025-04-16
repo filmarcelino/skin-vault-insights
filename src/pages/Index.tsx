@@ -1,4 +1,3 @@
-
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { InsightsCard } from "@/components/dashboard/insights-card";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
@@ -48,13 +47,11 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   
   const { toast } = useToast();
   
-  // Fetch skins data from the API
   const { data: skins, isLoading: isSkinsLoading, error: skinsError } = useSkins({
     search: searchQuery.length > 2 ? searchQuery : undefined,
     onlyUserInventory: currentTab === "inventory"
   });
 
-  // Load user inventory and transactions
   const refreshUserData = async () => {
     setIsLoading(true);
     try {
@@ -83,12 +80,10 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     refreshUserData();
   }, []);
 
-  // Update active tab when prop changes
   useEffect(() => {
     setCurrentTab(activeTab);
   }, [activeTab]);
 
-  // Debug information
   useEffect(() => {
     if (currentTab === "inventory") {
       setDebugInfo(`Loaded ${userInventory.length} skins from user inventory`);
@@ -101,7 +96,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     }
   }, [skins, isSkinsLoading, skinsError, userInventory, currentTab]);
 
-  // Prepare stats from the fetched data
   const prepareStats = async () => {
     try {
       const totalSkins = userInventory.length;
@@ -127,41 +121,36 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     }
   };
 
-  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  // Handle clicking on a skin to view details
   const handleSkinClick = (skin: Skin | InventoryItem) => {
-    // If the skin is already in the inventory, use it directly
     if ('isInUserInventory' in skin && skin.isInUserInventory) {
       setSelectedSkin(skin);
       setDetailModalOpen(true);
       return;
     }
     
-    // Add some mock inventory data to the skin for display purposes
     const inventorySkin: InventoryItem = {
       ...skin,
       inventoryId: `demo-${skin.id}`,
       acquiredDate: new Date().toISOString(),
-      purchasePrice: skin.price ? skin.price * 0.9 : 0, // Mock purchase price
+      purchasePrice: skin.price ? skin.price * 0.9 : 0,
       currentPrice: skin.price,
-      tradeLockDays: Math.floor(Math.random() * 8), // Random trade lock between 0-7 days
+      tradeLockDays: Math.floor(Math.random() * 8),
       tradeLockUntil: new Date(new Date().getTime() + Math.floor(Math.random() * 8) * 24 * 60 * 60 * 1000).toISOString(),
-      isStatTrak: Math.random() > 0.7, // 30% chance of being StatTrak
+      isStatTrak: Math.random() > 0.7,
       marketplace: "Steam Market",
       feePercentage: 13,
       notes: "This is a mock inventory item for demonstration purposes.",
-      isInUserInventory: false // Mark as not in inventory
+      isInUserInventory: false
     };
     
     setSelectedSkin(inventorySkin);
     setDetailModalOpen(true);
   };
 
-  // Add skin to user's inventory
   const handleAddToInventory = async (skin: Skin) => {
     try {
       console.log("Adding skin to inventory:", skin);
@@ -172,7 +161,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         notes: "Added from search"
       });
       
-      // Refresh inventory
       await refreshUserData();
       
       toast({
@@ -192,7 +180,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     }
   };
 
-  // Handle selling a skin
   const handleSellSkin = async (itemId: string, sellData: SellData) => {
     console.log("Selling skin:", itemId, sellData);
     
@@ -204,7 +191,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         soldNotes: sellData.soldNotes
       });
       
-      // Refresh inventory and transactions
       await refreshUserData();
       
       toast({
@@ -245,7 +231,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         </div>
       )}
 
-      {/* Debug info - only visible during development */}
       <div className="p-2 mb-4 bg-gray-100 dark:bg-gray-800 text-xs overflow-x-auto">
         <p>{debugInfo}</p>
       </div>
@@ -276,8 +261,9 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       {currentTab === "inventory" && userInventory.length > 0 && (
         <InsightsCard 
           message={`Your inventory has ${userInventory.length} skins worth ${inventoryStats.totalValue}`}
-          className="mt-6 animate-fade-in animate-pulse-glow"
+          className="mt-6 animate-fade-in"
           style={{ animationDelay: "0.4s" }}
+          id="inventory-summary"
         />
       )}
       
@@ -293,7 +279,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {isLoading ? (
-                // Loading skeletons
                 Array.from({ length: 4 }).map((_, idx) => (
                   <div key={`skeleton-${idx}`} className="cs-card p-3">
                     <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
@@ -310,7 +295,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                   <p className="mt-2">Switch to "Search Skins" tab to find and add skins to your inventory.</p>
                 </div>
               ) : (
-                // Display inventory items
                 userInventory.map((skin, index) => (
                   <InventoryCard 
                     key={skin.inventoryId}
@@ -344,7 +328,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {isSkinsLoading ? (
-                // Show skeletons while loading
                 Array.from({ length: 8 }).map((_, index) => (
                   <div key={index} className="cs-card p-3 flex flex-col">
                     <Skeleton className="h-4 w-24 mb-2" />
@@ -356,7 +339,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                   </div>
                 ))
               ) : skins && skins.length > 0 ? (
-                // Display the fetched skins
                 skins.map((skin, index) => (
                   <InventoryCard 
                     key={skin.id}
@@ -366,7 +348,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                     price={skin.price?.toString() || "N/A"}
                     image={skin.image}
                     rarity={skin.rarity}
-                    isStatTrak={Math.random() > 0.7} // 30% chance of being StatTrak for demo
+                    isStatTrak={Math.random() > 0.7}
                     tradeLockDays={0}
                     className="animate-fade-in hover:scale-105 transition-transform duration-200"
                     style={{ animationDelay: `${0.5 + (index * 0.1)}s` }}
@@ -374,7 +356,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                   />
                 ))
               ) : (
-                // Display a message when no skins are found
                 <div className="col-span-full text-center py-8 text-muted-foreground">
                   {searchQuery.length > 0 ? (
                     <>No skins found matching "{searchQuery}". Try adjusting your search.</>
@@ -398,7 +379,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         
         <div className="cs-card divide-y divide-border/50">
           {isLoading ? (
-            // Loading skeletons for transactions
             Array.from({ length: 3 }).map((_, idx) => (
               <div key={`trans-skeleton-${idx}`} className={`p-4 flex items-center gap-3`}>
                 <Skeleton className="h-8 w-8 rounded-full" />
@@ -435,7 +415,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         </div>
       </div>
 
-      {/* Inventory Skin Modal */}
       <InventorySkinModal
         item={selectedSkin}
         open={detailModalOpen}

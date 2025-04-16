@@ -1,5 +1,6 @@
 
 import { FC, ReactNode } from "react";
+import { format } from "date-fns";
 
 type ActivityType = "add" | "sell" | "trade" | "purchase" | string;
 
@@ -42,6 +43,36 @@ export const ActivityItem: FC<ActivityItemProps> = ({
     }
   };
 
+  // Format the date to "Month Day, Year" format
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) return dateString;
+      
+      // Format: May 3rd, 2023
+      const day = date.getDate();
+      const suffix = getDaySuffix(day);
+      
+      return format(date, `MMMM d'${suffix}', yyyy`);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
+  };
+  
+  // Helper to get day suffix (st, nd, rd, th)
+  const getDaySuffix = (day: number): string => {
+    if (day > 3 && day < 21) return "th";
+    switch (day % 10) {
+      case 1: return "st";
+      case 2: return "nd";
+      case 3: return "rd";
+      default: return "th";
+    }
+  };
+
   return (
     <div className={`flex items-center justify-between py-3 ${className}`}>
       <div className="flex items-center gap-3">
@@ -52,7 +83,7 @@ export const ActivityItem: FC<ActivityItemProps> = ({
           <div className="font-medium">
             {weaponName} | {skinName}
           </div>
-          <div className="text-xs text-muted-foreground">{date}</div>
+          <div className="text-xs text-muted-foreground">{formatDate(date)}</div>
         </div>
       </div>
       {price && (
