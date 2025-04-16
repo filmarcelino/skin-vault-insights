@@ -38,6 +38,8 @@ export interface InventoryItem extends Skin {
   tradeLockUntil?: string;
   marketplace?: string;
   feePercentage?: number;
+  floatValue?: number;
+  notes?: string;
 }
 
 export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';
