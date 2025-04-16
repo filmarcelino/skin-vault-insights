@@ -6,13 +6,35 @@ import { Input } from "@/components/ui/input";
 interface SearchProps {
   placeholder?: string;
   onSearch?: (value: string) => void;
+  initialValue?: string;
+  debounceTime?: number;
 }
 
 export const Search: FC<SearchProps> = ({
   placeholder = "Search for a skin...",
   onSearch,
+  initialValue = "",
+  debounceTime = 300,
 }) => {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialValue);
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setValue(newValue);
+    
+    if (onSearch) {
+      // Clear any existing timeout
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+      
+      // Set a new timeout
+      const timeout = setTimeout(() => {
+        onSearch(newValue);
+      }, debounceTime);
+      
+      setDebounceTimeout(timeout);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +48,7 @@ export const Search: FC<SearchProps> = ({
         type="search"
         placeholder={placeholder}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
         className="pl-9 bg-secondary/50"
       />
     </form>
