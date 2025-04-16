@@ -49,12 +49,21 @@ const mapSupabaseToTransaction = (transaction: any): Transaction => {
   };
 };
 
-// Recuperar o inventário do usuário do Supabase
+// Recuperar o inventário do usuário atual do Supabase
 export const getUserInventory = async (): Promise<InventoryItem[]> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
+      .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -78,6 +87,14 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
   notes?: string;
 }): Promise<InventoryItem | null> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return null;
+    }
+    
     if (!skin || !skin.name) {
       console.error("Invalid skin data:", skin);
       return null;
@@ -92,6 +109,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
     console.log("Adding skin to inventory with data:", {
       skin_id: skinId,
       inventory_id: inventoryId,
+      user_id: session.user.id,
       name: skin.name,
       weapon: skin.weapon,
       price: skin.price || purchaseInfo.purchasePrice || 0,
@@ -101,6 +119,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
     const insertData = {
       skin_id: skinId,
       inventory_id: inventoryId,
+      user_id: session.user.id,
       weapon: skin.weapon || "Unknown",
       name: skin.name,
       wear: skin.wear,
@@ -163,10 +182,19 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
 // Remover uma skin do inventário do usuário
 export const removeSkinFromInventory = async (inventoryId: string): Promise<boolean> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return false;
+    }
+    
     const { error } = await supabase
       .from('inventory')
       .delete()
-      .eq('inventory_id', inventoryId);
+      .eq('inventory_id', inventoryId)
+      .eq('user_id', session.user.id);
     
     if (error) {
       console.error("Error removing skin from inventory:", error);
@@ -183,6 +211,14 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
 // Atualizar uma skin no inventário do usuário
 export const updateInventoryItem = async (updatedItem: InventoryItem): Promise<boolean> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return false;
+    }
+    
     const { error } = await supabase
       .from('inventory')
       .update({
@@ -191,7 +227,8 @@ export const updateInventoryItem = async (updatedItem: InventoryItem): Promise<b
         float_value: updatedItem.floatValue,
         is_stat_trak: updatedItem.isStatTrak
       })
-      .eq('inventory_id', updatedItem.inventoryId);
+      .eq('inventory_id', updatedItem.inventoryId)
+      .eq('user_id', session.user.id);
     
     if (error) {
       console.error("Error updating inventory item:", error);
@@ -208,9 +245,18 @@ export const updateInventoryItem = async (updatedItem: InventoryItem): Promise<b
 // Obter todas as transações do usuário
 export const getUserTransactions = async (): Promise<Transaction[]> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
+      .eq('user_id', session.user.id)
       .order('date', { ascending: false });
     
     if (error) {
@@ -228,12 +274,21 @@ export const getUserTransactions = async (): Promise<Transaction[]> => {
 // Adicionar uma nova transação
 export const addTransaction = async (transaction: Transaction): Promise<boolean> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return false;
+    }
+    
     console.log("Adding transaction:", transaction);
     
     const { error } = await supabase
       .from('transactions')
       .insert({
         transaction_id: transaction.id,
+        user_id: session.user.id,
         type: transaction.type,
         item_id: transaction.itemId,
         weapon_name: transaction.weaponName,
@@ -264,11 +319,20 @@ export const sellSkin = async (inventoryId: string, sellData: {
   soldNotes?: string;
 }): Promise<boolean> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return false;
+    }
+    
     // Obter informações da skin
     const { data: skin, error: skinError } = await supabase
       .from('inventory')
       .select('weapon, name')
       .eq('inventory_id', inventoryId)
+      .eq('user_id', session.user.id)
       .single();
     
     if (skinError) {
@@ -280,7 +344,8 @@ export const sellSkin = async (inventoryId: string, sellData: {
     const { error: removeError } = await supabase
       .from('inventory')
       .delete()
-      .eq('inventory_id', inventoryId);
+      .eq('inventory_id', inventoryId)
+      .eq('user_id', session.user.id);
     
     if (removeError) {
       console.error("Error removing skin:", removeError);
@@ -315,9 +380,18 @@ export const sellSkin = async (inventoryId: string, sellData: {
 // Calcular o valor total do inventário
 export const calculateInventoryValue = async (): Promise<number> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return 0;
+    }
+    
     const { data, error } = await supabase
       .from('inventory')
-      .select('current_price');
+      .select('current_price')
+      .eq('user_id', session.user.id);
     
     if (error) {
       console.error("Error calculating inventory value:", error);
@@ -333,12 +407,21 @@ export const calculateInventoryValue = async (): Promise<number> => {
   }
 };
 
-// Encontrar a skin mais valiosa no inventário
+// Encontrar a skin mais valiosa no inventário do usuário
 export const findMostValuableSkin = async (): Promise<InventoryItem | null> => {
   try {
+    // Get current user session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return null;
+    }
+    
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
+      .eq('user_id', session.user.id)
       .order('current_price', { ascending: false })
       .limit(1);
     

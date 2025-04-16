@@ -5,11 +5,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "@/components/layout/layout";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AddSkin from "./pages/AddSkin";
 import Settings from "./pages/Settings";
 import Inventory from "./pages/Inventory";
+import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+import RequireAuth from "./components/auth/require-auth";
 
 // Configuração do React Query para 15 minutos de staleTime em vez de 5 minutos
 const queryClient = new QueryClient({
@@ -24,22 +28,57 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <div className="min-h-screen bg-background text-foreground antialiased">
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout><Index /></Layout>} />
-            <Route path="/inventory" element={<Layout><Inventory /></Layout>} />
-            <Route path="/more" element={<Layout><Index activeTab="inventory" /></Layout>} />
-            <Route path="/add" element={<Layout><AddSkin /></Layout>} />
-            <Route path="/search" element={<Layout><Index activeTab="search" /></Layout>} />
-            <Route path="/analytics" element={<Layout><Index /></Layout>} />
-            <Route path="/settings" element={<Layout><Settings /></Layout>} />
-            <Route path="*" element={<Layout><NotFound /></Layout>} />
-          </Routes>
-        </BrowserRouter>
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen bg-background text-foreground antialiased">
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              
+              {/* Protected routes */}
+              <Route path="/" element={
+                <RequireAuth>
+                  <Layout><Index /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="/inventory" element={
+                <RequireAuth>
+                  <Layout><Inventory /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="/more" element={
+                <RequireAuth>
+                  <Layout><Index activeTab="inventory" /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="/add" element={
+                <RequireAuth>
+                  <Layout><AddSkin /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="/search" element={
+                <RequireAuth>
+                  <Layout><Index activeTab="search" /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="/analytics" element={
+                <RequireAuth>
+                  <Layout><Index /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="/settings" element={
+                <RequireAuth>
+                  <Layout><Settings /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="*" element={<Layout><NotFound /></Layout>} />
+            </Routes>
+          </BrowserRouter>
+        </div>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

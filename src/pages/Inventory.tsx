@@ -74,7 +74,7 @@ const Inventory = () => {
 
       {selectedSkin && (
         <InventorySkinModal
-          skin={selectedSkin}
+          item={selectedSkin}
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
         />
