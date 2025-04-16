@@ -27,14 +27,25 @@ serve(async (req) => {
         messages: [
           {
             role: 'system', 
-            content: 'You are an expert in identifying CS:GO weapon skins. Analyze the image and provide detailed information about the weapon, skin name, wear condition, rarity, and any unique characteristics.'
+            content: `Você é um especialista em identificar skins de armas do CS:GO. 
+                      Analise a imagem e forneça informações detalhadas sobre:
+                      1. Nome da arma (ex: AK-47, M4A4, AWP)
+                      2. Nome da skin (ex: Vulcan, Asiimov, Dragon Lore)
+                      3. Condição de desgaste (Factory New, Minimal Wear, Field-Tested, Well-Worn, Battle-Scarred)
+                      4. Raridade (Consumer Grade, Industrial Grade, Mil-Spec, Restricted, Classified, Covert, Contraband)
+                      5. Se é StatTrak ou não
+                      6. Coleção a que pertence (se identificável)
+                      7. Estimativa de faixa de preço (se possível)
+                      8. Características únicas ou padrões especiais (se houver)
+                      
+                      Formate a resposta de forma clara e organizada. Se algum detalhe não for visível ou identificável na imagem, indique isso.`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: 'Identify the CS:GO skin in this image. Provide as much detail as possible.'
+                text: 'Identifique esta skin do CS:GO com o máximo de detalhes possível.'
               },
               {
                 type: 'image_url',
@@ -45,11 +56,17 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 300
+        max_tokens: 500
       }),
     })
 
     const data = await response.json()
+    console.log("OpenAI response:", data)
+    
+    if (data.error) {
+      throw new Error(`OpenAI Error: ${data.error.message || 'Unknown error'}`)
+    }
+    
     const skinDescription = data.choices[0].message.content
 
     return new Response(JSON.stringify({ 

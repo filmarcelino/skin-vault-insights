@@ -7,6 +7,8 @@ import { Skin } from "@/types/skin";
 import { useToast } from "@/hooks/use-toast";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
+import { SkinImageAnalyzer } from "@/components/SkinImageAnalyzer";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const AddSkin = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,6 +16,7 @@ const AddSkin = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const { data: searchResults = [], isLoading: isSearching } = useSearchSkins(searchQuery);
   const { data: weapons = [] } = useWeapons();
@@ -96,6 +99,12 @@ const AddSkin = () => {
   return (
     <div className="animate-fade-in">
       <h1 className="text-2xl font-bold mb-6">Adicionar Skin ao Inventário</h1>
+      
+      {isMobile && (
+        <div className="mb-6">
+          <SkinImageAnalyzer />
+        </div>
+      )}
       
       <div className="mb-6">
         <Search 
