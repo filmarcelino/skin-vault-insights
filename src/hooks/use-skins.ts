@@ -27,10 +27,11 @@ export const useSkins = (filters?: SkinFilter) => {
       if (filters?.onlyUserInventory) {
         const inventory = await getUserInventory();
         console.log("Retrieved inventory in useSkins hook:", inventory);
-        return inventory;
+        return inventory || [];
       }
       // Caso contrário, buscamos da API
-      return fetchSkins(filters);
+      const result = await fetchSkins(filters);
+      return result || [];
     },
     retry: 1,
   });
@@ -42,7 +43,7 @@ export const useInventory = () => {
     queryFn: async () => {
       const inventory = await getUserInventory();
       console.log("Loaded inventory:", inventory);
-      return inventory;
+      return inventory || [];
     },
     retry: 1,
   });
@@ -54,6 +55,12 @@ export const useAddSkin = () => {
   return useMutation({
     mutationFn: async (data: {skin: Skin, purchaseInfo: any}) => {
       console.log("Add skin mutation called with:", data);
+      
+      // Validate data before proceeding
+      if (!data.skin || !data.skin.name) {
+        throw new Error("Invalid skin data provided");
+      }
+      
       const result = await addSkinToInventory(data.skin, data.purchaseInfo);
       if (!result) {
         throw new Error("Failed to add skin to inventory");
@@ -63,6 +70,9 @@ export const useAddSkin = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
     },
+    onError: (error) => {
+      console.error("Error in addSkin mutation:", error);
+    }
   });
 };
 

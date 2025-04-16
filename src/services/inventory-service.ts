@@ -1,23 +1,24 @@
 
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 // Helper function to convert Supabase inventory items to our app's model
 const mapSupabaseToInventoryItem = (item: any): InventoryItem => {
+  if (!item) return null;
+  
   return {
-    id: item.skin_id,
-    inventoryId: item.inventory_id,
-    name: item.name,
-    weapon: item.weapon,
+    id: item.skin_id || '',
+    inventoryId: item.inventory_id || '',
+    name: item.name || '',
+    weapon: item.weapon || '',
     rarity: item.rarity,
     wear: item.wear,
     image: item.image,
     price: item.price,
     purchasePrice: item.purchase_price,
     currentPrice: item.current_price,
-    acquiredDate: item.acquired_date,
-    isStatTrak: item.is_stat_trak,
+    acquiredDate: item.acquired_date || new Date().toISOString(),
+    isStatTrak: item.is_stat_trak || false,
     tradeLockDays: item.trade_lock_days,
     tradeLockUntil: item.trade_lock_until,
     marketplace: item.marketplace,
@@ -34,13 +35,15 @@ const mapSupabaseToInventoryItem = (item: any): InventoryItem => {
 
 // Helper function to convert Supabase transactions to our app's model
 const mapSupabaseToTransaction = (transaction: any): Transaction => {
+  if (!transaction) return null;
+  
   return {
-    id: transaction.transaction_id,
-    type: transaction.type,
-    itemId: transaction.item_id,
-    weaponName: transaction.weapon_name,
-    skinName: transaction.skin_name,
-    date: transaction.date,
+    id: transaction.transaction_id || '',
+    type: transaction.type || 'add',
+    itemId: transaction.item_id || '',
+    weaponName: transaction.weapon_name || '',
+    skinName: transaction.skin_name || '',
+    date: transaction.date || new Date().toISOString(),
     price: transaction.price,
     notes: transaction.notes
   };
@@ -60,7 +63,7 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
     }
     
     console.log("Retrieved inventory:", data);
-    return Array.isArray(data) ? data.map(mapSupabaseToInventoryItem) : [];
+    return Array.isArray(data) ? data.map(mapSupabaseToInventoryItem).filter(Boolean) : [];
   } catch (error) {
     console.error("Error getting inventory:", error);
     return [];
@@ -75,51 +78,66 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
   notes?: string;
 }): Promise<InventoryItem | null> => {
   try {
+    if (!skin || !skin.name) {
+      console.error("Invalid skin data:", skin);
+      return null;
+    }
+    
     // Generate a random ID for the inventory item if one doesn't exist
-    const inventoryId = `inv-${Date.now()}-${skin.id || Math.random().toString(36).substring(2, 15)}`;
+    const skinId = skin.id || `skin-${Date.now()}`;
+    const inventoryId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
     const tradeLockDays = Math.floor(Math.random() * 8); // Random trade lock for demo
     const tradeLockUntil = new Date(new Date().getTime() + tradeLockDays * 24 * 60 * 60 * 1000).toISOString();
     
     console.log("Adding skin to inventory with data:", {
-      skin_id: skin.id,
+      skin_id: skinId,
       inventory_id: inventoryId,
       name: skin.name,
       weapon: skin.weapon,
-      other_details: "..."
+      price: skin.price || purchaseInfo.purchasePrice || 0,
     });
+    
+    // Prepare data for insertion
+    const insertData = {
+      skin_id: skinId,
+      inventory_id: inventoryId,
+      weapon: skin.weapon || "Unknown",
+      name: skin.name,
+      wear: skin.wear,
+      rarity: skin.rarity,
+      image: skin.image,
+      price: skin.price || 0,
+      current_price: skin.price || purchaseInfo.purchasePrice || 0,
+      purchase_price: purchaseInfo.purchasePrice || 0,
+      marketplace: purchaseInfo.marketplace || "Steam Market",
+      fee_percentage: purchaseInfo.feePercentage || 0,
+      notes: purchaseInfo.notes || "",
+      is_stat_trak: skin.isStatTrak || false,
+      trade_lock_days: tradeLockDays,
+      trade_lock_until: tradeLockUntil,
+      collection_id: skin.collection?.id,
+      collection_name: skin.collection?.name,
+      float_value: skin.floatValue || 0,
+      acquired_date: new Date().toISOString()
+    };
     
     // Inserir no Supabase
     const { data, error } = await supabase
       .from('inventory')
-      .insert({
-        skin_id: skin.id || `skin-${Date.now()}`,
-        inventory_id: inventoryId,
-        weapon: skin.weapon || "Unknown",
-        name: skin.name,
-        wear: skin.wear,
-        rarity: skin.rarity,
-        image: skin.image,
-        price: skin.price || 0,
-        current_price: skin.price || purchaseInfo.purchasePrice || 0,
-        purchase_price: purchaseInfo.purchasePrice || 0,
-        marketplace: purchaseInfo.marketplace || "Steam Market",
-        fee_percentage: purchaseInfo.feePercentage || 0,
-        notes: purchaseInfo.notes || "",
-        is_stat_trak: skin.isStatTrak || false,
-        trade_lock_days: tradeLockDays,
-        trade_lock_until: tradeLockUntil,
-        collection_id: skin.collection?.id,
-        collection_name: skin.collection?.name,
-        float_value: skin.floatValue || 0,
-        acquired_date: new Date().toISOString()
-      })
-      .select()
-      .single();
+      .insert(insertData)
+      .select();
     
     if (error) {
       console.error("Error adding skin to inventory:", error);
       return null;
     }
+    
+    if (!data || data.length === 0) {
+      console.error("No data returned after adding skin");
+      return null;
+    }
+    
+    console.log("Supabase insert response:", data);
     
     // Adicionar transação
     await addTransaction({
@@ -133,9 +151,9 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       notes: purchaseInfo.notes || ""
     });
     
-    console.log("Added skin to inventory:", data);
+    console.log("Added skin to inventory:", data[0]);
     
-    return data ? mapSupabaseToInventoryItem(data) : null;
+    return mapSupabaseToInventoryItem(data[0]);
   } catch (error) {
     console.error("Error adding skin to inventory:", error);
     return null;

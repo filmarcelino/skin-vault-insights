@@ -36,12 +36,29 @@ export function InventorySkinModal({
     try {
       console.log("Adding item to inventory from modal:", item);
       
+      // Prepare sanitized data
+      const cleanSkin = {
+        id: item.id || `skin-${Date.now()}`,
+        name: item.name || "Unknown Skin",
+        weapon: item.weapon || "Unknown",
+        rarity: item.rarity || "",
+        wear: item.wear || "",
+        image: item.image || "",
+        price: item.price || 0,
+        floatValue: item.floatValue || 0,
+        isStatTrak: !!item.isStatTrak,
+        collection: item.collection ? {
+          id: item.collection.id || "",
+          name: item.collection.name || ""
+        } : undefined,
+      };
+      
       if (onAddToInventory) {
-        const result = await onAddToInventory(item);
+        const result = await onAddToInventory(cleanSkin);
         if (result) {
           toast({
             title: "Skin Adicionada",
-            description: `${item.weapon || ""} | ${item.name} foi adicionada ao seu inventário.`,
+            description: `${cleanSkin.weapon} | ${cleanSkin.name} foi adicionada ao seu inventário.`,
           });
           onOpenChange(false);
         } else {
@@ -52,18 +69,7 @@ export function InventorySkinModal({
       
       // Adicionar a skin ao inventário usando o hook de mutation
       addSkinMutation.mutate({
-        skin: {
-          id: item.id || `skin-${Date.now()}`,
-          name: item.name,
-          weapon: item.weapon || "Unknown",
-          rarity: item.rarity,
-          wear: item.wear,
-          image: item.image,
-          price: item.price || 0,
-          floatValue: item.floatValue || 0,
-          isStatTrak: item.isStatTrak || false,
-          collection: item.collection,
-        },
+        skin: cleanSkin,
         purchaseInfo: {
           purchasePrice: item.price || 0,
           marketplace: "Steam Market",
@@ -74,7 +80,7 @@ export function InventorySkinModal({
         onSuccess: () => {
           toast({
             title: "Skin Adicionada",
-            description: `${item.weapon || ""} | ${item.name} foi adicionada ao seu inventário.`,
+            description: `${cleanSkin.weapon} | ${cleanSkin.name} foi adicionada ao seu inventário.`,
           });
           onOpenChange(false);
         },

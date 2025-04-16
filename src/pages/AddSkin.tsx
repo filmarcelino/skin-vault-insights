@@ -35,31 +35,39 @@ const AddSkin = () => {
       // Ensure we have a valid ID
       const skinId = skinData.skinId || `skin-${Date.now()}`;
       
+      // Sanitize data to avoid undefined values
+      const cleanSkin = {
+        id: skinId,
+        name: skinData.name || "Unknown Skin",
+        weapon: skinData.weapon || "Unknown",
+        rarity: skinData.rarity || "",
+        image: skinData.image || "",
+        price: skinData.estimatedValue || skinData.purchasePrice || 0,
+        floatValue: parseFloat(skinData.floatValue || "0"),
+        isStatTrak: !!skinData.isStatTrak,
+        wear: skinData.wear || "",
+      };
+      
+      const cleanPurchaseInfo = {
+        purchasePrice: skinData.purchasePrice || 0,
+        marketplace: skinData.marketplace || "Steam Market",
+        feePercentage: skinData.feePercentage || 0,
+        notes: skinData.notes || ""
+      };
+      
+      console.log("Cleaned skin data:", cleanSkin);
+      console.log("Cleaned purchase info:", cleanPurchaseInfo);
+      
       // Adicionar a skin ao inventário
       addSkinMutation.mutate({
-        skin: {
-          id: skinId,
-          name: skinData.name,
-          weapon: skinData.weapon || "Unknown",
-          rarity: skinData.rarity,
-          image: skinData.image,
-          price: skinData.estimatedValue || skinData.purchasePrice || 0,
-          floatValue: parseFloat(skinData.floatValue || "0"),
-          isStatTrak: skinData.isStatTrak || false,
-          wear: skinData.wear,
-        },
-        purchaseInfo: {
-          purchasePrice: skinData.purchasePrice || 0,
-          marketplace: skinData.marketplace || "Steam Market",
-          feePercentage: skinData.feePercentage || 0,
-          notes: skinData.notes || ""
-        }
+        skin: cleanSkin,
+        purchaseInfo: cleanPurchaseInfo
       }, {
         onSuccess: () => {
           // Mostrar mensagem de sucesso
           toast({
             title: "Skin Adicionada",
-            description: `${skinData.weapon || ""} | ${skinData.name} foi adicionada ao seu inventário.`,
+            description: `${cleanSkin.weapon} | ${cleanSkin.name} foi adicionada ao seu inventário.`,
           });
           
           // Resetar formulário e navegar de volta para o inventário
