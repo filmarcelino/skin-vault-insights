@@ -87,31 +87,35 @@ const AddSkin = () => {
       <h1 className="text-2xl font-bold mb-6">Adicionar Skin ao Inventário</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {weapons.slice(0, 9).map((weapon) => (
+        {weapons.map((weapon) => (
           <Card
-            key={weapon.id || weapon.name}
+            key={typeof weapon === 'object' ? (weapon.id || weapon.name) : weapon}
             className="p-4 cursor-pointer hover:bg-accent transition-colors"
             onClick={() => {
               setSelectedSkin({
                 id: `new-skin-${Date.now()}`,
                 name: "",
-                weapon: weapon.name,
+                weapon: typeof weapon === 'object' ? weapon.name : weapon,
                 rarity: "",
-                image: weapon.image || "",
+                image: typeof weapon === 'object' ? weapon.image || "" : "",
               });
               setModalOpen(true);
             }}
           >
             <div className="flex items-center space-x-4">
-              {weapon.image && (
+              {typeof weapon === 'object' && weapon.image ? (
                 <img 
                   src={weapon.image} 
-                  alt={weapon.name} 
+                  alt={typeof weapon === 'object' ? weapon.name : weapon} 
                   className="w-16 h-16 object-contain"
                 />
+              ) : (
+                <div className="w-16 h-16 bg-muted flex items-center justify-center rounded">
+                  <span className="text-xs text-muted-foreground">No image</span>
+                </div>
               )}
               <div>
-                <h3 className="font-medium">{weapon.name}</h3>
+                <h3 className="font-medium">{typeof weapon === 'object' ? weapon.name : weapon}</h3>
                 <p className="text-sm text-muted-foreground">
                   Clique para adicionar
                 </p>
