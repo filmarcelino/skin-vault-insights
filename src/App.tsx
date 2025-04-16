@@ -49,9 +49,19 @@ const App = () => (
                   <Layout><Inventory /></Layout>
                 </RequireAuth>
               } />
+              <Route path="/more" element={
+                <RequireAuth>
+                  <Layout><Index activeTab="inventory" /></Layout>
+                </RequireAuth>
+              } />
               <Route path="/add" element={
                 <RequireAuth>
                   <Layout><AddSkin /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="/search" element={
+                <RequireAuth>
+                  <Layout><Index activeTab="search" /></Layout>
                 </RequireAuth>
               } />
               <Route path="/analytics" element={

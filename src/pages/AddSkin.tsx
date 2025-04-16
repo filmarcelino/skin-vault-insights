@@ -1,21 +1,32 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
-import { useAddSkin, useWeapons } from "@/hooks/use-skins";
+import { Search } from "@/components/ui/search";
+import { useSearchSkins, useWeapons, useAddSkin } from "@/hooks/use-skins";
 import { Skin } from "@/types/skin";
 import { useToast } from "@/hooks/use-toast";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
 
 const AddSkin = () => {
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkin, setSelectedSkin] = useState<Skin | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  const { data: searchResults = [], isLoading: isSearching } = useSearchSkins(searchQuery);
   const { data: weapons = [] } = useWeapons();
   const addSkinMutation = useAddSkin();
+  
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  const handleSelectSkin = (skin: Skin) => {
+    setSelectedSkin(skin);
+    setModalOpen(true);
+  };
   
   const handleAddSkin = async (skinData: any) => {
     try {
@@ -86,44 +97,44 @@ const AddSkin = () => {
     <div className="animate-fade-in">
       <h1 className="text-2xl font-bold mb-6">Adicionar Skin ao Inventário</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {weapons.map((weapon) => (
-          <Card
-            key={typeof weapon === 'object' ? (weapon.id || weapon.name) : weapon}
-            className="p-4 cursor-pointer hover:bg-accent transition-colors"
-            onClick={() => {
-              setSelectedSkin({
-                id: `new-skin-${Date.now()}`,
-                name: "",
-                weapon: typeof weapon === 'object' ? weapon.name : weapon,
-                rarity: "",
-                image: typeof weapon === 'object' ? weapon.image || "" : "",
-              });
-              setModalOpen(true);
-            }}
-          >
-            <div className="flex items-center space-x-4">
-              {typeof weapon === 'object' && weapon.image ? (
-                <img 
-                  src={weapon.image} 
-                  alt={typeof weapon === 'object' ? weapon.name : weapon} 
-                  className="w-16 h-16 object-contain"
-                />
-              ) : (
-                <div className="w-16 h-16 bg-muted flex items-center justify-center rounded">
-                  <span className="text-xs text-muted-foreground">No image</span>
-                </div>
-              )}
-              <div>
-                <h3 className="font-medium">{typeof weapon === 'object' ? weapon.name : weapon}</h3>
-                <p className="text-sm text-muted-foreground">
-                  Clique para adicionar
-                </p>
-              </div>
-            </div>
-          </Card>
-        ))}
+      <div className="mb-6">
+        <Search 
+          placeholder="Busque uma skin pelo nome ou arma..." 
+          onSearch={handleSearch}
+        />
       </div>
+      
+      {isSearching && searchQuery.length > 2 && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Buscando skins...</p>
+        </div>
+      )}
+      
+      {searchQuery.length > 2 && !isSearching && searchResults.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Nenhuma skin encontrada com "{searchQuery}"</p>
+        </div>
+      )}
+      
+      {searchResults.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {searchResults.slice(0, 8).map((skin) => (
+            <div 
+              key={skin.id || `temp-${skin.name}`}
+              onClick={() => handleSelectSkin(skin)}
+              className="cursor-pointer transition-all hover:scale-[1.02]"
+            >
+              <InventoryCard
+                weaponName={skin.weapon || ""}
+                skinName={skin.name}
+                image={skin.image}
+                rarity={skin.rarity}
+                className={selectedSkin?.id === skin.id ? 'ring-2 ring-primary' : ''}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       
       {/* Modal de detalhes da skin */}
       <SkinDetailModal 
