@@ -88,6 +88,9 @@ const getWearFromFloat = (floatValue: number): SkinWear => {
       return range.name as SkinWear;
     }
   }
+  if (floatValue === 1.00) {
+    return "Battle-Scarred";
+  }
   return "Factory New"; // Default
 };
 
@@ -105,7 +108,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   const [estimatedValue, setEstimatedValue] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   
-  // Reset form when skin changes
   useEffect(() => {
     if (skin) {
       setFloatValue(skin.min_float ? skin.min_float.toString() : "0");
@@ -120,11 +122,10 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
     }
   }, [skin]);
   
-  // Update wear when float changes
   useEffect(() => {
     if (floatValue) {
       const floatNum = parseFloat(floatValue);
-      if (!isNaN(floatNum)) {
+      if (!isNaN(floatNum) && floatNum >= 0 && floatNum <= 1) {
         setWear(getWearFromFloat(floatNum));
       }
     }
@@ -132,7 +133,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   
   const handleFloatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow valid float values between 0 and 1
     if (value === "" || (/^\d*\.?\d*$/.test(value) && parseFloat(value) >= 0 && parseFloat(value) <= 1)) {
       setFloatValue(value);
     }
@@ -191,43 +191,42 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 animate-fade-in">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-2xl flex justify-between items-center">
+          <DialogTitle className="text-2xl">
             <span>Add Skin to Inventory</span>
-            {/* Removed the duplicated close button here, keeping only the one from the DialogContent component */}
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
-          <ScrollArea className="max-h-[calc(90vh-10rem)] px-6 py-4 scrollbar-none">
-            {/* Skin Card with Rarity Colored Background */}
-            <div className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(skin.rarity)}`}>
-              <div className="w-full md:w-1/3 flex items-center justify-center">
-                {skin.image ? (
-                  <img 
-                    src={skin.image} 
-                    alt={skin.name} 
-                    className="max-h-48 max-w-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
-                    }}
-                  />
-                ) : (
-                  <div className="h-40 w-full flex items-center justify-center bg-muted/20 rounded-lg">
-                    <span className="text-muted-foreground">No image available</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="w-full md:w-2/3 flex flex-col justify-center">
-                <h3 className="text-xl font-semibold mb-2">
-                  {skin.weapon ? `${skin.weapon} | ${skin.name}` : skin.name}
-                </h3>
+          <div className="max-h-[calc(90vh-12rem)] px-6 py-4">
+            <ScrollArea className="h-full pr-4">
+              <div className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(skin.rarity)}`}>
+                <div className="w-full md:w-1/3 flex items-center justify-center">
+                  {skin.image ? (
+                    <img 
+                      src={skin.image} 
+                      alt={skin.name} 
+                      className="max-h-48 max-w-full object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                  ) : (
+                    <div className="h-40 w-full flex items-center justify-center bg-muted/20 rounded-lg">
+                      <span className="text-muted-foreground">No image available</span>
+                    </div>
+                  )}
+                </div>
                 
-                <div className="text-sm text-muted-foreground mb-4 space-y-2">
-                  {skin.rarity && (
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full mr-2" style={{ 
-                        backgroundColor: skin.rarity.toLowerCase().includes("consumer") ? "#B0C3D9" : 
+                <div className="w-full md:w-2/3 flex flex-col justify-center">
+                  <h3 className="text-xl font-semibold mb-2">
+                    {skin.weapon ? `${skin.weapon} | ${skin.name}` : skin.name}
+                  </h3>
+                  
+                  <div className="text-sm text-muted-foreground mb-4 space-y-2">
+                    {skin.rarity && (
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full mr-2" style={{ 
+                          backgroundColor: skin.rarity.toLowerCase().includes("consumer") ? "#B0C3D9" : 
                                          skin.rarity.toLowerCase().includes("industrial") ? "#5E98D9" :
                                          skin.rarity.toLowerCase().includes("mil-spec") ? "#4B69FF" :
                                          skin.rarity.toLowerCase().includes("restricted") ? "#8847FF" :
@@ -238,167 +237,160 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                                          skin.rarity.toLowerCase().includes("rare") || 
                                          skin.rarity.toLowerCase().includes("knife") || 
                                          skin.rarity.toLowerCase().includes("glove") ? "#FFF99B" : "#888888"
-                      }}></div>
-                      <span className="font-medium">Rarity:</span> {skin.rarity}
-                    </div>
-                  )}
-                  
-                  {collectionName && (
-                    <div className="flex items-center">
-                      <span className="font-medium mr-1">Collection:</span> {collectionName}
-                    </div>
-                  )}
-                  
-                  {skin.min_float !== undefined && skin.max_float !== undefined && (
-                    <div className="flex items-center">
-                      <span className="font-medium mr-1">Float Range:</span> {skin.min_float.toFixed(4)} - {skin.max_float.toFixed(4)}
-                    </div>
-                  )}
+                        }}></div>
+                        <span className="font-medium">Rarity:</span> {skin.rarity}
+                      </div>
+                    )}
+                    
+                    {collectionName && (
+                      <div className="flex items-center">
+                        <span className="font-medium mr-1">Collection:</span> {collectionName}
+                      </div>
+                    )}
+                    
+                    {skin.min_float !== undefined && skin.max_float !== undefined && (
+                      <div className="flex items-center">
+                        <span className="font-medium mr-1">Float Range:</span> {skin.min_float.toFixed(4)} - {skin.max_float.toFixed(4)}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              {/* Float and Wear */}
-              <div className="space-y-2">
-                <Label htmlFor="float-value">Float Value</Label>
-                <Input 
-                  id="float-value"
-                  type="text"
-                  placeholder="0.0000"
-                  value={floatValue}
-                  onChange={handleFloatChange}
-                  className="transition-all"
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="float-value">Float Value</Label>
+                  <Input 
+                    id="float-value"
+                    type="text"
+                    placeholder="0.0000"
+                    value={floatValue}
+                    onChange={handleFloatChange}
+                    className="transition-all"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Float determines the visual wear of your skin
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Wear</Label>
+                  <Input 
+                    value={wear}
+                    readOnly
+                    className="bg-muted/30"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="transaction-type">Transaction Type</Label>
+                  <Select
+                    value={transactionType}
+                    onValueChange={setTransactionType}
+                  >
+                    <SelectTrigger id="transaction-type">
+                      <SelectValue placeholder="Select transaction type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TRANSACTION_TYPES.map(type => (
+                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="purchase-price">Purchase Price</Label>
+                  <Input
+                    id="purchase-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={purchasePrice}
+                    onChange={(e) => setPurchasePrice(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency</Label>
+                  <Select
+                    value={currency}
+                    onValueChange={setCurrency}
+                  >
+                    <SelectTrigger id="currency">
+                      <SelectValue placeholder="Select currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map(curr => (
+                        <SelectItem key={curr.code} value={curr.code}>
+                          {curr.symbol} {curr.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="marketplace">Purchase Location</Label>
+                  <Select
+                    value={marketplace}
+                    onValueChange={setMarketplace}
+                  >
+                    <SelectTrigger id="marketplace">
+                      <SelectValue placeholder="Select marketplace" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MARKETPLACE_OPTIONS.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="fee-percentage">Fee Percentage (%)</Label>
+                  <Input
+                    id="fee-percentage"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    placeholder="0"
+                    value={feePercentage}
+                    onChange={(e) => setFeePercentage(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Marketplace fee (e.g., Steam: 13%, BUFF: 2.5%)
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="estimated-value">Estimated Value</Label>
+                  <Input
+                    id="estimated-value"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={estimatedValue}
+                    onChange={(e) => setEstimatedValue(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2 mt-6">
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Add any additional notes about this skin..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="min-h-[100px]"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Float determines the visual wear of your skin
-                </p>
               </div>
-              
-              <div className="space-y-2">
-                <Label>Wear</Label>
-                <Input 
-                  value={wear}
-                  readOnly
-                  className="bg-muted/30"
-                />
-              </div>
-              
-              {/* Transaction Type */}
-              <div className="space-y-2">
-                <Label htmlFor="transaction-type">Transaction Type</Label>
-                <Select
-                  value={transactionType}
-                  onValueChange={setTransactionType}
-                >
-                  <SelectTrigger id="transaction-type">
-                    <SelectValue placeholder="Select transaction type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TRANSACTION_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Purchase Price */}
-              <div className="space-y-2">
-                <Label htmlFor="purchase-price">Purchase Price</Label>
-                <Input
-                  id="purchase-price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={purchasePrice}
-                  onChange={(e) => setPurchasePrice(e.target.value)}
-                />
-              </div>
-              
-              {/* Currency */}
-              <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
-                <Select
-                  value={currency}
-                  onValueChange={setCurrency}
-                >
-                  <SelectTrigger id="currency">
-                    <SelectValue placeholder="Select currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map(curr => (
-                      <SelectItem key={curr.code} value={curr.code}>
-                        {curr.symbol} {curr.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Marketplace */}
-              <div className="space-y-2">
-                <Label htmlFor="marketplace">Purchase Location</Label>
-                <Select
-                  value={marketplace}
-                  onValueChange={setMarketplace}
-                >
-                  <SelectTrigger id="marketplace">
-                    <SelectValue placeholder="Select marketplace" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MARKETPLACE_OPTIONS.map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Fee Percentage */}
-              <div className="space-y-2">
-                <Label htmlFor="fee-percentage">Fee Percentage (%)</Label>
-                <Input
-                  id="fee-percentage"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  placeholder="0"
-                  value={feePercentage}
-                  onChange={(e) => setFeePercentage(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Marketplace fee (e.g., Steam: 13%, BUFF: 2.5%)
-                </p>
-              </div>
-              
-              {/* Estimated Value */}
-              <div className="space-y-2">
-                <Label htmlFor="estimated-value">Estimated Value</Label>
-                <Input
-                  id="estimated-value"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={estimatedValue}
-                  onChange={(e) => setEstimatedValue(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            {/* Notes */}
-            <div className="space-y-2 mt-6">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any additional notes about this skin..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
-          </ScrollArea>
+            </ScrollArea>
+          </div>
           
           <DialogFooter className="p-6 pt-4 border-t">
             <DialogClose asChild>
