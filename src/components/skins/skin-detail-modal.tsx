@@ -55,32 +55,67 @@ const getRarityColorClass = (rarity?: string) => {
   switch (rarity.toLowerCase()) {
     case "consumer grade":
     case "white":
-      return "bg-[rgba(176,195,217,0.08)] border-[#B0C3D9]";
+      return "bg-[rgba(176,195,217,0.2)] border-[#B0C3D9]";
     case "industrial grade":
     case "light blue":
-      return "bg-[rgba(94,152,217,0.08)] border-[#5E98D9]";
+      return "bg-[rgba(94,152,217,0.2)] border-[#5E98D9]";
     case "mil-spec grade":
     case "blue":
-      return "bg-[rgba(75,105,255,0.08)] border-[#4B69FF]";
+      return "bg-[rgba(75,105,255,0.2)] border-[#4B69FF]";
     case "restricted":
     case "purple":
-      return "bg-[rgba(136,71,255,0.08)] border-[#8847FF]";
+      return "bg-[rgba(136,71,255,0.2)] border-[#8847FF]";
     case "classified":
     case "pink":
-      return "bg-[rgba(211,44,230,0.08)] border-[#D32CE6]";
+      return "bg-[rgba(211,44,230,0.2)] border-[#D32CE6]";
     case "covert":
     case "red":
-      return "bg-[rgba(235,75,75,0.08)] border-[#EB4B4B]";
+      return "bg-[rgba(235,75,75,0.2)] border-[#EB4B4B]";
     case "contraband":
     case "gold":
-      return "bg-[rgba(255,215,0,0.08)] border-[#FFD700]";
+      return "bg-[rgba(255,215,0,0.2)] border-[#FFD700]";
     case "extraordinary":
     case "rare special":
     case "knife":
     case "glove":
-      return "bg-[rgba(255,249,155,0.08)] border-[#FFF99B]";
+      return "bg-[rgba(255,249,155,0.2)] border-[#FFF99B]";
     default:
       return "";
+  }
+};
+
+const getRarityColor = (rarity?: string) => {
+  if (!rarity) return "#888888";
+  
+  switch (rarity.toLowerCase()) {
+    case "consumer grade":
+    case "white":
+      return "#B0C3D9";
+    case "industrial grade":
+    case "light blue":
+      return "#5E98D9";
+    case "mil-spec grade":
+    case "blue":
+      return "#4B69FF";
+    case "restricted":
+    case "purple":
+      return "#8847FF";
+    case "classified":
+    case "pink":
+      return "#D32CE6";
+    case "covert":
+    case "red":
+      return "#EB4B4B";
+    case "contraband":
+    case "gold":
+      return "#FFD700";
+    case "extraordinary":
+    case "rare special":
+    case "knife":
+    case "glove":
+      return "#FFF99B";
+    default:
+      return "#888888";
   }
 };
 
@@ -89,6 +124,10 @@ const getWearFromFloat = (floatValue: number): SkinWear => {
     if (floatValue >= range.min && floatValue < range.max) {
       return range.name as SkinWear;
     }
+  }
+  // Handle edge case for Battle-Scarred at exactly 1.0
+  if (floatValue === 1.0) {
+    return "Battle-Scarred";
   }
   return "Factory New"; // Default
 };
@@ -111,7 +150,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   useEffect(() => {
     if (skin) {
       setFloatValue(skin.min_float ? skin.min_float.toString() : "0");
-      setWear("Factory New");
+      setWear(getWearFromFloat(skin.min_float || 0));
       setTransactionType("purchase");
       setPurchasePrice("");
       setCurrency("USD");
@@ -201,17 +240,20 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit}>
-          <ScrollArea className="max-h-[calc(90vh-10rem)] px-6 scrollbar-none">
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+          <ScrollArea className="flex-grow pr-4 pl-6 pt-4 pb-4 h-[calc(90vh-10rem)] scrollbar-none">
             <div className="py-4">
-              {/* Skin Card with Rarity Colored Background */}
-              <div className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(skin.rarity)}`}>
+              {/* Skin Card with Rarity Colored Background - reduzindo o tamanho em 45% */}
+              <div className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(skin.rarity)}`}
+                style={{ backgroundColor: `${getRarityColor(skin.rarity)}20` }}
+              >
                 <div className="w-full md:w-1/3 flex items-center justify-center">
                   {skin.image ? (
                     <img 
                       src={skin.image} 
                       alt={skin.name} 
-                      className="max-h-48 max-w-full object-contain"
+                      className="max-h-[26.4rem] max-w-full object-contain scale-[0.55] transform-origin-center"
+                      style={{ transform: 'scale(0.55)' }}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/placeholder.svg';
                       }}
@@ -231,19 +273,8 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   <div className="text-sm text-muted-foreground mb-4 space-y-2">
                     {skin.rarity && (
                       <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full mr-2" style={{ 
-                          backgroundColor: skin.rarity.toLowerCase().includes("consumer") ? "#B0C3D9" : 
-                                           skin.rarity.toLowerCase().includes("industrial") ? "#5E98D9" :
-                                           skin.rarity.toLowerCase().includes("mil-spec") ? "#4B69FF" :
-                                           skin.rarity.toLowerCase().includes("restricted") ? "#8847FF" :
-                                           skin.rarity.toLowerCase().includes("classified") ? "#D32CE6" :
-                                           skin.rarity.toLowerCase().includes("covert") ? "#EB4B4B" :
-                                           skin.rarity.toLowerCase().includes("contraband") ? "#FFD700" :
-                                           skin.rarity.toLowerCase().includes("extraordinary") || 
-                                           skin.rarity.toLowerCase().includes("rare") || 
-                                           skin.rarity.toLowerCase().includes("knife") || 
-                                           skin.rarity.toLowerCase().includes("glove") ? "#FFF99B" : "#888888"
-                        }}></div>
+                        <div className="w-3 h-3 rounded-full mr-2" 
+                          style={{ backgroundColor: getRarityColor(skin.rarity) }}></div>
                         <span className="font-medium">Rarity:</span> {skin.rarity}
                       </div>
                     )}
