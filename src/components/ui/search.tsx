@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 interface SearchProps {
   placeholder?: string;
   onSearch?: (value: string) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  value?: string;
   initialValue?: string;
   debounceTime?: number;
 }
@@ -13,15 +15,26 @@ interface SearchProps {
 export const Search: FC<SearchProps> = ({
   placeholder = "Search for a skin...",
   onSearch,
+  onChange,
+  value,
   initialValue = "",
   debounceTime = 300,
 }) => {
-  const [value, setValue] = useState(initialValue);
+  const [internalValue, setValue] = useState(initialValue);
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    setValue(newValue);
+    
+    // If value prop is not provided, manage state internally
+    if (value === undefined) {
+      setValue(newValue);
+    }
+    
+    // Call onChange prop if provided
+    if (onChange) {
+      onChange(e);
+    }
     
     if (onSearch) {
       // Clear any existing timeout
@@ -38,7 +51,7 @@ export const Search: FC<SearchProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSearch) onSearch(value);
+    if (onSearch) onSearch(value !== undefined ? value : internalValue);
   };
 
   return (
@@ -47,7 +60,7 @@ export const Search: FC<SearchProps> = ({
       <Input
         type="search"
         placeholder={placeholder}
-        value={value}
+        value={value !== undefined ? value : internalValue}
         onChange={handleChange}
         className="pl-9 bg-secondary/50"
       />
