@@ -36,37 +36,40 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     switch (rarity.toLowerCase()) {
       case "consumer grade":
       case "white":
-        return "border-[#B0C3D9]";
+        return "border-[#B0C3D9] hover:bg-[rgba(176,195,217,0.05)]";
       case "industrial grade":
       case "light blue":
-        return "border-[#5E98D9]";
+        return "border-[#5E98D9] hover:bg-[rgba(94,152,217,0.05)]";
       case "mil-spec grade":
       case "blue":
-        return "border-[#4B69FF]";
+        return "border-[#4B69FF] hover:bg-[rgba(75,105,255,0.05)]";
       case "restricted":
       case "purple":
-        return "border-[#8847FF]";
+        return "border-[#8847FF] hover:bg-[rgba(136,71,255,0.05)]";
       case "classified":
       case "pink":
-        return "border-[#D32CE6]";
+        return "border-[#D32CE6] hover:bg-[rgba(211,44,230,0.05)]";
       case "covert":
       case "red":
-        return "border-[#EB4B4B]";
+        return "border-[#EB4B4B] hover:bg-[rgba(235,75,75,0.05)]";
       case "contraband":
       case "gold":
-        return "border-[#FFD700]";
+        return "border-[#FFD700] hover:bg-[rgba(255,215,0,0.05)]";
       case "extraordinary":
       case "rare special":
       case "knife":
       case "glove":
-        return "border-[#FFF99B]";
+        return "border-[#FFF99B] hover:bg-[rgba(255,249,155,0.05)]";
       default:
         return "";
     }
   };
 
   return (
-    <div className={`cs-card p-3 flex flex-col ${getRarityColorClass()} border-t-2 ${className}`} style={style}>
+    <div 
+      className={`cs-card p-3 flex flex-col transition-all ${getRarityColorClass()} border-t-2 ${className}`} 
+      style={style}
+    >
       <div className="flex items-center justify-between mb-2">
         <div className="font-medium text-sm truncate max-w-full">
           {weaponName} | <span className="text-primary">{skinName}</span>

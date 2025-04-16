@@ -103,10 +103,11 @@
     scroll-behavior: smooth;
   }
   
-  /* Custom scrollbar styles */
+  /* Custom scrollbar styles - invisible scrollbars */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 0px;
+    height: 0px;
+    display: none;
   }
   
   ::-webkit-scrollbar-track {
@@ -114,18 +115,14 @@
   }
   
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: transparent;
     border-radius: 10px;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
   }
   
   /* Firefox */
   * {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   /* Add CS Skin Vault custom classes */
@@ -140,14 +137,15 @@
   .cs-gradient-text {
     @apply bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent;
   }
-}
-
-@layer base {
-  * {
-    @apply border-border;
+  
+  /* Custom class for invisible scrollbars */
+  .scrollbar-none {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
   }
-
-  body {
-    @apply bg-background text-foreground;
+  .scrollbar-none::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+    width: 0;
+    height: 0;
   }
 }

@@ -191,7 +191,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 animate-fade-in">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-2xl flex justify-between items-center">
             <span>Add Skin to Inventory</span>
@@ -202,48 +202,61 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
-          <ScrollArea className="max-h-[calc(90vh-10rem)] px-6">
+          <ScrollArea className="max-h-[calc(90vh-10rem)] px-6 scrollbar-none">
             <div className="py-4">
               {/* Skin Card with Rarity Colored Background */}
-              <div className={`flex flex-col md:flex-row gap-6 p-4 rounded-lg border mb-6 ${getRarityColorClass(skin.rarity)}`}>
+              <div className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(skin.rarity)}`}>
                 <div className="w-full md:w-1/3 flex items-center justify-center">
                   {skin.image ? (
                     <img 
                       src={skin.image} 
                       alt={skin.name} 
-                      className="max-h-40 max-w-full object-contain"
+                      className="max-h-48 max-w-full object-contain"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/placeholder.svg';
                       }}
                     />
                   ) : (
-                    <div className="h-40 w-full flex items-center justify-center bg-muted/20 rounded">
+                    <div className="h-40 w-full flex items-center justify-center bg-muted/20 rounded-lg">
                       <span className="text-muted-foreground">No image available</span>
                     </div>
                   )}
                 </div>
                 
-                <div className="w-full md:w-2/3">
-                  <h3 className="text-xl font-semibold mb-1">
+                <div className="w-full md:w-2/3 flex flex-col justify-center">
+                  <h3 className="text-xl font-semibold mb-2">
                     {skin.weapon ? `${skin.weapon} | ${skin.name}` : skin.name}
                   </h3>
                   
-                  <div className="text-sm text-muted-foreground mb-4">
+                  <div className="text-sm text-muted-foreground mb-4 space-y-2">
                     {skin.rarity && (
-                      <div className="mb-1">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full mr-2" style={{ 
+                          backgroundColor: skin.rarity.toLowerCase().includes("consumer") ? "#B0C3D9" : 
+                                           skin.rarity.toLowerCase().includes("industrial") ? "#5E98D9" :
+                                           skin.rarity.toLowerCase().includes("mil-spec") ? "#4B69FF" :
+                                           skin.rarity.toLowerCase().includes("restricted") ? "#8847FF" :
+                                           skin.rarity.toLowerCase().includes("classified") ? "#D32CE6" :
+                                           skin.rarity.toLowerCase().includes("covert") ? "#EB4B4B" :
+                                           skin.rarity.toLowerCase().includes("contraband") ? "#FFD700" :
+                                           skin.rarity.toLowerCase().includes("extraordinary") || 
+                                           skin.rarity.toLowerCase().includes("rare") || 
+                                           skin.rarity.toLowerCase().includes("knife") || 
+                                           skin.rarity.toLowerCase().includes("glove") ? "#FFF99B" : "#888888"
+                        }}></div>
                         <span className="font-medium">Rarity:</span> {skin.rarity}
                       </div>
                     )}
                     
                     {collectionName && (
-                      <div>
-                        <span className="font-medium">Collection:</span> {collectionName}
+                      <div className="flex items-center">
+                        <span className="font-medium mr-1">Collection:</span> {collectionName}
                       </div>
                     )}
                     
                     {skin.min_float !== undefined && skin.max_float !== undefined && (
-                      <div className="mt-1">
-                        <span className="font-medium">Float Range:</span> {skin.min_float.toFixed(2)} - {skin.max_float.toFixed(2)}
+                      <div className="flex items-center">
+                        <span className="font-medium mr-1">Float Range:</span> {skin.min_float.toFixed(4)} - {skin.max_float.toFixed(4)}
                       </div>
                     )}
                   </div>
@@ -260,6 +273,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                     placeholder="0.0000"
                     value={floatValue}
                     onChange={handleFloatChange}
+                    className="transition-all"
                   />
                   <p className="text-xs text-muted-foreground">
                     Float determines the visual wear of your skin
@@ -379,7 +393,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
               </div>
               
               {/* Notes */}
-              <div className="space-y-2 mt-4">
+              <div className="space-y-2 mt-6">
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea
                   id="notes"
@@ -392,11 +406,11 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
             </div>
           </ScrollArea>
           
-          <DialogFooter className="p-6 pt-4">
+          <DialogFooter className="p-6 pt-4 border-t">
             <DialogClose asChild>
               <Button type="button" variant="outline">Cancel</Button>
             </DialogClose>
-            <Button type="submit">Add Skin</Button>
+            <Button type="submit" className="gap-1">Add Skin</Button>
           </DialogFooter>
         </form>
       </DialogContent>

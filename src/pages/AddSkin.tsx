@@ -6,6 +6,7 @@ import { useSearchSkins, useWeapons } from "@/hooks/use-skins";
 import { Skin } from "@/types/skin";
 import { useToast } from "@/hooks/use-toast";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
+import { InventoryCard } from "@/components/dashboard/inventory-card";
 
 const AddSkin = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,28 +68,17 @@ const AddSkin = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {searchResults.slice(0, 8).map((skin) => (
             <div 
-              key={skin.id} 
-              className={`cs-card p-3 flex flex-col cursor-pointer transition-all ${selectedSkin?.id === skin.id ? 'ring-2 ring-primary' : 'hover:bg-secondary/50'}`}
+              key={skin.id}
               onClick={() => handleSelectSkin(skin)}
+              className="cursor-pointer transition-all hover:scale-[1.02]"
             >
-              <div className="font-medium text-sm">
-                {skin.weapon} | <span className="text-primary">{skin.name}</span>
-              </div>
-              {skin.image && (
-                <div className="relative w-full h-24 my-2 flex items-center justify-center">
-                  <img 
-                    src={skin.image} 
-                    alt={`${skin.weapon} ${skin.name}`}
-                    className="max-h-full max-w-full object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
-                    }}
-                  />
-                </div>
-              )}
-              <div className="flex items-center justify-between mt-auto">
-                <div className="text-xs text-muted-foreground">{skin.rarity}</div>
-              </div>
+              <InventoryCard
+                weaponName={skin.weapon || ""}
+                skinName={skin.name}
+                image={skin.image}
+                rarity={skin.rarity}
+                className={selectedSkin?.id === skin.id ? 'ring-2 ring-primary' : ''}
+              />
             </div>
           ))}
         </div>
