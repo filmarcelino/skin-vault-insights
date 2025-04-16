@@ -10,10 +10,11 @@ import NotFound from "./pages/NotFound";
 import AddSkin from "./pages/AddSkin";
 import Settings from "./pages/Settings";
 
+// Configuração do React Query para 15 minutos de staleTime em vez de 5 minutos
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 15, // 15 minutos
       retry: 1,
     },
   },

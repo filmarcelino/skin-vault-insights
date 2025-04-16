@@ -9,49 +9,62 @@ import { SkinAdditionalInfo } from "./skin-additional-info";
 import { Button } from "../ui/button";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useInvalidateInventory } from "@/hooks/use-skins";
+import { useAddSkin } from "@/hooks/use-skins";
 
 interface InventorySkinModalProps {
   item: InventoryItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSellSkin?: (itemId: string, sellData: SellData) => void;
-  onAddToInventory?: (skin: Skin) => InventoryItem | null;
 }
 
 export function InventorySkinModal({
   item,
   open,
   onOpenChange,
-  onSellSkin,
-  onAddToInventory
+  onSellSkin
 }: InventorySkinModalProps) {
   const [activeTab, setActiveTab] = useState("details");
   const { toast } = useToast();
-  const invalidateInventory = useInvalidateInventory();
+  const addSkinMutation = useAddSkin();
 
   const handleAddToInventory = () => {
-    if (!item || !onAddToInventory) return;
+    if (!item) return;
 
     try {
       console.log("Adding item to inventory from modal:", item);
-      const newItem = onAddToInventory(item);
       
-      if (newItem) {
-        // Force refresh inventory data
-        invalidateInventory();
-        
-        toast({
-          title: "Skin Added",
-          description: `${item.weapon || ""} | ${item.name} has been added to your inventory.`,
-        });
-        onOpenChange(false);
-      }
+      // Adicionar a skin ao inventário usando o hook de mutation
+      addSkinMutation.mutate({
+        skin: item,
+        purchaseInfo: {
+          purchasePrice: item.price || 0,
+          marketplace: "Steam Market",
+          feePercentage: 0,
+          notes: ""
+        }
+      }, {
+        onSuccess: () => {
+          toast({
+            title: "Skin Adicionada",
+            description: `${item.weapon || ""} | ${item.name} foi adicionada ao seu inventário.`,
+          });
+          onOpenChange(false);
+        },
+        onError: (error) => {
+          console.error("Error adding skin from modal:", error);
+          toast({
+            title: "Erro",
+            description: "Falha ao adicionar skin ao inventário",
+            variant: "destructive"
+          });
+        }
+      });
     } catch (error) {
       console.error("Error adding skin from modal:", error);
       toast({
-        title: "Error",
-        description: "Failed to add skin to your inventory",
+        title: "Erro",
+        description: "Falha ao adicionar skin ao inventário",
         variant: "destructive"
       });
     }
@@ -64,58 +77,59 @@ export function InventorySkinModal({
           <>
             <SkinDetailsCard item={item} />
 
-            {!item.isInUserInventory && onAddToInventory && (
+            {!item.isInUserInventory && (
               <div className="mb-4">
                 <Button 
                   onClick={handleAddToInventory} 
                   className="w-full bg-green-600 hover:bg-green-700"
+                  disabled={addSkinMutation.isPending}
                 >
                   <PlusCircle className="h-4 w-4 mr-2" />
-                  Add to My Inventory
+                  {addSkinMutation.isPending ? "Adicionando..." : "Adicionar ao Inventário"}
                 </Button>
               </div>
             )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="w-full">
-                <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
+                <TabsTrigger value="details" className="flex-1">Detalhes</TabsTrigger>
                 {item.isInUserInventory && onSellSkin && (
-                  <TabsTrigger value="sell" className="flex-1">Sell</TabsTrigger>
+                  <TabsTrigger value="sell" className="flex-1">Vender</TabsTrigger>
                 )}
-                <TabsTrigger value="notes" className="flex-1">Notes</TabsTrigger>
+                <TabsTrigger value="notes" className="flex-1">Notas</TabsTrigger>
               </TabsList>
               
               <TabsContent value="details" className="py-4">
                 <div className="space-y-6">
-                  {/* Price History - Placeholder for now */}
+                  {/* Histórico de preços - Placeholder por enquanto */}
                   <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                    <h3 className="font-medium mb-2 text-[#8B5CF6]">Price History</h3>
+                    <h3 className="font-medium mb-2 text-[#8B5CF6]">Histórico de Preços</h3>
                     <div className="h-24 flex items-center justify-center text-[#8A898C] text-sm">
-                      Price history charts will be available soon.
+                      Gráficos de histórico de preços estarão disponíveis em breve.
                     </div>
                   </div>
 
-                  {/* Collection Info - Placeholder for now */}
+                  {/* Informações da coleção - Placeholder por enquanto */}
                   {item.collection && (
                     <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                      <h3 className="font-medium mb-2 text-[#8B5CF6]">Collection</h3>
+                      <h3 className="font-medium mb-2 text-[#8B5CF6]">Coleção</h3>
                       <div className="text-sm text-[#8A898C]">
-                        This skin is part of {item.collection.name || "Unknown Collection"}
+                        Esta skin faz parte de {item.collection.name || "Coleção Desconhecida"}
                       </div>
                     </div>
                   )}
 
-                  {/* Float Value Info */}
+                  {/* Informações do Float */}
                   <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                    <h3 className="font-medium mb-2 text-[#8B5CF6]">Float Value</h3>
+                    <h3 className="font-medium mb-2 text-[#8B5CF6]">Valor Float</h3>
                     <div className="text-sm text-[#8A898C]">
                       {item.floatValue ? (
                         <>
-                          <p>Current Float: {item.floatValue.toFixed(8)}</p>
-                          <p>Float Range: {item.min_float?.toFixed(8) || "Unknown"} - {item.max_float?.toFixed(8) || "Unknown"}</p>
+                          <p>Float Atual: {item.floatValue.toFixed(8)}</p>
+                          <p>Faixa de Float: {item.min_float?.toFixed(8) || "Desconhecido"} - {item.max_float?.toFixed(8) || "Desconhecido"}</p>
                         </>
                       ) : (
-                        <p>Float value information not available.</p>
+                        <p>Informações do valor de float não disponíveis.</p>
                       )}
                     </div>
                   </div>

@@ -1,172 +1,303 @@
 
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-// Use local storage to persist inventory between sessions
-const INVENTORY_STORAGE_KEY = "user_inventory";
-const TRANSACTIONS_STORAGE_KEY = "user_transactions";
-
-// Get user inventory from local storage
-export const getUserInventory = (): InventoryItem[] => {
+// Recuperar o inventário do usuário do Supabase
+export const getUserInventory = async (): Promise<InventoryItem[]> => {
   try {
-    const storedInventory = localStorage.getItem(INVENTORY_STORAGE_KEY);
-    const inventory = storedInventory ? JSON.parse(storedInventory) : [];
-    console.log("Retrieved inventory:", inventory);
-    return inventory;
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("Error getting inventory from Supabase:", error);
+      return [];
+    }
+    
+    console.log("Retrieved inventory:", data);
+    return data || [];
   } catch (error) {
-    console.error("Error getting inventory from localStorage:", error);
+    console.error("Error getting inventory:", error);
     return [];
   }
 };
 
-// Save user inventory to local storage
-export const saveUserInventory = (inventory: InventoryItem[]): void => {
-  try {
-    console.log("Saving inventory:", inventory);
-    localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
-  } catch (error) {
-    console.error("Error saving inventory to localStorage:", error);
-  }
-};
-
-// Add a skin to user's inventory
-export const addSkinToInventory = (skin: Skin, purchaseInfo: {
+// Salvar uma skin no inventário do usuário
+export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
   purchasePrice: number;
   marketplace: string;
   feePercentage?: number;
   notes?: string;
-}): InventoryItem => {
-  const inventory = getUserInventory();
-  
-  const inventoryItem: InventoryItem = {
-    ...skin,
-    inventoryId: `inv-${Date.now()}-${skin.id}`,
-    acquiredDate: new Date().toISOString(),
-    purchasePrice: purchaseInfo.purchasePrice,
-    currentPrice: skin.price || purchaseInfo.purchasePrice,
-    marketplace: purchaseInfo.marketplace,
-    feePercentage: purchaseInfo.feePercentage || 0,
-    notes: purchaseInfo.notes || "",
-    isInUserInventory: true, // Make sure this is set to true
-    tradeLockDays: Math.floor(Math.random() * 8), // Random trade lock for demo
-    tradeLockUntil: new Date(new Date().getTime() + Math.floor(Math.random() * 8) * 24 * 60 * 60 * 1000).toISOString()
-  };
-  
-  // Ensure we add to the inventory
-  inventory.push(inventoryItem);
-  saveUserInventory(inventory);
-  
-  // Add transaction
-  addTransaction({
-    id: `trans-${Date.now()}`,
-    type: 'add',
-    itemId: inventoryItem.inventoryId,
-    weaponName: inventoryItem.weapon || "Unknown",
-    skinName: inventoryItem.name,
-    date: new Date().toLocaleDateString(),
-    price: purchaseInfo.purchasePrice,
-    notes: purchaseInfo.notes
-  });
-  
-  console.log("Added skin to inventory:", inventoryItem);
-  
-  return inventoryItem;
-};
-
-// Remove a skin from user's inventory
-export const removeSkinFromInventory = (inventoryId: string): void => {
-  const inventory = getUserInventory();
-  const updatedInventory = inventory.filter(item => item.inventoryId !== inventoryId);
-  saveUserInventory(updatedInventory);
-};
-
-// Update a skin in user's inventory
-export const updateInventoryItem = (updatedItem: InventoryItem): void => {
-  const inventory = getUserInventory();
-  const index = inventory.findIndex(item => item.inventoryId === updatedItem.inventoryId);
-  
-  if (index !== -1) {
-    inventory[index] = updatedItem;
-    saveUserInventory(inventory);
+}): Promise<InventoryItem | null> => {
+  try {
+    const inventoryId = `inv-${Date.now()}-${skin.id}`;
+    const tradeLockDays = Math.floor(Math.random() * 8); // Random trade lock for demo
+    const tradeLockUntil = new Date(new Date().getTime() + tradeLockDays * 24 * 60 * 60 * 1000).toISOString();
+    
+    const inventoryItem: InventoryItem = {
+      ...skin,
+      inventoryId,
+      skin_id: skin.id,
+      acquiredDate: new Date().toISOString(),
+      purchasePrice: purchaseInfo.purchasePrice,
+      currentPrice: skin.price || purchaseInfo.purchasePrice,
+      marketplace: purchaseInfo.marketplace,
+      feePercentage: purchaseInfo.feePercentage || 0,
+      notes: purchaseInfo.notes || "",
+      isInUserInventory: true,
+      tradeLockDays,
+      tradeLockUntil
+    };
+    
+    console.log("Adding skin to inventory:", inventoryItem);
+    
+    // Inserir no Supabase
+    const { data, error } = await supabase
+      .from('inventory')
+      .insert({
+        skin_id: skin.id,
+        inventory_id: inventoryId,
+        weapon: skin.weapon,
+        name: skin.name,
+        wear: skin.wear,
+        rarity: skin.rarity,
+        image: skin.image,
+        price: skin.price,
+        current_price: skin.price || purchaseInfo.purchasePrice,
+        purchase_price: purchaseInfo.purchasePrice,
+        marketplace: purchaseInfo.marketplace,
+        fee_percentage: purchaseInfo.feePercentage || 0,
+        notes: purchaseInfo.notes,
+        is_stat_trak: skin.isStatTrak || false,
+        trade_lock_days: tradeLockDays,
+        trade_lock_until: tradeLockUntil,
+        collection_id: skin.collection?.id,
+        collection_name: skin.collection?.name,
+        float_value: skin.floatValue
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("Error adding skin to inventory:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar a skin ao inventário",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    // Adicionar transação
+    await addTransaction({
+      id: `trans-${Date.now()}`,
+      type: 'add',
+      itemId: inventoryId,
+      weaponName: skin.weapon || "Unknown",
+      skinName: skin.name,
+      date: new Date().toLocaleDateString(),
+      price: purchaseInfo.purchasePrice,
+      notes: purchaseInfo.notes
+    });
+    
+    console.log("Added skin to inventory:", data);
+    
+    return data as InventoryItem;
+  } catch (error) {
+    console.error("Error adding skin to inventory:", error);
+    return null;
   }
 };
 
-// Get all user transactions
-export const getUserTransactions = (): Transaction[] => {
+// Remover uma skin do inventário do usuário
+export const removeSkinFromInventory = async (inventoryId: string): Promise<boolean> => {
   try {
-    const storedTransactions = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
-    return storedTransactions ? JSON.parse(storedTransactions) : [];
+    const { error } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('inventory_id', inventoryId);
+    
+    if (error) {
+      console.error("Error removing skin from inventory:", error);
+      return false;
+    }
+    
+    return true;
   } catch (error) {
-    console.error("Error getting transactions from localStorage:", error);
+    console.error("Error removing skin:", error);
+    return false;
+  }
+};
+
+// Atualizar uma skin no inventário do usuário
+export const updateInventoryItem = async (updatedItem: InventoryItem): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('inventory')
+      .update({
+        current_price: updatedItem.currentPrice,
+        notes: updatedItem.notes,
+        float_value: updatedItem.floatValue,
+        is_stat_trak: updatedItem.isStatTrak
+      })
+      .eq('inventory_id', updatedItem.inventoryId);
+    
+    if (error) {
+      console.error("Error updating inventory item:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error updating item:", error);
+    return false;
+  }
+};
+
+// Obter todas as transações do usuário
+export const getUserTransactions = async (): Promise<Transaction[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      console.error("Error getting transactions:", error);
+      return [];
+    }
+    
+    return data as Transaction[] || [];
+  } catch (error) {
+    console.error("Error getting transactions:", error);
     return [];
   }
 };
 
-// Save transactions to local storage
-export const saveTransactions = (transactions: Transaction[]): void => {
+// Adicionar uma nova transação
+export const addTransaction = async (transaction: Transaction): Promise<boolean> => {
   try {
-    localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(transactions));
+    const { error } = await supabase
+      .from('transactions')
+      .insert({
+        transaction_id: transaction.id,
+        type: transaction.type,
+        item_id: transaction.itemId,
+        weapon_name: transaction.weaponName,
+        skin_name: transaction.skinName,
+        price: transaction.price,
+        notes: transaction.notes
+      });
+    
+    if (error) {
+      console.error("Error adding transaction:", error);
+      return false;
+    }
+    
+    console.log("Added transaction:", transaction);
+    return true;
   } catch (error) {
-    console.error("Error saving transactions to localStorage:", error);
+    console.error("Error adding transaction:", error);
+    return false;
   }
 };
 
-// Add a new transaction
-export const addTransaction = (transaction: Transaction): void => {
-  const transactions = getUserTransactions();
-  transactions.push(transaction);
-  saveTransactions(transactions);
-  console.log("Added transaction:", transaction);
-};
-
-// Sell a skin and record the transaction
-export const sellSkin = (inventoryId: string, sellData: {
+// Vender uma skin e registrar a transação
+export const sellSkin = async (inventoryId: string, sellData: {
   soldPrice: number;
   soldMarketplace: string;
   soldFeePercentage: number;
   soldNotes?: string;
-}): void => {
-  const inventory = getUserInventory();
-  const skinIndex = inventory.findIndex(item => item.inventoryId === inventoryId);
-  
-  if (skinIndex !== -1) {
-    const skin = inventory[skinIndex];
+}): Promise<boolean> => {
+  try {
+    // Obter informações da skin
+    const { data: skin, error: skinError } = await supabase
+      .from('inventory')
+      .select('weapon, name')
+      .eq('inventory_id', inventoryId)
+      .single();
     
-    // Remove from inventory
-    inventory.splice(skinIndex, 1);
-    saveUserInventory(inventory);
+    if (skinError) {
+      console.error("Error getting skin info:", skinError);
+      return false;
+    }
     
-    // Add transaction
-    addTransaction({
+    // Remover do inventário
+    const { error: removeError } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('inventory_id', inventoryId);
+    
+    if (removeError) {
+      console.error("Error removing skin:", removeError);
+      return false;
+    }
+    
+    // Adicionar transação
+    const transactionSuccess = await addTransaction({
       id: `trans-${Date.now()}`,
       type: 'sell',
       itemId: inventoryId,
-      weaponName: skin.weapon || "Unknown",
-      skinName: skin.name,
+      weaponName: skin?.weapon || "Unknown",
+      skinName: skin?.name || "Unknown Skin",
       date: new Date().toLocaleDateString(),
       price: sellData.soldPrice,
       notes: sellData.soldNotes
     });
     
-    console.log("Sold skin:", skin, "for", sellData.soldPrice);
+    if (!transactionSuccess) {
+      console.error("Failed to record sell transaction");
+      return false;
+    }
+    
+    console.log("Sold skin successfully");
+    return true;
+  } catch (error) {
+    console.error("Error selling skin:", error);
+    return false;
   }
 };
 
-// Calculate total inventory value
-export const calculateInventoryValue = (): number => {
-  const inventory = getUserInventory();
-  return inventory.reduce((total, item) => {
-    return total + (item.currentPrice || item.price || 0);
-  }, 0);
+// Calcular o valor total do inventário
+export const calculateInventoryValue = async (): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('current_price');
+    
+    if (error) {
+      console.error("Error calculating inventory value:", error);
+      return 0;
+    }
+    
+    return data.reduce((total, item) => {
+      return total + (item.current_price || 0);
+    }, 0);
+  } catch (error) {
+    console.error("Error calculating inventory value:", error);
+    return 0;
+  }
 };
 
-// Find most valuable skin in user's inventory
-export const findMostValuableSkin = (): InventoryItem | null => {
-  const inventory = getUserInventory();
-  if (inventory.length === 0) return null;
-  
-  return inventory.reduce((mostValuable, current) => {
-    const currentValue = current.currentPrice || current.price || 0;
-    const mostValuableValue = mostValuable.currentPrice || mostValuable.price || 0;
-    return currentValue > mostValuableValue ? current : mostValuable;
-  }, inventory[0]);
+// Encontrar a skin mais valiosa no inventário
+export const findMostValuableSkin = async (): Promise<InventoryItem | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('inventory')
+      .select('*')
+      .order('current_price', { ascending: false })
+      .limit(1);
+    
+    if (error || !data.length) {
+      console.error("Error finding most valuable skin:", error);
+      return null;
+    }
+    
+    return data[0] as InventoryItem;
+  } catch (error) {
+    console.error("Error finding most valuable skin:", error);
+    return null;
+  }
 };

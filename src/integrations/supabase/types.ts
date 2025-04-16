@@ -9,7 +9,132 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      inventory: {
+        Row: {
+          acquired_date: string
+          collection_id: string | null
+          collection_name: string | null
+          created_at: string
+          current_price: number | null
+          fee_percentage: number | null
+          float_value: number | null
+          id: string
+          image: string | null
+          inventory_id: string
+          is_in_user_inventory: boolean | null
+          is_stat_trak: boolean | null
+          marketplace: string | null
+          name: string
+          notes: string | null
+          price: number | null
+          purchase_price: number | null
+          rarity: string | null
+          skin_id: string
+          trade_lock_days: number | null
+          trade_lock_until: string | null
+          updated_at: string
+          user_id: string | null
+          weapon: string | null
+          wear: string | null
+        }
+        Insert: {
+          acquired_date?: string
+          collection_id?: string | null
+          collection_name?: string | null
+          created_at?: string
+          current_price?: number | null
+          fee_percentage?: number | null
+          float_value?: number | null
+          id?: string
+          image?: string | null
+          inventory_id: string
+          is_in_user_inventory?: boolean | null
+          is_stat_trak?: boolean | null
+          marketplace?: string | null
+          name: string
+          notes?: string | null
+          price?: number | null
+          purchase_price?: number | null
+          rarity?: string | null
+          skin_id: string
+          trade_lock_days?: number | null
+          trade_lock_until?: string | null
+          updated_at?: string
+          user_id?: string | null
+          weapon?: string | null
+          wear?: string | null
+        }
+        Update: {
+          acquired_date?: string
+          collection_id?: string | null
+          collection_name?: string | null
+          created_at?: string
+          current_price?: number | null
+          fee_percentage?: number | null
+          float_value?: number | null
+          id?: string
+          image?: string | null
+          inventory_id?: string
+          is_in_user_inventory?: boolean | null
+          is_stat_trak?: boolean | null
+          marketplace?: string | null
+          name?: string
+          notes?: string | null
+          price?: number | null
+          purchase_price?: number | null
+          rarity?: string | null
+          skin_id?: string
+          trade_lock_days?: number | null
+          trade_lock_until?: string | null
+          updated_at?: string
+          user_id?: string | null
+          weapon?: string | null
+          wear?: string | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          item_id: string
+          notes: string | null
+          price: number | null
+          skin_name: string | null
+          transaction_id: string
+          type: string
+          user_id: string | null
+          weapon_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          item_id: string
+          notes?: string | null
+          price?: number | null
+          skin_name?: string | null
+          transaction_id: string
+          type: string
+          user_id?: string | null
+          weapon_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          item_id?: string
+          notes?: string | null
+          price?: number | null
+          skin_name?: string | null
+          transaction_id?: string
+          type?: string
+          user_id?: string | null
+          weapon_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

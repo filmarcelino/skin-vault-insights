@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   fetchSkins, 
   fetchSkinById, 
@@ -7,9 +7,14 @@ import {
   fetchCollections, 
   searchSkins 
 } from "@/services/api";
-import { Skin, SkinFilter, SkinCollection } from "@/types/skin";
-import { getUserInventory } from "@/services/inventory-service";
-import { useQueryClient } from "@tanstack/react-query";
+import { 
+  getUserInventory, 
+  addSkinToInventory,
+  removeSkinFromInventory,
+  updateInventoryItem,
+  sellSkin as sellSkinService
+} from "@/services/inventory-service";
+import { Skin, SkinFilter, InventoryItem, SellData } from "@/types/skin";
 
 // Custom key for inventory data
 export const INVENTORY_QUERY_KEY = "user-inventory";
@@ -19,14 +24,66 @@ export const useSkins = (filters?: SkinFilter) => {
   return useQuery({
     queryKey: filters?.onlyUserInventory ? [INVENTORY_QUERY_KEY] : [SKINS_QUERY_KEY, filters],
     queryFn: async () => {
-      // If we want only user inventory, return it from local storage
+      // Se queremos apenas o inventário do usuário, buscamos do Supabase
       if (filters?.onlyUserInventory) {
         return getUserInventory();
       }
-      // Otherwise fetch from API
+      // Caso contrário, buscamos da API
       return fetchSkins(filters);
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+export const useInventory = () => {
+  return useQuery({
+    queryKey: [INVENTORY_QUERY_KEY],
+    queryFn: getUserInventory,
+  });
+};
+
+export const useAddSkin = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: {skin: Skin, purchaseInfo: any}) => 
+      addSkinToInventory(data.skin, data.purchaseInfo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    },
+  });
+};
+
+export const useSellSkin = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: {itemId: string, sellData: SellData}) => 
+      sellSkinService(data.itemId, data.sellData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    },
+  });
+};
+
+export const useUpdateSkin = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: updateInventoryItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    },
+  });
+};
+
+export const useRemoveSkin = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: removeSkinFromInventory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    },
   });
 };
 
@@ -34,7 +91,6 @@ export const useInvalidateInventory = () => {
   const queryClient = useQueryClient();
   
   return () => {
-    // Invalidate inventory query to force a refresh
     queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
   };
 };
@@ -43,7 +99,6 @@ export const useSkinById = (id: string) => {
   return useQuery({
     queryKey: ["skin", id],
     queryFn: () => fetchSkinById(id),
-    staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: !!id,
   });
 };
@@ -52,7 +107,6 @@ export const useWeapons = () => {
   return useQuery({
     queryKey: ["weapons"],
     queryFn: fetchWeapons,
-    staleTime: 1000 * 60 * 60, // 1 hour
   });
 };
 
@@ -60,7 +114,6 @@ export const useCollections = () => {
   return useQuery({
     queryKey: ["collections"],
     queryFn: fetchCollections,
-    staleTime: 1000 * 60 * 60, // 1 hour
   });
 };
 
@@ -68,7 +121,6 @@ export const useSearchSkins = (query: string) => {
   return useQuery({
     queryKey: ["search", query],
     queryFn: () => searchSkins(query),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    enabled: query.length > 2, // Only search with at least 3 characters
+    enabled: query.length > 2, // Só busca com pelo menos 3 caracteres
   });
 };

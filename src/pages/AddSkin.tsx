@@ -2,12 +2,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "@/components/ui/search";
-import { useSearchSkins, useWeapons, useInvalidateInventory } from "@/hooks/use-skins";
+import { useSearchSkins, useWeapons, useAddSkin } from "@/hooks/use-skins";
 import { Skin } from "@/types/skin";
 import { useToast } from "@/hooks/use-toast";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
-import { addSkinToInventory } from "@/services/inventory-service";
 
 const AddSkin = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,10 +14,10 @@ const AddSkin = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const invalidateInventory = useInvalidateInventory();
   
   const { data: searchResults = [], isLoading: isSearching } = useSearchSkins(searchQuery);
   const { data: weapons = [] } = useWeapons();
+  const addSkinMutation = useAddSkin();
   
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -33,38 +32,51 @@ const AddSkin = () => {
     try {
       console.log("Adding skin with data:", skinData);
       
-      // Add the skin to inventory
-      addSkinToInventory({
-        id: skinData.skinId,
-        name: skinData.name,
-        weapon: skinData.weapon,
-        rarity: skinData.rarity,
-        image: skinData.image,
-        price: skinData.estimatedValue || skinData.purchasePrice,
+      // Adicionar a skin ao inventário
+      addSkinMutation.mutate({
+        skin: {
+          id: skinData.skinId,
+          name: skinData.name,
+          weapon: skinData.weapon,
+          rarity: skinData.rarity,
+          image: skinData.image,
+          price: skinData.estimatedValue || skinData.purchasePrice,
+          floatValue: parseFloat(skinData.floatValue || "0"),
+          isStatTrak: skinData.isStatTrak,
+          wear: skinData.wear,
+        },
+        purchaseInfo: {
+          purchasePrice: skinData.purchasePrice || 0,
+          marketplace: skinData.marketplace || "Steam Market",
+          feePercentage: skinData.feePercentage || 0,
+          notes: skinData.notes || ""
+        }
       }, {
-        purchasePrice: skinData.purchasePrice || 0,
-        marketplace: skinData.marketplace || "Steam Market",
-        feePercentage: skinData.feePercentage || 0,
-        notes: skinData.notes || ""
+        onSuccess: () => {
+          // Mostrar mensagem de sucesso
+          toast({
+            title: "Skin Adicionada",
+            description: `${skinData.weapon || ""} | ${skinData.name} foi adicionada ao seu inventário.`,
+          });
+          
+          // Resetar formulário e navegar de volta para o inventário
+          setSelectedSkin(null);
+          navigate("/inventory");
+        },
+        onError: (error) => {
+          console.error("Error adding skin:", error);
+          toast({
+            title: "Erro",
+            description: "Falha ao adicionar skin ao inventário",
+            variant: "destructive"
+          });
+        }
       });
-      
-      // Force refresh inventory data
-      invalidateInventory();
-      
-      // Show success toast
-      toast({
-        title: "Skin Added",
-        description: `${skinData.weapon || ""} | ${skinData.name} has been added to your inventory.`,
-      });
-      
-      // Reset form and navigate back to inventory
-      setSelectedSkin(null);
-      navigate("/inventory");
     } catch (error) {
       console.error("Error adding skin:", error);
       toast({
-        title: "Error",
-        description: "Failed to add skin to your inventory",
+        title: "Erro",
+        description: "Falha ao adicionar skin ao inventário",
         variant: "destructive"
       });
     }
@@ -72,24 +84,24 @@ const AddSkin = () => {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-2xl font-bold mb-6">Add Skin to Inventory</h1>
+      <h1 className="text-2xl font-bold mb-6">Adicionar Skin ao Inventário</h1>
       
       <div className="mb-6">
         <Search 
-          placeholder="Search for a skin by name or weapon..." 
+          placeholder="Busque uma skin pelo nome ou arma..." 
           onSearch={handleSearch}
         />
       </div>
       
       {isSearching && searchQuery.length > 2 && (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">Searching for skins...</p>
+          <p className="text-muted-foreground">Buscando skins...</p>
         </div>
       )}
       
       {searchQuery.length > 2 && !isSearching && searchResults.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">No skins found matching "{searchQuery}"</p>
+          <p className="text-muted-foreground">Nenhuma skin encontrada com "{searchQuery}"</p>
         </div>
       )}
       
@@ -113,7 +125,7 @@ const AddSkin = () => {
         </div>
       )}
       
-      {/* Skin Detail Modal */}
+      {/* Modal de detalhes da skin */}
       <SkinDetailModal 
         skin={selectedSkin}
         open={modalOpen}
