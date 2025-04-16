@@ -33,7 +33,7 @@ export type Database = {
           trade_lock_days: number | null
           trade_lock_until: string | null
           updated_at: string
-          user_id: string | null
+          user_id: string
           weapon: string | null
           wear: string | null
         }
@@ -60,7 +60,7 @@ export type Database = {
           trade_lock_days?: number | null
           trade_lock_until?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id: string
           weapon?: string | null
           wear?: string | null
         }
@@ -87,9 +87,48 @@ export type Database = {
           trade_lock_days?: number | null
           trade_lock_until?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
           weapon?: string | null
           wear?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          preferred_currency: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id: string
+          preferred_currency?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          preferred_currency?: string
+          updated_at?: string
+          username?: string
         }
         Relationships: []
       }
@@ -104,7 +143,7 @@ export type Database = {
           skin_name: string | null
           transaction_id: string
           type: string
-          user_id: string | null
+          user_id: string
           weapon_name: string | null
         }
         Insert: {
@@ -117,7 +156,7 @@ export type Database = {
           skin_name?: string | null
           transaction_id: string
           type: string
-          user_id?: string | null
+          user_id: string
           weapon_name?: string | null
         }
         Update: {
@@ -130,7 +169,7 @@ export type Database = {
           skin_name?: string | null
           transaction_id?: string
           type?: string
-          user_id?: string | null
+          user_id?: string
           weapon_name?: string | null
         }
         Relationships: []

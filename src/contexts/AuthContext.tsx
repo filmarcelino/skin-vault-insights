@@ -16,6 +16,7 @@ export interface UserProfile {
   preferred_currency: Currency;
   avatar_url?: string;
   created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
@@ -123,10 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await supabase.auth.signInWithPassword({ 
         email, 
-        password,
-        options: {
-          shouldCreateUser: false
-        }
+        password
       });
       
       if (response.error) {
@@ -135,14 +133,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: response.error.message,
           variant: "destructive"
         });
+        return { error: response.error, data: null };
       } else if (response.data.session) {
         toast({
           title: "Login realizado com sucesso",
           description: "Bem-vindo de volta!"
         });
+        return { error: null, data: response.data.session };
       }
       
-      return response;
+      return { error: new Error("Erro desconhecido"), data: null };
     } catch (error) {
       console.error("Sign in error:", error);
       toast({
@@ -188,14 +188,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: authResponse.error.message,
           variant: "destructive"
         });
+        return { error: authResponse.error, data: null };
       } else if (authResponse.data.session) {
         toast({
           title: "Conta criada com sucesso",
           description: "Bem-vindo ao CS Skin Vault!"
         });
+        return { error: null, data: authResponse.data.session };
       }
       
-      return authResponse;
+      return { error: new Error("Erro desconhecido"), data: null };
     } catch (error) {
       console.error("Sign up error:", error);
       toast({
