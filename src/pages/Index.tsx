@@ -1,5 +1,4 @@
 
-import { Layout } from "@/components/layout/layout";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { InsightsCard } from "@/components/dashboard/insights-card";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
@@ -90,7 +89,7 @@ const activityItems = [
 
 const Index = () => {
   return (
-    <Layout>
+    <>
       <div className="mb-6">
         <Search placeholder="Search for weapon, skin or rarity..." />
       </div>
@@ -170,7 +169,7 @@ const Index = () => {
           ))}
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 
