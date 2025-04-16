@@ -1,3 +1,4 @@
+
 import { Skin, SkinCollection, SkinFilter } from "@/types/skin";
 import { 
   getLocalWeapons, 
@@ -139,7 +140,13 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
     wear: skin.wear,
     min_float: skin.min_float,
     max_float: skin.max_float,
-    price: skin.price
+    price: skin.price,
+    collection: skin.collection ? {
+      id: skin.collection.id || (skin.collection.name ? String(skin.collection.name).toLowerCase().replace(/\s+/g, '-') : undefined),
+      name: skin.collection.name || "",
+      description: skin.collection.description,
+      image: skin.collection.image
+    } : undefined
   }));
   
   // Apply filters if provided
