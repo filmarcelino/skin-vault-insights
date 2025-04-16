@@ -1,11 +1,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
-  fetchSkins, 
   fetchSkinById, 
   fetchWeapons, 
-  fetchCollections, 
-  searchSkins 
+  fetchCollections
 } from "@/services/api";
 import { 
   getUserInventory, 
@@ -18,30 +16,6 @@ import { Skin, SkinFilter, InventoryItem, SellData } from "@/types/skin";
 
 // Custom key for inventory data
 export const INVENTORY_QUERY_KEY = "user-inventory";
-export const SKINS_QUERY_KEY = "skins";
-
-export const useSkins = (filters?: SkinFilter) => {
-  return useQuery({
-    queryKey: filters?.onlyUserInventory ? [INVENTORY_QUERY_KEY] : [SKINS_QUERY_KEY, filters],
-    queryFn: async () => {
-      try {
-        // Se queremos apenas o inventário do usuário, buscamos do Supabase
-        if (filters?.onlyUserInventory) {
-          const inventory = await getUserInventory();
-          console.log("Retrieved inventory in useSkins hook:", inventory);
-          return Array.isArray(inventory) ? inventory : [];
-        }
-        // Caso contrário, buscamos da API
-        const result = await fetchSkins(filters);
-        return Array.isArray(result) ? result : [];
-      } catch (error) {
-        console.error("Error in useSkins:", error);
-        return [];
-      }
-    },
-    retry: 1,
-  });
-};
 
 export const useInventory = () => {
   return useQuery({
@@ -82,6 +56,7 @@ export const useAddSkin = () => {
       return result;
     },
     onSuccess: () => {
+      // Imediatamente invalidar a query para forçar uma atualização
       queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
     },
     onError: (error) => {
@@ -151,13 +126,5 @@ export const useCollections = () => {
   return useQuery({
     queryKey: ["collections"],
     queryFn: fetchCollections,
-  });
-};
-
-export const useSearchSkins = (query: string) => {
-  return useQuery({
-    queryKey: ["search", query],
-    queryFn: () => searchSkins(query),
-    enabled: query.length > 2, // Só busca com pelo menos 3 caracteres
   });
 };
