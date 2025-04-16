@@ -1,3 +1,4 @@
+
 export interface Skin {
   id: string;
   name: string;
@@ -10,6 +11,9 @@ export interface Skin {
   min_float?: number;
   max_float?: number;
   price?: number;
+  isStatTrak?: boolean;
+  tradeLockDays?: number;
+  tradeLockUntil?: string;
   collection?: {
     id?: string;
     name: string;
@@ -29,6 +33,11 @@ export interface InventoryItem extends Skin {
   acquiredDate: string;
   purchasePrice?: number;
   currentPrice?: number;
+  isStatTrak?: boolean;
+  tradeLockDays?: number;
+  tradeLockUntil?: string;
+  marketplace?: string;
+  feePercentage?: number;
 }
 
 export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';
@@ -48,4 +57,13 @@ export interface SkinFilter {
   minPrice?: number;
   maxPrice?: number;
   search?: string;
+}
+
+export interface SellData {
+  soldDate: string;
+  soldPrice: number;
+  soldMarketplace: string;
+  soldFeePercentage: number;
+  soldNotes?: string;
+  profit?: number;
 }

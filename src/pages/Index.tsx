@@ -7,10 +7,12 @@ import { ArrowUp, Boxes, DollarSign, ArrowDown, ArrowRightLeft, ShoppingCart } f
 import { Button } from "@/components/ui/button";
 import { Search } from "@/components/ui/search";
 import { useSkins } from "@/hooks/use-skins";
-import { Skin } from "@/types/skin";
+import { Skin, SellData } from "@/types/skin";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import { Loading } from "@/components/ui/loading";
+import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
+import { useToast } from "@/hooks/use-toast";
 
 // Activity data (in a real app, this would also come from an API)
 const activityItems = [
@@ -50,6 +52,10 @@ const activityItems = [
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debugInfo, setDebugInfo] = useState<string>("");
+  const [selectedSkin, setSelectedSkin] = useState<any>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  
+  const { toast } = useToast();
   
   // Fetch skins data from the API
   const { data: skins, isLoading, error } = useSkins({
@@ -120,6 +126,39 @@ const Index = () => {
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+  };
+
+  // Handle clicking on a skin to view details
+  const handleSkinClick = (skin: Skin) => {
+    // Add some mock inventory data to the skin for display purposes
+    const inventorySkin = {
+      ...skin,
+      inventoryId: skin.id,
+      acquiredDate: new Date().toISOString(),
+      purchasePrice: skin.price ? skin.price * 0.9 : 0, // Mock purchase price
+      currentPrice: skin.price,
+      tradeLockDays: Math.floor(Math.random() * 8), // Random trade lock between 0-7 days
+      tradeLockUntil: new Date(new Date().getTime() + Math.floor(Math.random() * 8) * 24 * 60 * 60 * 1000).toISOString(),
+      isStatTrak: Math.random() > 0.7, // 30% chance of being StatTrak
+      marketplace: "Steam Market",
+      feePercentage: 13,
+      notes: "This is a mock inventory item for demonstration purposes."
+    };
+    
+    setSelectedSkin(inventorySkin);
+    setDetailModalOpen(true);
+  };
+
+  // Handle selling a skin
+  const handleSellSkin = (itemId: string, sellData: SellData) => {
+    console.log("Selling skin:", itemId, sellData);
+    
+    toast({
+      title: "Skin Sold",
+      description: `The skin was successfully marked as sold for $${sellData.soldPrice}.`,
+    });
+    
+    // In a real app, you would update the database here
   };
 
   return (
@@ -203,8 +242,13 @@ const Index = () => {
                 wear={skin.wear || skin.rarity || "Unknown"}
                 price={skin.price?.toString() || "N/A"}
                 image={skin.image}
+                rarity={skin.rarity}
+                isStatTrak={Math.random() > 0.7} // 30% chance of being StatTrak for demo
+                tradeLockDays={Math.floor(Math.random() * 8)} // Random 0-7 days for demo
+                tradeLockUntil={new Date(new Date().getTime() + Math.floor(Math.random() * 8) * 24 * 60 * 60 * 1000).toISOString()}
                 className="animate-fade-in hover:scale-105 transition-transform duration-200"
                 style={{ animationDelay: `${0.5 + (index * 0.1)}s` }}
+                onClick={() => handleSkinClick(skin)}
               />
             ))
           ) : (
@@ -239,6 +283,14 @@ const Index = () => {
           ))}
         </div>
       </div>
+
+      {/* Inventory Skin Modal */}
+      <InventorySkinModal
+        item={selectedSkin}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        onSellSkin={handleSellSkin}
+      />
     </>
   );
 };

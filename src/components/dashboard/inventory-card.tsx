@@ -1,6 +1,7 @@
 
 import { FC } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Lock, Clock } from "lucide-react";
 
 interface InventoryCardProps {
   weaponName: string;
@@ -11,6 +12,10 @@ interface InventoryCardProps {
   className?: string;
   style?: React.CSSProperties;
   rarity?: string;
+  isStatTrak?: boolean;
+  tradeLockDays?: number;
+  tradeLockUntil?: string;
+  onClick?: () => void;
 }
 
 export const InventoryCard: FC<InventoryCardProps> = ({
@@ -22,6 +27,10 @@ export const InventoryCard: FC<InventoryCardProps> = ({
   className = "",
   style,
   rarity,
+  isStatTrak,
+  tradeLockDays,
+  tradeLockUntil,
+  onClick,
 }) => {
   // Function to handle image loading error
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -65,15 +74,29 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     }
   };
 
+  // Check if the item is still trade locked
+  const isLocked = tradeLockDays && tradeLockDays > 0;
+  const tradeLockDate = tradeLockUntil ? new Date(tradeLockUntil) : null;
+  const daysLeft = tradeLockDate ? Math.ceil((tradeLockDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
   return (
     <div 
-      className={`cs-card p-3 flex flex-col transition-all ${getRarityColorClass()} border-t-2 ${className}`} 
+      className={`cs-card p-3 flex flex-col transition-all ${getRarityColorClass()} border-t-2 ${className} ${onClick ? 'cursor-pointer' : ''}`} 
       style={style}
+      onClick={onClick}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="font-medium text-sm truncate max-w-full">
           {weaponName} | <span className="text-primary">{skinName}</span>
         </div>
+        {isStatTrak && (
+          <Badge 
+            variant="outline" 
+            className="ml-1 text-[10px] py-0 h-4 bg-[#CF6A32]/10 text-[#CF6A32] border-[#CF6A32]/30"
+          >
+            ST™
+          </Badge>
+        )}
       </div>
       <div className="relative w-full h-24 mb-2 flex items-center justify-center bg-black/10 dark:bg-white/5 rounded">
         {image ? (
@@ -87,9 +110,24 @@ export const InventoryCard: FC<InventoryCardProps> = ({
         ) : (
           <div className="text-xs text-muted-foreground">No image</div>
         )}
+        
+        {/* Trade lock indicator */}
+        {isLocked && daysLeft > 0 && (
+          <div className="absolute top-1 right-1 bg-black/70 rounded-full p-1 flex items-center">
+            <Lock className="h-3 w-3 text-yellow-500" />
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-between mt-auto">
-        {wear && <Badge variant="secondary" className="text-xs truncate max-w-[70%]">{wear}</Badge>}
+        <div className="flex items-center gap-1">
+          {wear && <Badge variant="secondary" className="text-xs truncate max-w-[70%]">{wear}</Badge>}
+          {isLocked && daysLeft > 0 && (
+            <div className="flex items-center text-[10px] text-yellow-500">
+              <Clock className="h-3 w-3 mr-0.5" />
+              {daysLeft}d
+            </div>
+          )}
+        </div>
         {price && <div className="text-sm font-medium">${price}</div>}
       </div>
     </div>

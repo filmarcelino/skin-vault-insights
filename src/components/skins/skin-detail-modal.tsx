@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skin, SkinWear } from "@/types/skin";
-import { X } from "lucide-react";
+import { Lock, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -145,6 +146,8 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   const [feePercentage, setFeePercentage] = useState<string>("0");
   const [estimatedValue, setEstimatedValue] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
+  const [isStatTrak, setIsStatTrak] = useState<boolean>(false);
+  const [tradeLockDays, setTradeLockDays] = useState<string>("0");
   
   // Reset form when skin changes
   useEffect(() => {
@@ -158,6 +161,8 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
       setFeePercentage("0");
       setEstimatedValue("");
       setNotes("");
+      setIsStatTrak(false);
+      setTradeLockDays("7"); // Default to 7 days for fresh purchases
     }
   }, [skin]);
   
@@ -184,6 +189,10 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
     
     if (!skin) return;
     
+    // Calculate trade lock end date
+    const tradeLockUntil = new Date();
+    tradeLockUntil.setDate(tradeLockUntil.getDate() + parseInt(tradeLockDays || "0", 10));
+    
     const skinData = {
       skinId: skin.id,
       name: skin.name,
@@ -199,6 +208,9 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
       feePercentage: feePercentage ? parseFloat(feePercentage) : 0,
       estimatedValue: estimatedValue ? parseFloat(estimatedValue) : undefined,
       notes,
+      isStatTrak,
+      tradeLockDays: parseInt(tradeLockDays || "0", 10),
+      tradeLockUntil: tradeLockDays !== "0" ? tradeLockUntil.toISOString() : undefined,
       acquiredDate: new Date().toISOString(),
     };
     
@@ -243,7 +255,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <ScrollArea className="flex-grow pr-4 pl-6 pt-4 pb-4 h-[calc(90vh-10rem)] scrollbar-none">
             <div className="py-4">
-              {/* Skin Card with Rarity Colored Background - reduzindo o tamanho em 45% */}
+              {/* Skin Card with Rarity Colored Background - reduced size by 45% */}
               <div className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(skin.rarity)}`}
                 style={{ backgroundColor: `${getRarityColor(skin.rarity)}20` }}
               >
@@ -295,6 +307,45 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                {/* StatTrak™ Option */}
+                <div className="space-y-2 flex items-center space-x-2">
+                  <Checkbox 
+                    id="stattrak"
+                    checked={isStatTrak}
+                    onCheckedChange={(checked) => setIsStatTrak(checked === true)}
+                    className="data-[state=checked]:bg-[#CF6A32] data-[state=checked]:border-[#CF6A32]"
+                  />
+                  <label
+                    htmlFor="stattrak"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    <span className="text-[#CF6A32] font-semibold">StatTrak™</span> (Counts kills)
+                  </label>
+                </div>
+                
+                {/* Trade Lock */}
+                <div className="space-y-2">
+                  <Label htmlFor="trade-lock" className="flex items-center">
+                    <Lock className="h-4 w-4 mr-1 text-yellow-500" />
+                    Trade Lock (days)
+                  </Label>
+                  <div className="flex space-x-2 items-center">
+                    <Input
+                      id="trade-lock"
+                      type="number"
+                      min="0"
+                      max="7"
+                      value={tradeLockDays}
+                      onChange={(e) => setTradeLockDays(e.target.value)}
+                      className="w-20"
+                    />
+                    <div className="text-xs text-muted-foreground flex items-center">
+                      <Info className="h-3 w-3 mr-1" /> 
+                      {tradeLockDays === "0" ? "No trade lock" : `Locked until ${new Date(new Date().getTime() + parseInt(tradeLockDays) * 24 * 60 * 60 * 1000).toLocaleDateString()}`}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Float and Wear */}
                 <div className="space-y-2">
                   <Label htmlFor="float-value">Float Value</Label>
