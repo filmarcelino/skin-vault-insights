@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AddSkin from "./pages/AddSkin";
 import Settings from "./pages/Settings";
+import Inventory from "./pages/Inventory";
 
 // Configuração do React Query para 15 minutos de staleTime em vez de 5 minutos
 const queryClient = new QueryClient({
@@ -29,7 +30,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout><Index /></Layout>} />
-            <Route path="/inventory" element={<Layout><Index activeTab="inventory" /></Layout>} />
+            <Route path="/inventory" element={<Layout><Inventory /></Layout>} />
             <Route path="/more" element={<Layout><Index activeTab="inventory" /></Layout>} />
             <Route path="/add" element={<Layout><AddSkin /></Layout>} />
             <Route path="/search" element={<Layout><Index activeTab="search" /></Layout>} />

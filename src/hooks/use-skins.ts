@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   fetchSkins, 
@@ -23,15 +24,20 @@ export const useSkins = (filters?: SkinFilter) => {
   return useQuery({
     queryKey: filters?.onlyUserInventory ? [INVENTORY_QUERY_KEY] : [SKINS_QUERY_KEY, filters],
     queryFn: async () => {
-      // Se queremos apenas o inventário do usuário, buscamos do Supabase
-      if (filters?.onlyUserInventory) {
-        const inventory = await getUserInventory();
-        console.log("Retrieved inventory in useSkins hook:", inventory);
-        return inventory || [];
+      try {
+        // Se queremos apenas o inventário do usuário, buscamos do Supabase
+        if (filters?.onlyUserInventory) {
+          const inventory = await getUserInventory();
+          console.log("Retrieved inventory in useSkins hook:", inventory);
+          return Array.isArray(inventory) ? inventory : [];
+        }
+        // Caso contrário, buscamos da API
+        const result = await fetchSkins(filters);
+        return Array.isArray(result) ? result : [];
+      } catch (error) {
+        console.error("Error in useSkins:", error);
+        return [];
       }
-      // Caso contrário, buscamos da API
-      const result = await fetchSkins(filters);
-      return result || [];
     },
     retry: 1,
   });
@@ -41,11 +47,19 @@ export const useInventory = () => {
   return useQuery({
     queryKey: [INVENTORY_QUERY_KEY],
     queryFn: async () => {
-      const inventory = await getUserInventory();
-      console.log("Loaded inventory:", inventory);
-      return inventory || [];
+      try {
+        const inventory = await getUserInventory();
+        console.log("Loaded inventory:", inventory);
+        // Garantir que sempre retornamos um array
+        return Array.isArray(inventory) ? inventory : [];
+      } catch (error) {
+        console.error("Error in useInventory:", error);
+        return [];
+      }
     },
     retry: 1,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };
 
