@@ -50,4 +50,3 @@ export const useSearchSkins = (query: string) => {
     enabled: query.length > 2, // Only search with at least 3 characters
   });
 };
-

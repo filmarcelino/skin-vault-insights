@@ -40,6 +40,18 @@ export interface InventoryItem extends Skin {
   feePercentage?: number;
   floatValue?: number;
   notes?: string;
+  isInUserInventory: boolean; // Flag to indicate if the skin belongs to user's inventory
+}
+
+export interface Transaction {
+  id: string;
+  type: 'add' | 'sell' | 'trade' | 'purchase';
+  itemId: string;
+  weaponName: string;
+  skinName: string;
+  date: string;
+  price?: number | string;
+  notes?: string;
 }
 
 export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';
@@ -59,6 +71,7 @@ export interface SkinFilter {
   minPrice?: number;
   maxPrice?: number;
   search?: string;
+  onlyUserInventory?: boolean; // New filter to show only user's inventory
 }
 
 export interface SellData {

@@ -1,124 +1,124 @@
 
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { InventoryItem, SellData, Skin } from "@/types/skin";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, 
-  DialogFooter, DialogClose, DialogDescription 
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { InventoryItem, SellData } from "@/types/skin";
-import { X, DollarSign } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { getTradeLockStatus } from "@/utils/skin-utils";
 import { SkinDetailsCard } from "./skin-details-card";
 import { SkinSellingForm } from "./skin-selling-form";
 import { SkinAdditionalInfo } from "./skin-additional-info";
+import { Button } from "../ui/button";
+import { PlusCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface InventorySkinModalProps {
   item: InventoryItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSellSkin?: (itemId: string, sellData: SellData) => void;
+  onAddToInventory?: (skin: Skin) => InventoryItem | null;
 }
 
-export const InventorySkinModal = ({ 
-  item, open, onOpenChange, onSellSkin 
-}: InventorySkinModalProps) => {
+export function InventorySkinModal({
+  item,
+  open,
+  onOpenChange,
+  onSellSkin,
+  onAddToInventory
+}: InventorySkinModalProps) {
+  const [activeTab, setActiveTab] = useState("details");
   const { toast } = useToast();
-  const [isSellingMode, setIsSellingMode] = useState(false);
 
-  // Check if the item is trade locked
-  const { isLocked } = item ? getTradeLockStatus(item.tradeLockUntil) : { isLocked: false };
+  const handleAddToInventory = () => {
+    if (!item || !onAddToInventory) return;
 
-  const handleSellSkin = (itemId: string, sellData: SellData) => {
-    if (!item || !onSellSkin) return;
-    
-    onSellSkin(itemId, sellData);
-    
-    toast({
-      title: "Skin Sold",
-      description: `${item.weapon || ""} | ${item.name} has been marked as sold.`,
-    });
-
-    setIsSellingMode(false);
-    onOpenChange(false);
+    const newItem = onAddToInventory(item);
+    if (newItem) {
+      onOpenChange(false);
+    }
   };
-
-  const resetSellForm = () => {
-    setIsSellingMode(false);
-  };
-
-  if (!item) return null;
-
+  
   return (
-    <Dialog open={open} onOpenChange={(newState) => {
-      onOpenChange(newState);
-      if (!newState) resetSellForm();
-    }}>
-      <DialogContent 
-        className="max-w-3xl max-h-[90vh] overflow-hidden p-0 animate-fade-in bg-[#1A1F2C] border-[#333] shadow-[0_0_15px_rgba(86,71,255,0.2)]"
-      >
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-2xl flex justify-between items-center">
-            <span className="text-[#8B5CF6]">
-              {isSellingMode ? "Sell Skin" : "Skin Details"}
-            </span>
-            <DialogClose className="rounded-full p-2 hover:bg-[#333]">
-              <X className="h-4 w-4" />
-            </DialogClose>
-          </DialogTitle>
-          {isSellingMode && (
-            <DialogDescription className="text-sm text-[#8A898C]">
-              Record the sale details for this skin to track your profits and transaction history
-            </DialogDescription>
-          )}
-        </DialogHeader>
-        
-        <ScrollArea className="flex-grow pr-4 pl-6 pt-4 pb-4 h-[calc(90vh-10rem)] scrollbar-none">
-          <div className="py-4">
-            {/* Skin Card with Rarity Colored Background */}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        {item && (
+          <>
             <SkinDetailsCard item={item} />
-            
-            {/* Show either the selling form or additional info based on mode */}
-            {isSellingMode ? (
-              <SkinSellingForm 
-                item={item} 
-                onCancel={() => setIsSellingMode(false)}
-                onSell={handleSellSkin}
-              />
-            ) : (
-              <SkinAdditionalInfo item={item} />
-            )}
-          </div>
-        </ScrollArea>
-        
-        <DialogFooter className="p-6 pt-4 border-t border-[#333]">
-          {isSellingMode ? (
-            <></>
-          ) : (
-            <>
-              <DialogClose asChild>
+
+            {!item.isInUserInventory && onAddToInventory && (
+              <div className="mb-4">
                 <Button 
-                  type="button" 
-                  variant="outline"
-                  className="border-[#333] hover:bg-[#333]"
+                  onClick={handleAddToInventory} 
+                  className="w-full bg-green-600 hover:bg-green-700"
                 >
-                  Close
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add to My Inventory
                 </Button>
-              </DialogClose>
-              <Button 
-                type="button" 
-                onClick={() => setIsSellingMode(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={isLocked}
-              >
-                <DollarSign className="h-4 w-4 mr-1" />
-                Sell Skin
-              </Button>
-            </>
-          )}
-        </DialogFooter>
+              </div>
+            )}
+
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="w-full">
+                <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
+                {item.isInUserInventory && onSellSkin && (
+                  <TabsTrigger value="sell" className="flex-1">Sell</TabsTrigger>
+                )}
+                <TabsTrigger value="notes" className="flex-1">Notes</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details" className="py-4">
+                <div className="space-y-6">
+                  {/* Price History - Placeholder for now */}
+                  <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
+                    <h3 className="font-medium mb-2 text-[#8B5CF6]">Price History</h3>
+                    <div className="h-24 flex items-center justify-center text-[#8A898C] text-sm">
+                      Price history charts will be available soon.
+                    </div>
+                  </div>
+
+                  {/* Collection Info - Placeholder for now */}
+                  {item.collection && (
+                    <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
+                      <h3 className="font-medium mb-2 text-[#8B5CF6]">Collection</h3>
+                      <div className="text-sm text-[#8A898C]">
+                        This skin is part of {item.collection.name || "Unknown Collection"}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Float Value Info */}
+                  <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
+                    <h3 className="font-medium mb-2 text-[#8B5CF6]">Float Value</h3>
+                    <div className="text-sm text-[#8A898C]">
+                      {item.floatValue ? (
+                        <>
+                          <p>Current Float: {item.floatValue.toFixed(8)}</p>
+                          <p>Float Range: {item.min_float?.toFixed(8) || "Unknown"} - {item.max_float?.toFixed(8) || "Unknown"}</p>
+                        </>
+                      ) : (
+                        <p>Float value information not available.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {item.isInUserInventory && onSellSkin && (
+                <TabsContent value="sell" className="py-4">
+                  <SkinSellingForm 
+                    item={item} 
+                    onSell={onSellSkin} 
+                    onCancel={() => setActiveTab("details")} 
+                  />
+                </TabsContent>
+              )}
+
+              <TabsContent value="notes" className="py-4">
+                <SkinAdditionalInfo item={item} />
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
-};
+}

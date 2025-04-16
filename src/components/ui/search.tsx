@@ -10,6 +10,7 @@ interface SearchProps {
   value?: string;
   initialValue?: string;
   debounceTime?: number;
+  className?: string; // Added className prop
 }
 
 export const Search: FC<SearchProps> = ({
@@ -19,6 +20,7 @@ export const Search: FC<SearchProps> = ({
   value,
   initialValue = "",
   debounceTime = 300,
+  className = "", // Default to empty string
 }) => {
   const [internalValue, setValue] = useState(initialValue);
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -55,7 +57,7 @@ export const Search: FC<SearchProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full">
+    <form onSubmit={handleSubmit} className={`relative w-full ${className}`}>
       <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         type="search"
