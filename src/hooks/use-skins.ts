@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { 
   fetchSkins, 
@@ -8,11 +7,19 @@ import {
   searchSkins 
 } from "@/services/api";
 import { Skin, SkinFilter, SkinCollection } from "@/types/skin";
+import { getUserInventory } from "@/services/inventory-service";
 
 export const useSkins = (filters?: SkinFilter) => {
   return useQuery({
     queryKey: ["skins", filters],
-    queryFn: () => fetchSkins(filters),
+    queryFn: async () => {
+      // If we want only user inventory, return it from local storage
+      if (filters?.onlyUserInventory) {
+        return getUserInventory();
+      }
+      // Otherwise fetch from API
+      return fetchSkins(filters);
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

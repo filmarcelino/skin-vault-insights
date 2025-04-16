@@ -23,12 +23,16 @@ import {
 } from "@/services/inventory-service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const Index = () => {
+interface IndexProps {
+  activeTab?: "inventory" | "search";
+}
+
+const Index = ({ activeTab = "inventory" }: IndexProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debugInfo, setDebugInfo] = useState<string>("");
   const [selectedSkin, setSelectedSkin] = useState<any>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("inventory");
+  const [currentTab, setCurrentTab] = useState<"inventory" | "search">(activeTab);
   const [userInventory, setUserInventory] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   
@@ -37,21 +41,32 @@ const Index = () => {
   // Fetch skins data from the API
   const { data: skins, isLoading, error } = useSkins({
     search: searchQuery.length > 2 ? searchQuery : undefined,
-    onlyUserInventory: activeTab === "inventory"
+    onlyUserInventory: currentTab === "inventory"
   });
 
   // Load user inventory and transactions
-  useEffect(() => {
+  const refreshUserData = () => {
+    console.log("Refreshing user data...");
     const loadedInventory = getUserInventory();
+    console.log("Loaded inventory:", loadedInventory);
     setUserInventory(loadedInventory);
     
     const loadedTransactions = getUserTransactions();
     setTransactions(loadedTransactions);
+  };
+
+  useEffect(() => {
+    refreshUserData();
   }, []);
+
+  // Update active tab when prop changes
+  useEffect(() => {
+    setCurrentTab(activeTab);
+  }, [activeTab]);
 
   // Debug information
   useEffect(() => {
-    if (activeTab === "inventory") {
+    if (currentTab === "inventory") {
       setDebugInfo(`Loaded ${userInventory.length} skins from user inventory`);
     } else if (skins) {
       setDebugInfo(`Loaded ${skins.length} skins from search`);
@@ -60,7 +75,7 @@ const Index = () => {
     } else if (error) {
       setDebugInfo(`Error: ${error.toString()}`);
     }
-  }, [skins, isLoading, error, userInventory, activeTab]);
+  }, [skins, isLoading, error, userInventory, currentTab]);
 
   // Prepare stats from the fetched data
   const prepareStats = () => {
@@ -123,6 +138,7 @@ const Index = () => {
   // Add skin to user's inventory
   const handleAddToInventory = (skin: Skin) => {
     try {
+      console.log("Adding skin to inventory:", skin);
       const newItem = addSkinToInventory(skin, {
         purchasePrice: skin.price || 0,
         marketplace: "Steam Market",
@@ -131,8 +147,7 @@ const Index = () => {
       });
       
       // Refresh inventory
-      setUserInventory([...getUserInventory()]);
-      setTransactions([...getUserTransactions()]);
+      refreshUserData();
       
       toast({
         title: "Skin Added",
@@ -141,6 +156,7 @@ const Index = () => {
       
       return newItem;
     } catch (err) {
+      console.error("Error adding skin:", err);
       toast({
         title: "Error",
         description: "Failed to add skin to inventory",
@@ -163,8 +179,7 @@ const Index = () => {
       });
       
       // Refresh inventory and transactions
-      setUserInventory([...getUserInventory()]);
-      setTransactions([...getUserTransactions()]);
+      refreshUserData();
       
       toast({
         title: "Skin Sold",
@@ -190,7 +205,7 @@ const Index = () => {
           value={searchQuery}
           className="flex-1"
         />
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+        <Tabs value={currentTab} onValueChange={(value) => setCurrentTab(value as "inventory" | "search")} className="w-full sm:w-auto">
           <TabsList>
             <TabsTrigger value="inventory">My Inventory</TabsTrigger>
             <TabsTrigger value="search">Search Skins</TabsTrigger>
@@ -212,27 +227,27 @@ const Index = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 animate-fade-in">
         <StatsCard 
           title="Total Skins" 
-          value={isLoading && activeTab === "inventory" ? "Loading..." : stats.totalSkins} 
+          value={isLoading && currentTab === "inventory" ? "Loading..." : stats.totalSkins} 
           icon={<Boxes className="h-5 w-5" />}
           className="animate-fade-in" 
           style={{ animationDelay: "0.1s" }}
         />
         <StatsCard 
           title="Total Value" 
-          value={isLoading && activeTab === "inventory" ? "Loading..." : stats.totalValue} 
+          value={isLoading && currentTab === "inventory" ? "Loading..." : stats.totalValue} 
           icon={<DollarSign className="h-5 w-5" />} 
           className="animate-fade-in" 
           style={{ animationDelay: "0.2s" }}
         />
         <StatsCard 
           title="Most Valuable" 
-          value={isLoading && activeTab === "inventory" ? "Loading..." : `${stats.mostValuable.weapon} | ${stats.mostValuable.skin}`} 
+          value={isLoading && currentTab === "inventory" ? "Loading..." : `${stats.mostValuable.weapon} | ${stats.mostValuable.skin}`} 
           className="md:col-span-1 animate-fade-in" 
           style={{ animationDelay: "0.3s" }}
         />
       </div>
       
-      {activeTab === "inventory" && userInventory.length > 0 && (
+      {currentTab === "inventory" && userInventory.length > 0 && (
         <InsightsCard 
           message={`Your inventory has ${userInventory.length} skins worth ${stats.totalValue}`}
           className="mt-6 animate-fade-in animate-pulse-glow"
@@ -240,95 +255,99 @@ const Index = () => {
         />
       )}
       
-      <Tabs defaultValue={activeTab} value={activeTab}>
-        <TabsContent value="inventory" className="mt-8 animate-fade-in" style={{ animationDelay: "0.5s" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">My Inventory</h2>
-            <Button variant="outline" size="sm" className="text-primary border-primary hover:bg-primary/10">
-              Sort by Value
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {userInventory.length === 0 ? (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                <p>Your inventory is empty.</p>
-                <p className="mt-2">Switch to "Search Skins" tab to find and add skins to your inventory.</p>
-              </div>
-            ) : (
-              userInventory.map((skin, index) => (
-                <InventoryCard 
-                  key={skin.inventoryId}
-                  weaponName={skin.weapon || "Unknown"}
-                  skinName={skin.name}
-                  wear={skin.wear || skin.rarity || "Unknown"}
-                  price={skin.currentPrice?.toString() || skin.price?.toString() || "N/A"}
-                  image={skin.image}
-                  rarity={skin.rarity}
-                  isStatTrak={skin.isStatTrak}
-                  tradeLockDays={skin.tradeLockDays}
-                  tradeLockUntil={skin.tradeLockUntil}
-                  className="animate-fade-in hover:scale-105 transition-transform duration-200"
-                  style={{ animationDelay: `${0.5 + (index * 0.1)}s` }}
-                  onClick={() => handleSkinClick(skin)}
-                />
-              ))
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="search" className="mt-8 animate-fade-in" style={{ animationDelay: "0.5s" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">Search Results</h2>
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-              Filter
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {isLoading ? (
-              // Show skeletons while loading
-              Array.from({ length: 8 }).map((_, index) => (
-                <div key={index} className="cs-card p-3 flex flex-col">
-                  <Skeleton className="h-4 w-24 mb-2" />
-                  <Skeleton className="w-full h-24 mb-2" />
-                  <div className="flex items-center justify-between mt-auto">
-                    <Skeleton className="h-3 w-16" />
-                    <Skeleton className="h-3 w-12" />
-                  </div>
+      <div className="mt-8">
+        {currentTab === "inventory" && (
+          <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">My Inventory</h2>
+              <Button variant="outline" size="sm" className="text-primary border-primary hover:bg-primary/10">
+                Sort by Value
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {userInventory.length === 0 ? (
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  <p>Your inventory is empty.</p>
+                  <p className="mt-2">Switch to "Search Skins" tab to find and add skins to your inventory.</p>
                 </div>
-              ))
-            ) : skins && skins.length > 0 ? (
-              // Display the fetched skins
-              skins.map((skin, index) => (
-                <InventoryCard 
-                  key={skin.id}
-                  weaponName={skin.weapon || "Unknown"}
-                  skinName={skin.name}
-                  wear={skin.wear || skin.rarity || "Unknown"}
-                  price={skin.price?.toString() || "N/A"}
-                  image={skin.image}
-                  rarity={skin.rarity}
-                  isStatTrak={Math.random() > 0.7} // 30% chance of being StatTrak for demo
-                  tradeLockDays={0}
-                  className="animate-fade-in hover:scale-105 transition-transform duration-200"
-                  style={{ animationDelay: `${0.5 + (index * 0.1)}s` }}
-                  onClick={() => handleSkinClick(skin)}
-                />
-              ))
-            ) : (
-              // Display a message when no skins are found
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                {searchQuery.length > 0 ? (
-                  <>No skins found matching "{searchQuery}". Try adjusting your search.</>
-                ) : (
-                  <>Enter a search term to find skins.</>
-                )}
-              </div>
-            )}
+              ) : (
+                userInventory.map((skin, index) => (
+                  <InventoryCard 
+                    key={skin.inventoryId}
+                    weaponName={skin.weapon || "Unknown"}
+                    skinName={skin.name}
+                    wear={skin.wear || skin.rarity || "Unknown"}
+                    price={skin.currentPrice?.toString() || skin.price?.toString() || "N/A"}
+                    image={skin.image}
+                    rarity={skin.rarity}
+                    isStatTrak={skin.isStatTrak}
+                    tradeLockDays={skin.tradeLockDays}
+                    tradeLockUntil={skin.tradeLockUntil}
+                    className="animate-fade-in hover:scale-105 transition-transform duration-200"
+                    style={{ animationDelay: `${0.5 + (index * 0.1)}s` }}
+                    onClick={() => handleSkinClick(skin)}
+                  />
+                ))
+              )}
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+        
+        {currentTab === "search" && (
+          <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold">Search Results</h2>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+                Filter
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {isLoading ? (
+                // Show skeletons while loading
+                Array.from({ length: 8 }).map((_, index) => (
+                  <div key={index} className="cs-card p-3 flex flex-col">
+                    <Skeleton className="h-4 w-24 mb-2" />
+                    <Skeleton className="w-full h-24 mb-2" />
+                    <div className="flex items-center justify-between mt-auto">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-3 w-12" />
+                    </div>
+                  </div>
+                ))
+              ) : skins && skins.length > 0 ? (
+                // Display the fetched skins
+                skins.map((skin, index) => (
+                  <InventoryCard 
+                    key={skin.id}
+                    weaponName={skin.weapon || "Unknown"}
+                    skinName={skin.name}
+                    wear={skin.wear || skin.rarity || "Unknown"}
+                    price={skin.price?.toString() || "N/A"}
+                    image={skin.image}
+                    rarity={skin.rarity}
+                    isStatTrak={Math.random() > 0.7} // 30% chance of being StatTrak for demo
+                    tradeLockDays={0}
+                    className="animate-fade-in hover:scale-105 transition-transform duration-200"
+                    style={{ animationDelay: `${0.5 + (index * 0.1)}s` }}
+                    onClick={() => handleSkinClick(skin)}
+                  />
+                ))
+              ) : (
+                // Display a message when no skins are found
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  {searchQuery.length > 0 ? (
+                    <>No skins found matching "{searchQuery}". Try adjusting your search.</>
+                  ) : (
+                    <>Enter a search term to find skins.</>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       
       <div className="mt-8 animate-fade-in" style={{ animationDelay: "0.9s" }}>
         <div className="flex items-center justify-between mb-4">

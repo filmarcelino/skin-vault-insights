@@ -21,12 +21,12 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout><Index /></Layout>} />
-            <Route path="/inventory" element={<Layout><Index /></Layout>} /> {/* Placeholder for future pages */}
+            <Route path="/inventory" element={<Layout><Index /></Layout>} />
+            <Route path="/more" element={<Layout><Index activeTab="inventory" /></Layout>} /> {/* Force inventory tab on /more */}
             <Route path="/add" element={<Layout><AddSkin /></Layout>} />
-            <Route path="/search" element={<Layout><Index /></Layout>} /> {/* Placeholder for future pages */}
-            <Route path="/analytics" element={<Layout><Index /></Layout>} /> {/* Placeholder for future pages */}
+            <Route path="/search" element={<Layout><Index activeTab="search" /></Layout>} /> {/* Force search tab */}
+            <Route path="/analytics" element={<Layout><Index /></Layout>} />
             <Route path="/settings" element={<Layout><Settings /></Layout>} />
-            <Route path="/more" element={<Layout><Index /></Layout>} /> {/* Placeholder for future pages */}
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
         </BrowserRouter>

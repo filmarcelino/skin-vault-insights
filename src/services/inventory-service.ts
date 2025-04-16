@@ -34,11 +34,12 @@ export const addSkinToInventory = (skin: Skin, purchaseInfo: {
     marketplace: purchaseInfo.marketplace,
     feePercentage: purchaseInfo.feePercentage || 0,
     notes: purchaseInfo.notes || "",
-    isInUserInventory: true,
+    isInUserInventory: true, // Make sure this is set to true
     tradeLockDays: Math.floor(Math.random() * 8), // Random trade lock for demo
     tradeLockUntil: new Date(new Date().getTime() + Math.floor(Math.random() * 8) * 24 * 60 * 60 * 1000).toISOString()
   };
   
+  // Ensure we add to the inventory
   inventory.push(inventoryItem);
   saveUserInventory(inventory);
   
