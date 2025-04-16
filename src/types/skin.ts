@@ -1,4 +1,3 @@
-
 export interface Skin {
   id: string;
   name: string;
@@ -17,6 +16,12 @@ export interface Skin {
     description?: string;
     image?: string;
   };
+  collections?: {
+    id?: string;
+    name: string;
+    description?: string;
+    image?: string;
+  }[];
 }
 
 export interface InventoryItem extends Skin {
