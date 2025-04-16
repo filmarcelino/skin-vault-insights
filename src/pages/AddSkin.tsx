@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "@/components/ui/search";
-import { useSearchSkins, useWeapons } from "@/hooks/use-skins";
+import { useSearchSkins, useWeapons, useInvalidateInventory } from "@/hooks/use-skins";
 import { Skin } from "@/types/skin";
 import { useToast } from "@/hooks/use-toast";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
+import { addSkinToInventory } from "@/services/inventory-service";
 
 const AddSkin = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,6 +15,7 @@ const AddSkin = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const invalidateInventory = useInvalidateInventory();
   
   const { data: searchResults = [], isLoading: isSearching } = useSearchSkins(searchQuery);
   const { data: weapons = [] } = useWeapons();
@@ -28,17 +30,44 @@ const AddSkin = () => {
   };
   
   const handleAddSkin = (skinData: any) => {
-    // Here we would normally save this to a backend, but for now let's just simulate it
-    console.log("Adding skin:", skinData);
-    
-    toast({
-      title: "Skin Added",
-      description: `${skinData.weapon || ""} | ${skinData.name} has been added to your inventory.`,
-    });
-    
-    // Reset form and navigate back to inventory
-    setSelectedSkin(null);
-    navigate("/inventory");
+    try {
+      console.log("Adding skin with data:", skinData);
+      
+      // Add the skin to inventory
+      addSkinToInventory({
+        id: skinData.skinId,
+        name: skinData.name,
+        weapon: skinData.weapon,
+        rarity: skinData.rarity,
+        image: skinData.image,
+        price: skinData.estimatedValue || skinData.purchasePrice,
+      }, {
+        purchasePrice: skinData.purchasePrice || 0,
+        marketplace: skinData.marketplace || "Steam Market",
+        feePercentage: skinData.feePercentage || 0,
+        notes: skinData.notes || ""
+      });
+      
+      // Force refresh inventory data
+      invalidateInventory();
+      
+      // Show success toast
+      toast({
+        title: "Skin Added",
+        description: `${skinData.weapon || ""} | ${skinData.name} has been added to your inventory.`,
+      });
+      
+      // Reset form and navigate back to inventory
+      setSelectedSkin(null);
+      navigate("/inventory");
+    } catch (error) {
+      console.error("Error adding skin:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add skin to your inventory",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

@@ -9,6 +9,7 @@ import { SkinAdditionalInfo } from "./skin-additional-info";
 import { Button } from "../ui/button";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useInvalidateInventory } from "@/hooks/use-skins";
 
 interface InventorySkinModalProps {
   item: InventoryItem | null;
@@ -27,13 +28,32 @@ export function InventorySkinModal({
 }: InventorySkinModalProps) {
   const [activeTab, setActiveTab] = useState("details");
   const { toast } = useToast();
+  const invalidateInventory = useInvalidateInventory();
 
   const handleAddToInventory = () => {
     if (!item || !onAddToInventory) return;
 
-    const newItem = onAddToInventory(item);
-    if (newItem) {
-      onOpenChange(false);
+    try {
+      console.log("Adding item to inventory from modal:", item);
+      const newItem = onAddToInventory(item);
+      
+      if (newItem) {
+        // Force refresh inventory data
+        invalidateInventory();
+        
+        toast({
+          title: "Skin Added",
+          description: `${item.weapon || ""} | ${item.name} has been added to your inventory.`,
+        });
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error("Error adding skin from modal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add skin to your inventory",
+        variant: "destructive"
+      });
     }
   };
   

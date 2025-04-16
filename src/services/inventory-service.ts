@@ -7,13 +7,25 @@ const TRANSACTIONS_STORAGE_KEY = "user_transactions";
 
 // Get user inventory from local storage
 export const getUserInventory = (): InventoryItem[] => {
-  const storedInventory = localStorage.getItem(INVENTORY_STORAGE_KEY);
-  return storedInventory ? JSON.parse(storedInventory) : [];
+  try {
+    const storedInventory = localStorage.getItem(INVENTORY_STORAGE_KEY);
+    const inventory = storedInventory ? JSON.parse(storedInventory) : [];
+    console.log("Retrieved inventory:", inventory);
+    return inventory;
+  } catch (error) {
+    console.error("Error getting inventory from localStorage:", error);
+    return [];
+  }
 };
 
 // Save user inventory to local storage
 export const saveUserInventory = (inventory: InventoryItem[]): void => {
-  localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
+  try {
+    console.log("Saving inventory:", inventory);
+    localStorage.setItem(INVENTORY_STORAGE_KEY, JSON.stringify(inventory));
+  } catch (error) {
+    console.error("Error saving inventory to localStorage:", error);
+  }
 };
 
 // Add a skin to user's inventory
@@ -30,7 +42,7 @@ export const addSkinToInventory = (skin: Skin, purchaseInfo: {
     inventoryId: `inv-${Date.now()}-${skin.id}`,
     acquiredDate: new Date().toISOString(),
     purchasePrice: purchaseInfo.purchasePrice,
-    currentPrice: skin.price,
+    currentPrice: skin.price || purchaseInfo.purchasePrice,
     marketplace: purchaseInfo.marketplace,
     feePercentage: purchaseInfo.feePercentage || 0,
     notes: purchaseInfo.notes || "",
@@ -55,6 +67,8 @@ export const addSkinToInventory = (skin: Skin, purchaseInfo: {
     notes: purchaseInfo.notes
   });
   
+  console.log("Added skin to inventory:", inventoryItem);
+  
   return inventoryItem;
 };
 
@@ -78,13 +92,22 @@ export const updateInventoryItem = (updatedItem: InventoryItem): void => {
 
 // Get all user transactions
 export const getUserTransactions = (): Transaction[] => {
-  const storedTransactions = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
-  return storedTransactions ? JSON.parse(storedTransactions) : [];
+  try {
+    const storedTransactions = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
+    return storedTransactions ? JSON.parse(storedTransactions) : [];
+  } catch (error) {
+    console.error("Error getting transactions from localStorage:", error);
+    return [];
+  }
 };
 
 // Save transactions to local storage
 export const saveTransactions = (transactions: Transaction[]): void => {
-  localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(transactions));
+  try {
+    localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(transactions));
+  } catch (error) {
+    console.error("Error saving transactions to localStorage:", error);
+  }
 };
 
 // Add a new transaction
@@ -92,6 +115,7 @@ export const addTransaction = (transaction: Transaction): void => {
   const transactions = getUserTransactions();
   transactions.push(transaction);
   saveTransactions(transactions);
+  console.log("Added transaction:", transaction);
 };
 
 // Sell a skin and record the transaction
@@ -122,6 +146,8 @@ export const sellSkin = (inventoryId: string, sellData: {
       price: sellData.soldPrice,
       notes: sellData.soldNotes
     });
+    
+    console.log("Sold skin:", skin, "for", sellData.soldPrice);
   }
 };
 

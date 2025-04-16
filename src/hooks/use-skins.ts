@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { 
   fetchSkins, 
@@ -8,10 +9,15 @@ import {
 } from "@/services/api";
 import { Skin, SkinFilter, SkinCollection } from "@/types/skin";
 import { getUserInventory } from "@/services/inventory-service";
+import { useQueryClient } from "@tanstack/react-query";
+
+// Custom key for inventory data
+export const INVENTORY_QUERY_KEY = "user-inventory";
+export const SKINS_QUERY_KEY = "skins";
 
 export const useSkins = (filters?: SkinFilter) => {
   return useQuery({
-    queryKey: ["skins", filters],
+    queryKey: filters?.onlyUserInventory ? [INVENTORY_QUERY_KEY] : [SKINS_QUERY_KEY, filters],
     queryFn: async () => {
       // If we want only user inventory, return it from local storage
       if (filters?.onlyUserInventory) {
@@ -22,6 +28,15 @@ export const useSkins = (filters?: SkinFilter) => {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+};
+
+export const useInvalidateInventory = () => {
+  const queryClient = useQueryClient();
+  
+  return () => {
+    // Invalidate inventory query to force a refresh
+    queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+  };
 };
 
 export const useSkinById = (id: string) => {
