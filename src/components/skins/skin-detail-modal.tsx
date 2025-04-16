@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skin, SkinWear } from "@/types/skin";
+import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -88,9 +90,6 @@ const getWearFromFloat = (floatValue: number): SkinWear => {
       return range.name as SkinWear;
     }
   }
-  if (floatValue === 1.00) {
-    return "Battle-Scarred";
-  }
   return "Factory New"; // Default
 };
 
@@ -108,6 +107,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   const [estimatedValue, setEstimatedValue] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   
+  // Reset form when skin changes
   useEffect(() => {
     if (skin) {
       setFloatValue(skin.min_float ? skin.min_float.toString() : "0");
@@ -122,10 +122,11 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
     }
   }, [skin]);
   
+  // Update wear when float changes
   useEffect(() => {
     if (floatValue) {
       const floatNum = parseFloat(floatValue);
-      if (!isNaN(floatNum) && floatNum >= 0 && floatNum <= 1) {
+      if (!isNaN(floatNum)) {
         setWear(getWearFromFloat(floatNum));
       }
     }
@@ -133,6 +134,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   
   const handleFloatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+    // Only allow valid float values between 0 and 1
     if (value === "" || (/^\d*\.?\d*$/.test(value) && parseFloat(value) >= 0 && parseFloat(value) <= 1)) {
       setFloatValue(value);
     }
@@ -191,14 +193,18 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 animate-fade-in">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-2xl">
+          <DialogTitle className="text-2xl flex justify-between items-center">
             <span>Add Skin to Inventory</span>
+            <DialogClose className="rounded-full p-2 hover:bg-secondary">
+              <X className="h-4 w-4" />
+            </DialogClose>
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
-          <div className="max-h-[calc(90vh-12rem)] px-6 py-4">
-            <ScrollArea className="h-full pr-4">
+          <ScrollArea className="max-h-[calc(90vh-10rem)] px-6 scrollbar-none">
+            <div className="py-4">
+              {/* Skin Card with Rarity Colored Background */}
               <div className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(skin.rarity)}`}>
                 <div className="w-full md:w-1/3 flex items-center justify-center">
                   {skin.image ? (
@@ -227,16 +233,16 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                       <div className="flex items-center">
                         <div className="w-3 h-3 rounded-full mr-2" style={{ 
                           backgroundColor: skin.rarity.toLowerCase().includes("consumer") ? "#B0C3D9" : 
-                                         skin.rarity.toLowerCase().includes("industrial") ? "#5E98D9" :
-                                         skin.rarity.toLowerCase().includes("mil-spec") ? "#4B69FF" :
-                                         skin.rarity.toLowerCase().includes("restricted") ? "#8847FF" :
-                                         skin.rarity.toLowerCase().includes("classified") ? "#D32CE6" :
-                                         skin.rarity.toLowerCase().includes("covert") ? "#EB4B4B" :
-                                         skin.rarity.toLowerCase().includes("contraband") ? "#FFD700" :
-                                         skin.rarity.toLowerCase().includes("extraordinary") || 
-                                         skin.rarity.toLowerCase().includes("rare") || 
-                                         skin.rarity.toLowerCase().includes("knife") || 
-                                         skin.rarity.toLowerCase().includes("glove") ? "#FFF99B" : "#888888"
+                                           skin.rarity.toLowerCase().includes("industrial") ? "#5E98D9" :
+                                           skin.rarity.toLowerCase().includes("mil-spec") ? "#4B69FF" :
+                                           skin.rarity.toLowerCase().includes("restricted") ? "#8847FF" :
+                                           skin.rarity.toLowerCase().includes("classified") ? "#D32CE6" :
+                                           skin.rarity.toLowerCase().includes("covert") ? "#EB4B4B" :
+                                           skin.rarity.toLowerCase().includes("contraband") ? "#FFD700" :
+                                           skin.rarity.toLowerCase().includes("extraordinary") || 
+                                           skin.rarity.toLowerCase().includes("rare") || 
+                                           skin.rarity.toLowerCase().includes("knife") || 
+                                           skin.rarity.toLowerCase().includes("glove") ? "#FFF99B" : "#888888"
                         }}></div>
                         <span className="font-medium">Rarity:</span> {skin.rarity}
                       </div>
@@ -258,6 +264,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                {/* Float and Wear */}
                 <div className="space-y-2">
                   <Label htmlFor="float-value">Float Value</Label>
                   <Input 
@@ -282,6 +289,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   />
                 </div>
                 
+                {/* Transaction Type */}
                 <div className="space-y-2">
                   <Label htmlFor="transaction-type">Transaction Type</Label>
                   <Select
@@ -299,6 +307,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </Select>
                 </div>
                 
+                {/* Purchase Price */}
                 <div className="space-y-2">
                   <Label htmlFor="purchase-price">Purchase Price</Label>
                   <Input
@@ -312,6 +321,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   />
                 </div>
                 
+                {/* Currency */}
                 <div className="space-y-2">
                   <Label htmlFor="currency">Currency</Label>
                   <Select
@@ -331,6 +341,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </Select>
                 </div>
                 
+                {/* Marketplace */}
                 <div className="space-y-2">
                   <Label htmlFor="marketplace">Purchase Location</Label>
                   <Select
@@ -348,6 +359,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </Select>
                 </div>
                 
+                {/* Fee Percentage */}
                 <div className="space-y-2">
                   <Label htmlFor="fee-percentage">Fee Percentage (%)</Label>
                   <Input
@@ -365,6 +377,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </p>
                 </div>
                 
+                {/* Estimated Value */}
                 <div className="space-y-2">
                   <Label htmlFor="estimated-value">Estimated Value</Label>
                   <Input
@@ -379,6 +392,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
               </div>
               
+              {/* Notes */}
               <div className="space-y-2 mt-6">
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea
@@ -389,8 +403,8 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   className="min-h-[100px]"
                 />
               </div>
-            </ScrollArea>
-          </div>
+            </div>
+          </ScrollArea>
           
           <DialogFooter className="p-6 pt-4 border-t">
             <DialogClose asChild>
