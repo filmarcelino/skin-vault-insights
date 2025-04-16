@@ -28,21 +28,24 @@ const AddSkin = () => {
     setModalOpen(true);
   };
   
-  const handleAddSkin = (skinData: any) => {
+  const handleAddSkin = async (skinData: any) => {
     try {
       console.log("Adding skin with data:", skinData);
+      
+      // Ensure we have a valid ID
+      const skinId = skinData.skinId || `skin-${Date.now()}`;
       
       // Adicionar a skin ao inventário
       addSkinMutation.mutate({
         skin: {
-          id: skinData.skinId,
+          id: skinId,
           name: skinData.name,
-          weapon: skinData.weapon,
+          weapon: skinData.weapon || "Unknown",
           rarity: skinData.rarity,
           image: skinData.image,
-          price: skinData.estimatedValue || skinData.purchasePrice,
+          price: skinData.estimatedValue || skinData.purchasePrice || 0,
           floatValue: parseFloat(skinData.floatValue || "0"),
-          isStatTrak: skinData.isStatTrak,
+          isStatTrak: skinData.isStatTrak || false,
           wear: skinData.wear,
         },
         purchaseInfo: {
@@ -109,7 +112,7 @@ const AddSkin = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {searchResults.slice(0, 8).map((skin) => (
             <div 
-              key={skin.id}
+              key={skin.id || `temp-${skin.name}`}
               onClick={() => handleSelectSkin(skin)}
               className="cursor-pointer transition-all hover:scale-[1.02]"
             >

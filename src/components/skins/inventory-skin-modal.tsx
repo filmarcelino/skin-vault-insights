@@ -30,33 +30,40 @@ export function InventorySkinModal({
   const { toast } = useToast();
   const addSkinMutation = useAddSkin();
 
-  const handleAddToInventory = () => {
+  const handleAddToInventory = async () => {
     if (!item) return;
 
     try {
       console.log("Adding item to inventory from modal:", item);
       
       if (onAddToInventory) {
-        onAddToInventory(item).then(() => {
+        const result = await onAddToInventory(item);
+        if (result) {
           toast({
             title: "Skin Adicionada",
             description: `${item.weapon || ""} | ${item.name} foi adicionada ao seu inventário.`,
           });
           onOpenChange(false);
-        }).catch(error => {
-          console.error("Error adding skin from modal:", error);
-          toast({
-            title: "Erro",
-            description: "Falha ao adicionar skin ao inventário",
-            variant: "destructive"
-          });
-        });
+        } else {
+          throw new Error("Failed to add skin to inventory");
+        }
         return;
       }
       
       // Adicionar a skin ao inventário usando o hook de mutation
       addSkinMutation.mutate({
-        skin: item,
+        skin: {
+          id: item.id || `skin-${Date.now()}`,
+          name: item.name,
+          weapon: item.weapon || "Unknown",
+          rarity: item.rarity,
+          wear: item.wear,
+          image: item.image,
+          price: item.price || 0,
+          floatValue: item.floatValue || 0,
+          isStatTrak: item.isStatTrak || false,
+          collection: item.collection,
+        },
         purchaseInfo: {
           purchasePrice: item.price || 0,
           marketplace: "Steam Market",

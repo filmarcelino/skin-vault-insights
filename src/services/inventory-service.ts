@@ -1,7 +1,7 @@
 
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 // Helper function to convert Supabase inventory items to our app's model
 const mapSupabaseToInventoryItem = (item: any): InventoryItem => {
@@ -60,7 +60,7 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
     }
     
     console.log("Retrieved inventory:", data);
-    return (data || []).map(mapSupabaseToInventoryItem);
+    return Array.isArray(data) ? data.map(mapSupabaseToInventoryItem) : [];
   } catch (error) {
     console.error("Error getting inventory:", error);
     return [];
@@ -75,44 +75,49 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
   notes?: string;
 }): Promise<InventoryItem | null> => {
   try {
-    const inventoryId = `inv-${Date.now()}-${skin.id}`;
+    // Generate a random ID for the inventory item if one doesn't exist
+    const inventoryId = `inv-${Date.now()}-${skin.id || Math.random().toString(36).substring(2, 15)}`;
     const tradeLockDays = Math.floor(Math.random() * 8); // Random trade lock for demo
     const tradeLockUntil = new Date(new Date().getTime() + tradeLockDays * 24 * 60 * 60 * 1000).toISOString();
+    
+    console.log("Adding skin to inventory with data:", {
+      skin_id: skin.id,
+      inventory_id: inventoryId,
+      name: skin.name,
+      weapon: skin.weapon,
+      other_details: "..."
+    });
     
     // Inserir no Supabase
     const { data, error } = await supabase
       .from('inventory')
       .insert({
-        skin_id: skin.id,
+        skin_id: skin.id || `skin-${Date.now()}`,
         inventory_id: inventoryId,
-        weapon: skin.weapon,
+        weapon: skin.weapon || "Unknown",
         name: skin.name,
         wear: skin.wear,
         rarity: skin.rarity,
         image: skin.image,
-        price: skin.price,
-        current_price: skin.price || purchaseInfo.purchasePrice,
-        purchase_price: purchaseInfo.purchasePrice,
-        marketplace: purchaseInfo.marketplace,
+        price: skin.price || 0,
+        current_price: skin.price || purchaseInfo.purchasePrice || 0,
+        purchase_price: purchaseInfo.purchasePrice || 0,
+        marketplace: purchaseInfo.marketplace || "Steam Market",
         fee_percentage: purchaseInfo.feePercentage || 0,
-        notes: purchaseInfo.notes,
+        notes: purchaseInfo.notes || "",
         is_stat_trak: skin.isStatTrak || false,
         trade_lock_days: tradeLockDays,
         trade_lock_until: tradeLockUntil,
         collection_id: skin.collection?.id,
         collection_name: skin.collection?.name,
-        float_value: skin.floatValue || 0
+        float_value: skin.floatValue || 0,
+        acquired_date: new Date().toISOString()
       })
       .select()
       .single();
     
     if (error) {
       console.error("Error adding skin to inventory:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível adicionar a skin ao inventário",
-        variant: "destructive"
-      });
       return null;
     }
     
@@ -123,14 +128,14 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       itemId: inventoryId,
       weaponName: skin.weapon || "Unknown",
       skinName: skin.name,
-      date: new Date().toLocaleDateString(),
-      price: purchaseInfo.purchasePrice,
-      notes: purchaseInfo.notes
+      date: new Date().toISOString(),
+      price: purchaseInfo.purchasePrice || 0,
+      notes: purchaseInfo.notes || ""
     });
     
     console.log("Added skin to inventory:", data);
     
-    return mapSupabaseToInventoryItem(data);
+    return data ? mapSupabaseToInventoryItem(data) : null;
   } catch (error) {
     console.error("Error adding skin to inventory:", error);
     return null;
@@ -195,7 +200,7 @@ export const getUserTransactions = async (): Promise<Transaction[]> => {
       return [];
     }
     
-    return (data || []).map(mapSupabaseToTransaction);
+    return Array.isArray(data) ? data.map(mapSupabaseToTransaction) : [];
   } catch (error) {
     console.error("Error getting transactions:", error);
     return [];
@@ -205,6 +210,8 @@ export const getUserTransactions = async (): Promise<Transaction[]> => {
 // Adicionar uma nova transação
 export const addTransaction = async (transaction: Transaction): Promise<boolean> => {
   try {
+    console.log("Adding transaction:", transaction);
+    
     const { error } = await supabase
       .from('transactions')
       .insert({
@@ -213,6 +220,7 @@ export const addTransaction = async (transaction: Transaction): Promise<boolean>
         item_id: transaction.itemId,
         weapon_name: transaction.weaponName,
         skin_name: transaction.skinName,
+        date: transaction.date,
         price: typeof transaction.price === 'string' ? parseFloat(transaction.price) : transaction.price,
         notes: transaction.notes
       });
@@ -222,7 +230,7 @@ export const addTransaction = async (transaction: Transaction): Promise<boolean>
       return false;
     }
     
-    console.log("Added transaction:", transaction);
+    console.log("Added transaction successfully");
     return true;
   } catch (error) {
     console.error("Error adding transaction:", error);

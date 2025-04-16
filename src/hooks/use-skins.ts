@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   fetchSkins, 
@@ -26,18 +25,26 @@ export const useSkins = (filters?: SkinFilter) => {
     queryFn: async () => {
       // Se queremos apenas o inventário do usuário, buscamos do Supabase
       if (filters?.onlyUserInventory) {
-        return getUserInventory();
+        const inventory = await getUserInventory();
+        console.log("Retrieved inventory in useSkins hook:", inventory);
+        return inventory;
       }
       // Caso contrário, buscamos da API
       return fetchSkins(filters);
     },
+    retry: 1,
   });
 };
 
 export const useInventory = () => {
   return useQuery({
     queryKey: [INVENTORY_QUERY_KEY],
-    queryFn: getUserInventory,
+    queryFn: async () => {
+      const inventory = await getUserInventory();
+      console.log("Loaded inventory:", inventory);
+      return inventory;
+    },
+    retry: 1,
   });
 };
 
@@ -45,8 +52,14 @@ export const useAddSkin = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (data: {skin: Skin, purchaseInfo: any}) => 
-      addSkinToInventory(data.skin, data.purchaseInfo),
+    mutationFn: async (data: {skin: Skin, purchaseInfo: any}) => {
+      console.log("Add skin mutation called with:", data);
+      const result = await addSkinToInventory(data.skin, data.purchaseInfo);
+      if (!result) {
+        throw new Error("Failed to add skin to inventory");
+      }
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
     },

@@ -11,7 +11,7 @@ export interface Skin {
   min_float?: number;
   max_float?: number;
   price?: number;
-  floatValue?: number; // Added to match what's used in the code
+  floatValue?: number;
   isStatTrak?: boolean;
   tradeLockDays?: number;
   tradeLockUntil?: string;
@@ -41,7 +41,7 @@ export interface InventoryItem extends Skin {
   feePercentage?: number;
   floatValue?: number;
   notes?: string;
-  isInUserInventory: boolean; // Flag to indicate if the skin belongs to user's inventory
+  isInUserInventory: boolean;
   // Supabase fields mapping
   inventory_id?: string; 
   skin_id?: string;
@@ -89,7 +89,7 @@ export interface SkinFilter {
   minPrice?: number;
   maxPrice?: number;
   search?: string;
-  onlyUserInventory?: boolean; // New filter to show only user's inventory
+  onlyUserInventory?: boolean;
 }
 
 export interface SellData {
