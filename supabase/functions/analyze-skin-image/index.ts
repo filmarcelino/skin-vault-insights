@@ -50,15 +50,15 @@ serve(async (req) => {
           {
             role: "system",
             content: `Você é um especialista em CS:GO e skins. Analise a imagem de uma skin de CS:GO e extraia:
-            1. Nome da arma (weaponName)
-            2. Nome da skin/pintura (skinName)
+            1. Nome da arma (weaponName) - seja específico e preciso, incluindo o modelo exato como "AWP", "AK-47", "M4A4", etc.
+            2. Nome da skin/pintura (skinName) - apenas o nome da skin, sem o nome da arma, como "Asiimov", "Dragon Lore", "Fade", etc.
             3. Condição de desgaste (wear): Factory New, Minimal Wear, Field-Tested, Well-Worn ou Battle-Scarred
             4. Raridade (rarity): Consumer Grade, Industrial Grade, Mil-Spec Grade, Restricted, Classified, Covert ou Contraband
             5. Valor Float estimado (floatValue): um número entre 0 e 1
             6. Preço estimado em USD (estimatedPrice)
             7. Uma descrição breve da skin
             
-            Formate sua resposta em JSON com esses campos específicos. Se não conseguir identificar algum campo, deixe-o vazio.`
+            Formate sua resposta em JSON com esses campos específicos. Seja o mais preciso possível na identificação dos nomes corretos tanto da arma quanto da skin, para facilitar a pesquisa no banco de dados. Se não conseguir identificar algum campo com certeza, deixe-o vazio.`
           },
           {
             role: "user",

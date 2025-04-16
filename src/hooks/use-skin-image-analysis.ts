@@ -3,11 +3,13 @@ import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { Skin } from '@/types/skin'
+import { searchSkins } from '@/services/api'
 
 export interface SkinAnalysisResult {
   description?: string
   error?: string
   skinData?: Skin
+  foundSkins?: Skin[]
 }
 
 export const useSkinImageAnalysis = () => {
@@ -44,15 +46,29 @@ export const useSkinImageAnalysis = () => {
         price: data.estimatedPrice || 0,
         floatValue: data.floatValue ? parseFloat(data.floatValue) : undefined,
       }
+      
+      // Buscar skins correspondentes baseado no nome da arma e nome da skin
+      let foundSkins: Skin[] = []
+      
+      if (data.weaponName && data.skinName) {
+        console.log("Buscando skins correspondentes...")
+        // Usar o nome da arma + nome da skin como termo de pesquisa
+        const searchTerm = `${data.weaponName} ${data.skinName}`.trim()
+        foundSkins = await searchSkins(searchTerm)
+        console.log("Skins encontradas:", foundSkins)
+      }
 
       setAnalysisResult({
         description: data.description,
-        skinData: skinData
+        skinData: skinData,
+        foundSkins: foundSkins
       })
       
       toast({
         title: "Análise concluída",
-        description: "A skin foi analisada com sucesso"
+        description: foundSkins.length > 0 
+          ? `${foundSkins.length} skins correspondentes encontradas` 
+          : "A skin foi analisada com sucesso"
       })
       
     } catch (error) {
