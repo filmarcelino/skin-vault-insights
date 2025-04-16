@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "@/components/ui/search";
@@ -145,7 +144,6 @@ const AddSkin = () => {
         </div>
       )}
       
-      {/* Modal de detalhes da skin */}
       <SkinDetailModal 
         skin={selectedSkin}
         open={modalOpen}

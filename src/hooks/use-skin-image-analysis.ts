@@ -2,10 +2,12 @@
 import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { Skin } from '@/types/skin'
 
 export interface SkinAnalysisResult {
   description?: string
   error?: string
+  skinData?: Skin
 }
 
 export const useSkinImageAnalysis = () => {
@@ -31,8 +33,21 @@ export const useSkinImageAnalysis = () => {
 
       console.log("Resposta da análise:", data)
 
+      // Criar um objeto Skin com os dados retornados da análise
+      const skinData: Skin = {
+        id: `skin-${Date.now()}`,
+        name: data.skinName || "Unknown Skin",
+        weapon: data.weaponName || "Unknown",
+        rarity: data.rarity || "",
+        wear: data.wear || "",
+        image: `data:image/jpeg;base64,${imageBase64}`,
+        price: data.estimatedPrice || 0,
+        floatValue: data.floatValue ? parseFloat(data.floatValue) : undefined,
+      }
+
       setAnalysisResult({
-        description: data.description
+        description: data.description,
+        skinData: skinData
       })
       
       toast({

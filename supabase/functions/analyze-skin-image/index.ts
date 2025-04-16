@@ -1,88 +1,118 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import "https://deno.land/x/xhr@0.1.0/mod.ts"
+// deno-lint-ignore-file no-explicit-any
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface AnalysisResponse {
+  description: string;
+  weaponName?: string;
+  skinName?: string;
+  wear?: string;
+  rarity?: string;
+  estimatedPrice?: number;
+  floatValue?: string;
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { imageBase64 } = await req.json()
+    const { imageBase64 } = await req.json();
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
+    if (!imageBase64) {
+      return new Response(
+        JSON.stringify({ error: "É necessário fornecer uma imagem para análise" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log("Enviando imagem para análise com OpenAI...");
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json',
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: "gpt-4o",
         messages: [
           {
-            role: 'system', 
-            content: `Você é um especialista em identificar skins de armas do CS:GO. 
-                      Analise a imagem e forneça informações detalhadas sobre:
-                      1. Nome da arma (ex: AK-47, M4A4, AWP)
-                      2. Nome da skin (ex: Vulcan, Asiimov, Dragon Lore)
-                      3. Condição de desgaste (Factory New, Minimal Wear, Field-Tested, Well-Worn, Battle-Scarred)
-                      4. Raridade (Consumer Grade, Industrial Grade, Mil-Spec, Restricted, Classified, Covert, Contraband)
-                      5. Se é StatTrak ou não
-                      6. Coleção a que pertence (se identificável)
-                      7. Estimativa de faixa de preço (se possível)
-                      8. Características únicas ou padrões especiais (se houver)
-                      
-                      Formate a resposta de forma clara e organizada. Se algum detalhe não for visível ou identificável na imagem, indique isso.`
+            role: "system",
+            content: `Você é um especialista em CS:GO e skins. Analise a imagem de uma skin de CS:GO e extraia:
+            1. Nome da arma (weaponName)
+            2. Nome da skin/pintura (skinName)
+            3. Condição de desgaste (wear): Factory New, Minimal Wear, Field-Tested, Well-Worn ou Battle-Scarred
+            4. Raridade (rarity): Consumer Grade, Industrial Grade, Mil-Spec Grade, Restricted, Classified, Covert ou Contraband
+            5. Valor Float estimado (floatValue): um número entre 0 e 1
+            6. Preço estimado em USD (estimatedPrice)
+            7. Uma descrição breve da skin
+            
+            Formate sua resposta em JSON com esses campos específicos. Se não conseguir identificar algum campo, deixe-o vazio.`
           },
           {
-            role: 'user',
+            role: "user",
             content: [
               {
-                type: 'text',
-                text: 'Identifique esta skin do CS:GO com o máximo de detalhes possível.'
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`,
+                },
               },
               {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`
-                }
+                type: "text",
+                text: "Identifique esta skin de CS:GO com os detalhes pedidos."
               }
-            ]
-          }
+            ],
+          },
         ],
-        max_tokens: 500
+        response_format: { "type": "json_object" }
       }),
-    })
+    });
 
-    const data = await response.json()
-    console.log("OpenAI response:", data)
-    
+    const data = await response.json();
+    console.log("Resposta do OpenAI recebida:", data);
+
     if (data.error) {
-      throw new Error(`OpenAI Error: ${data.error.message || 'Unknown error'}`)
+      throw new Error(`Erro OpenAI: ${data.error.message || JSON.stringify(data.error)}`);
     }
-    
-    const skinDescription = data.choices[0].message.content
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      description: skinDescription 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    // Extrair a resposta do OpenAI
+    const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if (!content) {
+      throw new Error("Formato de resposta inválido do OpenAI");
+    }
+
+    // Tenta fazer o parse do JSON da resposta
+    let analysisData: AnalysisResponse;
+    try {
+      analysisData = JSON.parse(content);
+    } catch (e) {
+      console.error("Erro ao fazer parse do JSON:", e);
+      console.log("Conteúdo recebido:", content);
+      throw new Error("Falha ao processar resposta da análise");
+    }
+
+    return new Response(
+      JSON.stringify(analysisData),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
   } catch (error) {
-    console.error('Error analyzing skin:', error)
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    console.error("Erro ao analisar imagem:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Erro desconhecido ao analisar a imagem" }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
-})
+});
