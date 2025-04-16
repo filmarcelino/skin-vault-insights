@@ -1,4 +1,3 @@
-
 import { Skin, SkinCollection, SkinFilter } from "@/types/skin";
 import { 
   getLocalWeapons, 
@@ -7,12 +6,12 @@ import {
   getLocalSkinById 
 } from "./local-data";
 
-// Base API URL for bymykel CS2 API
-const API_URL = "https://bymykel.github.io/CSGO-API/api/";
+// Base API URL for CS:GO API from GitHub
+const API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/";
 
 // Configuration for data sources
 export const DataSourceConfig = {
-  // Set to true to use local data instead of API
+  // Set to false to use API instead of local data
   useLocalData: false,
   
   // Custom JSON file paths (relative to public folder)
@@ -56,10 +55,11 @@ export const fetchWeapons = async (): Promise<string[]> => {
   
   // Otherwise use API
   try {
-    const response = await fetch(`${API_URL}weapons.json`);
-    if (!response.ok) throw new Error('Failed to fetch weapons');
-    const data = await response.json();
-    return data.map((weapon: any) => weapon.name);
+    // In the new API, we need to extract weapon names from skins
+    const skins = await fetchSkins();
+    // Extract unique weapon names
+    const weaponNames = [...new Set(skins.map(skin => skin.weapon || ""))].filter(name => name);
+    return weaponNames;
   } catch (error) {
     console.error("Error fetching weapons:", error);
     // Fallback to local data if API fails
@@ -84,15 +84,28 @@ export const fetchCollections = async (): Promise<SkinCollection[]> => {
   
   // Otherwise use API
   try {
-    const response = await fetch(`${API_URL}collections.json`);
-    if (!response.ok) throw new Error('Failed to fetch collections');
-    const data = await response.json();
-    return data.map((collection: any) => ({
-      id: collection.id || String(collection.name).toLowerCase().replace(/\s+/g, '-'),
-      name: collection.name,
-      description: collection.description,
-      image: collection.image
-    }));
+    // In the new API structure, we need to extract collections from skins
+    const skins = await fetchSkins();
+    const collections: SkinCollection[] = [];
+    const collectionMap = new Map<string, SkinCollection>();
+    
+    // Extract unique collections
+    skins.forEach(skin => {
+      if (skin.collections && skin.collections.length > 0) {
+        skin.collections.forEach(collection => {
+          if (collection.id && !collectionMap.has(collection.id)) {
+            collectionMap.set(collection.id, {
+              id: collection.id,
+              name: collection.name,
+              description: '',
+              image: collection.image
+            });
+          }
+        });
+      }
+    });
+    
+    return Array.from(collectionMap.values());
   } catch (error) {
     console.error("Error fetching collections:", error);
     return getLocalCollections();
@@ -130,24 +143,26 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
   
   // Map and standardize the data format
   const mappedSkins = skins.map((skin: any) => ({
-    id: skin.id || `${skin.weapon}-${skin.name}`.toLowerCase().replace(/\s+/g, '-'),
-    name: skin.name,
+    id: skin.id || `${skin.weapon?.name || ""}-${skin.name}`.toLowerCase().replace(/\s+/g, '-'),
+    name: skin.name?.split("|")[1]?.trim() || skin.name,
     description: skin.description,
-    weapon: skin.weapon,
-    category: skin.category,
-    rarity: skin.rarity,
+    weapon: skin.weapon?.name || "",
+    category: skin.category?.name || "",
+    rarity: skin.rarity?.name || "",
     image: skin.image,
-    wear: skin.wear,
+    wear: "", // Will be updated after filtering by wear
     min_float: skin.min_float,
     max_float: skin.max_float,
-    price: skin.price,
-    collection: skin.collection ? {
-      id: skin.collection.id || (skin.collection.name ? String(skin.collection.name).toLowerCase().replace(/\s+/g, '-') : undefined),
-      name: skin.collection.name || "",
-      description: skin.collection.description,
-      image: skin.collection.image
+    price: Math.floor(Math.random() * 1000) + 1, // Random price for demo purposes
+    collection: skin.collections && skin.collections.length > 0 ? {
+      id: skin.collections[0].id,
+      name: skin.collections[0].name,
+      description: '',
+      image: skin.collections[0].image
     } : undefined
   }));
+  
+  console.log("Fetched skins:", mappedSkins.slice(0, 2)); // Debug log for the first 2 skins
   
   // Apply filters if provided
   if (filters) {

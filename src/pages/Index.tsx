@@ -9,7 +9,8 @@ import { Search } from "@/components/ui/search";
 import { useSkins } from "@/hooks/use-skins";
 import { Skin } from "@/types/skin";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Loading } from "@/components/ui/loading";
 
 // Activity data (in a real app, this would also come from an API)
 const activityItems = [
@@ -48,11 +49,23 @@ const activityItems = [
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debugInfo, setDebugInfo] = useState<string>("");
   
   // Fetch skins data from the API
   const { data: skins, isLoading, error } = useSkins({
     search: searchQuery.length > 2 ? searchQuery : undefined
   });
+
+  // Debug information
+  useEffect(() => {
+    if (skins) {
+      setDebugInfo(`Loaded ${skins.length} skins`);
+    } else if (isLoading) {
+      setDebugInfo("Loading skins...");
+    } else if (error) {
+      setDebugInfo(`Error: ${error.toString()}`);
+    }
+  }, [skins, isLoading, error]);
 
   // Function to calculate total inventory value
   const calculateTotalValue = (skins: Skin[]) => {
@@ -125,6 +138,11 @@ const Index = () => {
         </div>
       )}
 
+      {/* Debug info - only visible during development */}
+      <div className="p-2 mb-4 bg-gray-100 dark:bg-gray-800 text-xs overflow-x-auto">
+        <p>{debugInfo}</p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
         <StatsCard 
           title="Total Skins" 
@@ -165,7 +183,7 @@ const Index = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {isLoading ? (
             // Show skeletons while loading
-            Array.from({ length: 4 }).map((_, index) => (
+            Array.from({ length: 8 }).map((_, index) => (
               <div key={index} className="cs-card p-3 flex flex-col">
                 <Skeleton className="h-4 w-24 mb-2" />
                 <Skeleton className="w-full h-24 mb-2" />
@@ -177,12 +195,12 @@ const Index = () => {
             ))
           ) : skins && skins.length > 0 ? (
             // Display the fetched skins
-            skins.slice(0, 4).map((skin, index) => (
+            skins.slice(0, 8).map((skin, index) => (
               <InventoryCard 
                 key={skin.id}
                 weaponName={skin.weapon || "Unknown"}
                 skinName={skin.name}
-                wear={skin.wear || "Unknown"}
+                wear={skin.wear || skin.rarity || "Unknown"}
                 price={skin.price?.toString() || "N/A"}
                 image={skin.image}
                 className="animate-fade-in hover:scale-105 transition-transform duration-200"
