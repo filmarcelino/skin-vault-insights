@@ -32,23 +32,34 @@ export const InventoryCard: FC<InventoryCardProps> = ({
   const getRarityColorClass = () => {
     if (!rarity) return "";
     
-    // This is a simplified version, you can expand this based on CS:GO rarity colors
+    // Updated colors to match CS:GO/Steam rarity colors
     switch (rarity.toLowerCase()) {
       case "consumer grade":
-        return "border-gray-400";
+      case "white":
+        return "border-[#B0C3D9]";
       case "industrial grade":
-        return "border-blue-400";
+      case "light blue":
+        return "border-[#5E98D9]";
       case "mil-spec grade":
-        return "border-blue-500";
+      case "blue":
+        return "border-[#4B69FF]";
       case "restricted":
-        return "border-purple-500";
+      case "purple":
+        return "border-[#8847FF]";
       case "classified":
-        return "border-pink-500";
+      case "pink":
+        return "border-[#D32CE6]";
       case "covert":
-        return "border-red-500";
-      case "extraordinary":
+      case "red":
+        return "border-[#EB4B4B]";
       case "contraband":
-        return "border-yellow-500";
+      case "gold":
+        return "border-[#FFD700]";
+      case "extraordinary":
+      case "rare special":
+      case "knife":
+      case "glove":
+        return "border-[#FFF99B]";
       default:
         return "";
     }

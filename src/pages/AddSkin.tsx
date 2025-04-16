@@ -1,74 +1,43 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "@/components/ui/search";
 import { useSearchSkins, useWeapons } from "@/hooks/use-skins";
 import { Skin } from "@/types/skin";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-
-const AddSkinSchema = z.object({
-  skinId: z.string().min(1, "Please select a skin"),
-  wear: z.string().min(1, "Please select wear"),
-  price: z.coerce.number().min(0, "Price must be a positive number"),
-});
+import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 
 const AddSkin = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkin, setSelectedSkin] = useState<Skin | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const { data: searchResults = [], isLoading: isSearching } = useSearchSkins(searchQuery);
   const { data: weapons = [] } = useWeapons();
   
-  const form = useForm<z.infer<typeof AddSkinSchema>>({
-    resolver: zodResolver(AddSkinSchema),
-    defaultValues: {
-      skinId: "",
-      wear: "",
-      price: 0,
-    },
-  });
-
-  const onSubmit = (values: z.infer<typeof AddSkinSchema>) => {
-    if (!selectedSkin) return;
-    
-    // Here we would normally save this to a backend, but for now let's just simulate it
-    console.log("Adding skin:", { ...selectedSkin, ...values });
-    
-    toast({
-      title: "Skin Added",
-      description: `${selectedSkin.weapon} | ${selectedSkin.name} has been added to your inventory.`,
-    });
-    
-    // Reset form and navigate back to inventory
-    form.reset();
-    setSelectedSkin(null);
-    navigate("/inventory");
-  };
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
   const handleSelectSkin = (skin: Skin) => {
     setSelectedSkin(skin);
-    form.setValue("skinId", skin.id);
+    setModalOpen(true);
+  };
+  
+  const handleAddSkin = (skinData: any) => {
+    // Here we would normally save this to a backend, but for now let's just simulate it
+    console.log("Adding skin:", skinData);
+    
+    toast({
+      title: "Skin Added",
+      description: `${skinData.weapon || ""} | ${skinData.name} has been added to your inventory.`,
+    });
+    
+    // Reset form and navigate back to inventory
+    setSelectedSkin(null);
+    navigate("/inventory");
   };
 
   return (
@@ -111,6 +80,9 @@ const AddSkin = () => {
                     src={skin.image} 
                     alt={`${skin.weapon} ${skin.name}`}
                     className="max-h-full max-w-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
                   />
                 </div>
               )}
@@ -122,66 +94,13 @@ const AddSkin = () => {
         </div>
       )}
       
-      {selectedSkin && (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="wear"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Skin Wear</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select wear condition" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Factory New">Factory New</SelectItem>
-                      <SelectItem value="Minimal Wear">Minimal Wear</SelectItem>
-                      <SelectItem value="Field-Tested">Field-Tested</SelectItem>
-                      <SelectItem value="Well-Worn">Well-Worn</SelectItem>
-                      <SelectItem value="Battle-Scarred">Battle-Scarred</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    The condition of your skin affects its value.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Purchase Price ($)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" min="0" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Enter how much you paid for this skin.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => {
-                setSelectedSkin(null);
-                form.reset();
-              }}>
-                Cancel
-              </Button>
-              <Button type="submit">Add to Inventory</Button>
-            </div>
-          </form>
-        </Form>
-      )}
+      {/* Skin Detail Modal */}
+      <SkinDetailModal 
+        skin={selectedSkin}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onAddSkin={handleAddSkin}
+      />
     </div>
   );
 };
