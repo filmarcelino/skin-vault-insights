@@ -6,53 +6,12 @@ import { ActivityItem } from "@/components/dashboard/activity-item";
 import { ArrowUp, Boxes, DollarSign, ArrowDown, ArrowRightLeft, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Search } from "@/components/ui/search";
+import { useSkins } from "@/hooks/use-skins";
+import { Skin } from "@/types/skin";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 
-// Mock data (in a real app, this would come from an API)
-const stats = {
-  totalSkins: 76,
-  totalValue: "$3,245",
-  mostValuable: {
-    weapon: "AK-47",
-    skin: "Gold Arabesque",
-    price: "$3,200"
-  },
-  mostRare: {
-    weapon: "Karambit",
-    skin: "Doppler Sapphire"
-  }
-};
-
-const inventoryItems = [
-  {
-    weaponName: "AWP",
-    skinName: "Neo-Noir",
-    wear: "Field-Tested",
-    price: "3,200",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotyg3w2x_0ZkZ2rzd4OXdgRoYQuE8gDtyL_mg5K4tJ7XiSw0WqKv8kM"
-  },
-  {
-    weaponName: "USP-S",
-    skinName: "Cortex",
-    wear: "Factory New",
-    price: "45",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_bGcjhQ09-jq5WYh8jyP7rQmGRu5Mx2gv2P8dSm2VK1_ERuYmmgd9eRcVA_NVyCqwS-k-m9jMO-7ZvOyCdj7HRw5GGdwUKgqkJpDw"
-  },
-  {
-    weaponName: "Karambit",
-    skinName: "Case Hardened",
-    wear: "Well-Worn",
-    price: "950",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2PLacDBA5ciJlY20mvbmOL7VqX5B18N4hOz--YXygED6_BBlZGH7JoaSI1c_YVvTrle7xbvphZC5vMnJyXYysyQrsHndmUTln1gSOUQIActA"
-  },
-  {
-    weaponName: "M4A4",
-    skinName: "Desolate Space",
-    wear: "Minimal Wear",
-    price: "27",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhjxszFJQJD_9W7m4WYg-X1P4Tdn2xZ_Pp9i_vG8MKsi1Cw-0E_N22iI4KVJAY2aAvW-VLrx-m-15TovJvLmydqvyRw5X7ZgVXp1milYhZm"
-  }
-];
-
+// Activity data (in a real app, this would also come from an API)
 const activityItems = [
   {
     type: "add" as const,
@@ -88,29 +47,102 @@ const activityItems = [
 ];
 
 const Index = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Fetch skins data from the API
+  const { data: skins, isLoading, error } = useSkins({
+    search: searchQuery.length > 2 ? searchQuery : undefined
+  });
+
+  // Function to calculate total inventory value
+  const calculateTotalValue = (skins: Skin[]) => {
+    return skins.reduce((total, skin) => {
+      return total + (skin.price || 0);
+    }, 0);
+  };
+
+  // Find the most valuable skin
+  const findMostValuableSkin = (skins: Skin[]) => {
+    if (!skins || skins.length === 0) return null;
+    
+    return skins.reduce((mostValuable, current) => {
+      return (current.price || 0) > (mostValuable.price || 0) ? current : mostValuable;
+    }, skins[0]);
+  };
+
+  // Prepare stats from the fetched data
+  const prepareStats = () => {
+    if (!skins || skins.length === 0) {
+      return {
+        totalSkins: 0,
+        totalValue: "$0",
+        mostValuable: {
+          weapon: "None",
+          skin: "None",
+          price: "$0"
+        }
+      };
+    }
+
+    const totalValue = calculateTotalValue(skins);
+    const mostValuableSkin = findMostValuableSkin(skins);
+
+    return {
+      totalSkins: skins.length,
+      totalValue: `$${totalValue.toLocaleString()}`,
+      mostValuable: mostValuableSkin ? {
+        weapon: mostValuableSkin.weapon || "Unknown",
+        skin: mostValuableSkin.name,
+        price: mostValuableSkin.price ? `$${mostValuableSkin.price.toLocaleString()}` : "$0"
+      } : {
+        weapon: "None",
+        skin: "None",
+        price: "$0"
+      }
+    };
+  };
+
+  const stats = prepareStats();
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <>
       <div className="mb-6">
-        <Search placeholder="Search for weapon, skin or rarity..." />
+        <Search 
+          placeholder="Search for weapon, skin or rarity..." 
+          onChange={handleSearchChange}
+          value={searchQuery}
+        />
       </div>
+
+      {error && (
+        <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400">
+          Error loading skin data. Please try again later.
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
         <StatsCard 
           title="Total Skins" 
-          value={stats.totalSkins} 
+          value={isLoading ? "Loading..." : stats.totalSkins} 
           icon={<Boxes className="h-5 w-5" />}
           className="animate-fade-in" 
           style={{ animationDelay: "0.1s" }}
         />
         <StatsCard 
           title="Total Value" 
-          value={stats.totalValue} 
+          value={isLoading ? "Loading..." : stats.totalValue} 
           icon={<DollarSign className="h-5 w-5" />} 
           className="animate-fade-in" 
           style={{ animationDelay: "0.2s" }}
         />
         <StatsCard 
           title="Most Valuable" 
-          value={`${stats.mostValuable.weapon} | ${stats.mostValuable.skin}`} 
+          value={isLoading ? "Loading..." : `${stats.mostValuable.weapon} | ${stats.mostValuable.skin}`} 
           className="md:col-span-1 animate-fade-in" 
           style={{ animationDelay: "0.3s" }}
         />
@@ -131,18 +163,38 @@ const Index = () => {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {inventoryItems.map((item, index) => (
-            <InventoryCard 
-              key={index}
-              weaponName={item.weaponName}
-              skinName={item.skinName}
-              wear={item.wear}
-              price={item.price}
-              image={item.image}
-              className="animate-fade-in hover:scale-105 transition-transform duration-200"
-              style={{ animationDelay: `${0.5 + (index * 0.1)}s` }}
-            />
-          ))}
+          {isLoading ? (
+            // Show skeletons while loading
+            Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="cs-card p-3 flex flex-col">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="w-full h-24 mb-2" />
+                <div className="flex items-center justify-between mt-auto">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              </div>
+            ))
+          ) : skins && skins.length > 0 ? (
+            // Display the fetched skins
+            skins.slice(0, 4).map((skin, index) => (
+              <InventoryCard 
+                key={skin.id}
+                weaponName={skin.weapon || "Unknown"}
+                skinName={skin.name}
+                wear={skin.wear || "Unknown"}
+                price={skin.price?.toString() || "N/A"}
+                image={skin.image}
+                className="animate-fade-in hover:scale-105 transition-transform duration-200"
+                style={{ animationDelay: `${0.5 + (index * 0.1)}s` }}
+              />
+            ))
+          ) : (
+            // Display a message when no skins are found
+            <div className="col-span-4 text-center py-8 text-muted-foreground">
+              No skins found. Try adjusting your search.
+            </div>
+          )}
         </div>
       </div>
       
