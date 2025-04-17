@@ -35,14 +35,16 @@ export const useSkinImageAnalysis = () => {
 
       console.log("Resposta da análise:", data)
 
-      // Criar um objeto Skin com os dados retornados da análise
+      // Criar um objeto Skin temporário com os dados retornados da análise
+      // Mas não incluiremos a imagem do usuário
       const skinData: Skin = {
         id: `skin-${Date.now()}`,
         name: data.skinName || "Unknown Skin",
         weapon: data.weaponName || "Unknown",
         rarity: data.rarity || "",
         wear: data.wear || "",
-        image: `data:image/jpeg;base64,${imageBase64}`,
+        // Note que não estamos mais usando a imagem do usuário
+        image: "", // Deixamos vazio para usar a imagem do banco
         price: data.estimatedPrice || 0,
         floatValue: data.floatValue ? parseFloat(data.floatValue) : undefined,
       }

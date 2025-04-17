@@ -142,20 +142,23 @@ export const SkinImageAnalyzer: React.FC = () => {
                       ))}
                     </div>
                     
-                    {analysisResult.foundSkins.length > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Clique em uma skin para adicionar ao seu inventário
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Clique em uma skin para adicionar ao seu inventário
+                    </p>
                   </>
                 ) : (
-                  <Button 
-                    onClick={() => handleOpenDetailModal(analysisResult.skinData!)}
-                    className="w-full"
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    Preencher detalhes e salvar
-                  </Button>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma skin correspondente encontrada no banco de dados.
+                    </p>
+                    <Button 
+                      onClick={() => handleOpenDetailModal(analysisResult.skinData!)}
+                      className="w-full"
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Preencher detalhes manualmente
+                    </Button>
+                  </div>
                 )}
                 
                 <Button 
