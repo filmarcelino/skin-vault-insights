@@ -9,18 +9,40 @@ export const Sidebar: FC = () => {
   const isActive = (path: string) => {
     return location.pathname === path;
   };
+  
+  // Function to get page name based on current route
+  const getPageName = (path: string) => {
+    switch (path) {
+      case "/":
+        return "Home";
+      case "/search":
+        return "Buscar Skins";
+      case "/add":
+        return "Adicionar Skin";
+      case "/inventory":
+        return "Inventário";
+      case "/analytics":
+        return "Análises";
+      case "/settings":
+        return "Configurações";
+      default:
+        return "";
+    }
+  };
 
+  const currentPageName = getPageName(location.pathname);
+  
   const getLinkClass = (path: string) => {
-    const baseClass = "w-10 h-10 flex items-center justify-center rounded-md transition-colors";
+    const baseClass = "flex items-center rounded-md transition-colors";
     return isActive(path)
       ? `${baseClass} bg-sidebar-accent text-primary`
       : `${baseClass} text-muted-foreground hover:bg-sidebar-accent hover:text-primary`;
   };
 
   return (
-    <div className="hidden md:flex flex-col h-screen w-16 border-r border-border/50 bg-sidebar-background fixed left-0 top-0 z-30">
+    <div className="hidden md:flex flex-col h-screen w-32 border-r border-border/50 bg-sidebar-background fixed left-0 top-0 z-30">
       <div className="flex items-center justify-center h-16 border-b border-border/50">
-        {/* Logo space */}
+        <h2 className="text-lg font-medium text-primary">{currentPageName}</h2>
       </div>
       
       <div className="flex flex-col items-center gap-6 py-6">
@@ -29,35 +51,50 @@ export const Sidebar: FC = () => {
           className={getLinkClass("/")}
           title="Home"
         >
-          <Home className="h-5 w-5" />
+          <div className="w-full flex flex-col items-center justify-center py-2">
+            <Home className="h-5 w-5" />
+            <span className="mt-1 text-xs">Home</span>
+          </div>
         </Link>
         <Link 
           to="/search" 
           className={getLinkClass("/search")}
           title="Buscar Skins"
         >
-          <Search className="h-5 w-5" />
+          <div className="w-full flex flex-col items-center justify-center py-2">
+            <Search className="h-5 w-5" />
+            <span className="mt-1 text-xs">Buscar</span>
+          </div>
         </Link>
         <Link 
           to="/add" 
           className={getLinkClass("/add")}
           title="Adicionar Skin"
         >
-          <Plus className="h-5 w-5" />
+          <div className="w-full flex flex-col items-center justify-center py-2">
+            <Plus className="h-5 w-5" />
+            <span className="mt-1 text-xs">Adicionar</span>
+          </div>
         </Link>
         <Link 
           to="/inventory" 
           className={getLinkClass("/inventory")}
           title="Inventário"
         >
-          <LayoutGrid className="h-5 w-5" />
+          <div className="w-full flex flex-col items-center justify-center py-2">
+            <LayoutGrid className="h-5 w-5" />
+            <span className="mt-1 text-xs">Inventário</span>
+          </div>
         </Link>
         <Link 
           to="/analytics" 
           className={getLinkClass("/analytics")}
           title="Análises"
         >
-          <LineChart className="h-5 w-5" />
+          <div className="w-full flex flex-col items-center justify-center py-2">
+            <LineChart className="h-5 w-5" />
+            <span className="mt-1 text-xs">Análises</span>
+          </div>
         </Link>
       </div>
       
@@ -67,7 +104,10 @@ export const Sidebar: FC = () => {
           className={getLinkClass("/settings")}
           title="Configurações"
         >
-          <Settings className="h-5 w-5" />
+          <div className="w-full flex flex-col items-center justify-center py-2">
+            <Settings className="h-5 w-5" />
+            <span className="mt-1 text-xs">Configurações</span>
+          </div>
         </Link>
       </div>
     </div>
