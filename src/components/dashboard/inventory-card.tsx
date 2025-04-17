@@ -116,25 +116,25 @@ export const InventoryCard: FC<InventoryCardProps> = ({
 
   return (
     <div 
-      className={`cs-card p-3 flex flex-col transition-all ${getRarityColorClass()} border-t-2 ${className} ${onClick ? 'cursor-pointer' : ''}`} 
+      className={`cs-card p-2 flex flex-col transition-all ${getRarityColorClass()} border-t-2 ${className} ${onClick ? 'cursor-pointer' : ''}`} 
       style={{...style, ...getBorderGlowStyle()}}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="font-medium text-sm truncate max-w-full">
+      <div className="flex items-center justify-between mb-1">
+        <div className="font-medium text-xs truncate max-w-full">
           {weaponName} | <span className="text-primary">{skinName}</span>
         </div>
         {isStatTrak && (
           <Badge 
             variant="outline" 
-            className="ml-1 text-[10px] py-0 h-4 bg-[#CF6A32]/10 text-[#CF6A32] border-[#CF6A32]/30"
+            className="ml-1 text-[9px] py-0 h-3.5 bg-[#CF6A32]/10 text-[#CF6A32] border-[#CF6A32]/30"
           >
             ST™
           </Badge>
         )}
       </div>
 
-      <div className="relative w-full h-24 mb-2 flex items-center justify-center bg-black/10 dark:bg-white/5 rounded">
+      <div className="relative w-full h-16 mb-1 flex items-center justify-center bg-black/10 dark:bg-white/5 rounded">
         {image ? (
           <img 
             src={image} 
@@ -149,8 +149,8 @@ export const InventoryCard: FC<InventoryCardProps> = ({
         
         {/* Trade lock indicator */}
         {isLocked && daysLeft > 0 && (
-          <div className="absolute top-1 right-1 bg-black/70 rounded-full p-1 flex items-center">
-            <Lock className="h-3 w-3 text-yellow-500" />
+          <div className="absolute top-1 right-1 bg-black/70 rounded-full p-0.5 flex items-center">
+            <Lock className="h-2.5 w-2.5 text-yellow-500" />
           </div>
         )}
 
@@ -163,10 +163,10 @@ export const InventoryCard: FC<InventoryCardProps> = ({
             <Button 
               variant="destructive" 
               size="sm" 
-              className="gap-1"
+              className="gap-1 text-xs py-0.5 px-2 h-6"
               onClick={handleDeleteClick}
             >
-              <Trash2 className="h-3.5 w-3.5" /> Remover
+              <Trash2 className="h-3 w-3" /> Remover
             </Button>
           </div>
         )}
@@ -174,15 +174,15 @@ export const InventoryCard: FC<InventoryCardProps> = ({
 
       <div className="flex items-center justify-between mt-auto">
         <div className="flex items-center gap-1">
-          {wear && <Badge variant="secondary" className="text-xs truncate max-w-[70%]">{wear}</Badge>}
+          {wear && <Badge variant="secondary" className="text-[9px] truncate max-w-[70%] px-1 py-0">{wear}</Badge>}
           {isLocked && daysLeft > 0 && (
-            <div className="flex items-center text-[10px] text-yellow-500">
-              <Clock className="h-3 w-3 mr-0.5" />
+            <div className="flex items-center text-[9px] text-yellow-500">
+              <Clock className="h-2.5 w-2.5 mr-0.5" />
               {daysLeft}d
             </div>
           )}
         </div>
-        {price && <div className="text-sm font-medium">${price}</div>}
+        {price && <div className="text-xs font-medium">${price}</div>}
       </div>
     </div>
   );

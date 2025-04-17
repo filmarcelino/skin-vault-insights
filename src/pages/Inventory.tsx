@@ -2,11 +2,13 @@
 import { useState } from "react";
 import { useInventory, useRemoveSkin } from "@/hooks/use-skins";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
+import { InventoryListItem } from "@/components/dashboard/inventory-list-item";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { InventoryItem, SellData } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { useToast } from "@/hooks/use-toast";
 import { Search } from "@/components/ui/search";
+import { ViewToggle } from "@/components/ui/view-toggle";
 import { 
   Pagination, 
   PaginationContent, 
@@ -16,7 +18,7 @@ import {
   PaginationPrevious 
 } from "@/components/ui/pagination";
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 12;
 
 const Inventory = () => {
   const { data: inventoryItems = [], isLoading, error } = useInventory();
@@ -25,6 +27,7 @@ const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { toast } = useToast();
   const removeSkinMutation = useRemoveSkin();
 
@@ -110,12 +113,14 @@ const Inventory = () => {
     <div className="animate-fade-in">
       <h1 className="text-2xl font-bold mb-6">Seu Inventário de Skins</h1>
       
-      <div className="mb-6">
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
         <Search 
           placeholder="Pesquisar arma, skin, raridade..."
           onSearch={handleSearch}
           debounceTime={300}
+          className="flex-1"
         />
+        <ViewToggle view={viewMode} onChange={setViewMode} />
       </div>
       
       {paginatedItems.length === 0 ? (
@@ -140,29 +145,53 @@ const Inventory = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {paginatedItems.map((skin, index) => (
-              <InventoryCard
-                key={skin.inventoryId || `skin-${index}`}
-                weaponName={skin.weapon || "Unknown"}
-                skinName={skin.name}
-                wear={skin.wear || ""}
-                price={skin.currentPrice?.toString() || skin.price?.toString() || "N/A"}
-                image={skin.image}
-                rarity={skin.rarity}
-                isStatTrak={skin.isStatTrak}
-                tradeLockDays={skin.tradeLockDays}
-                tradeLockUntil={skin.tradeLockUntil}
-                className="animate-fade-in hover:scale-105 transition-transform duration-200"
-                style={{
-                  animationDelay: `${0.1 + index * 0.05}s`,
-                }}
-                onClick={() => handleSkinClick(skin)}
-              />
-            ))}
-          </div>
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {paginatedItems.map((skin, index) => (
+                <InventoryCard
+                  key={skin.inventoryId || `skin-${index}`}
+                  weaponName={skin.weapon || "Unknown"}
+                  skinName={skin.name}
+                  wear={skin.wear || ""}
+                  price={skin.currentPrice?.toString() || skin.price?.toString() || "N/A"}
+                  image={skin.image}
+                  rarity={skin.rarity}
+                  isStatTrak={skin.isStatTrak}
+                  tradeLockDays={skin.tradeLockDays}
+                  tradeLockUntil={skin.tradeLockUntil}
+                  className="animate-fade-in hover:scale-105 transition-transform duration-200"
+                  style={{
+                    animationDelay: `${0.1 + index * 0.05}s`,
+                  }}
+                  onClick={() => handleSkinClick(skin)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5 border rounded-md divide-y divide-border/50">
+              {paginatedItems.map((skin, index) => (
+                <InventoryListItem
+                  key={skin.inventoryId || `skin-list-${index}`}
+                  weaponName={skin.weapon || "Unknown"}
+                  skinName={skin.name}
+                  wear={skin.wear || ""}
+                  price={skin.currentPrice?.toString() || skin.price?.toString() || "N/A"}
+                  image={skin.image}
+                  rarity={skin.rarity}
+                  isStatTrak={skin.isStatTrak}
+                  tradeLockDays={skin.tradeLockDays}
+                  tradeLockUntil={skin.tradeLockUntil}
+                  className="animate-fade-in"
+                  style={{
+                    animationDelay: `${0.1 + index * 0.05}s`,
+                  }}
+                  onClick={() => handleSkinClick(skin)}
+                />
+              ))}
+            </div>
+          )}
           
-          {/* Pagination - Garantindo que sempre seja exibida */}
+          {/* Pagination */}
           {displayItems.length > 0 && (
             <div className="mt-6">
               <Pagination>

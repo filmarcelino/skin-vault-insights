@@ -24,7 +24,7 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
           <img 
             src={item.image} 
             alt={item.name} 
-            className="max-h-[26.4rem] max-w-full object-contain scale-[0.55] transform-origin-center"
+            className="max-h-[20rem] max-w-full object-contain scale-[0.55] transform-origin-center"
             style={{ transform: 'scale(0.55)' }}
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/placeholder.svg';
