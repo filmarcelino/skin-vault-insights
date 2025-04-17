@@ -38,12 +38,14 @@ serve(async (req) => {
     if (!stripeKey) {
       logStep("Missing Stripe key");
       return new Response(JSON.stringify({ 
-        error: "Payment configuration unavailable at the moment" 
+        error: "Payment configuration unavailable at the moment. STRIPE_SECRET_KEY not set." 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
       });
     }
+    
+    logStep("Stripe key found");
     
     // Initialize Supabase client with service role key
     const supabaseClient = createClient(
@@ -70,7 +72,7 @@ serve(async (req) => {
     if (userError) {
       logStep("Authentication error", { message: userError.message });
       return new Response(JSON.stringify({ 
-        error: "Authentication error" 
+        error: "Authentication error: " + userError.message
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -93,12 +95,14 @@ serve(async (req) => {
     try {
       // Initialize Stripe with timeout handling
       const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+      logStep("Stripe initialized");
       
       // Check if user already exists as a customer with timeout
+      logStep("Checking if customer exists");
       const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
       const customers = await Promise.race([
         customersPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while fetching customer")), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while fetching customer")), 30000))
       ]) as Stripe.ApiList<Stripe.Customer>;
       
       let customerId: string | undefined;
@@ -108,6 +112,7 @@ serve(async (req) => {
         logStep("Found existing customer", { customerId });
         
         // Check if customer already has an active subscription
+        logStep("Checking for active subscriptions");
         const subscriptionsPromise = stripe.subscriptions.list({
           customer: customerId,
           status: "active",
@@ -116,7 +121,7 @@ serve(async (req) => {
         
         const subscriptions = await Promise.race([
           subscriptionsPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while checking subscriptions")), 15000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while checking subscriptions")), 30000))
         ]) as Stripe.ApiList<Stripe.Subscription>;
         
         if (subscriptions.data.length > 0) {
@@ -173,6 +178,8 @@ serve(async (req) => {
         }];
       }
       
+      logStep("Creating checkout session", { customerId: customerId || "new customer" });
+      
       // Create a Stripe Checkout session for a new subscription
       const sessionPromise = stripe.checkout.sessions.create({
         customer: customerId,
@@ -185,7 +192,7 @@ serve(async (req) => {
       
       const session = await Promise.race([
         sessionPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while creating checkout")), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while creating checkout")), 30000))
       ]) as Stripe.Checkout.Session;
       
       logStep("Checkout session created", { sessionId: session.id, url: session.url });
@@ -200,7 +207,7 @@ serve(async (req) => {
       logStep("STRIPE API ERROR", { message: errorMessage });
       
       return new Response(JSON.stringify({ 
-        error: "Failed to create payment session. Please try again later." 
+        error: "Failed to create payment session: " + errorMessage
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Still return 200 with error message inside
@@ -210,7 +217,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: "General error: " + errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200, // Still return 200 with error details inside
     });

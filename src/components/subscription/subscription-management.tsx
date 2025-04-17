@@ -6,8 +6,9 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, AlertCircle, CreditCard, RefreshCw } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, CreditCard, RefreshCw, Info } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -27,6 +28,7 @@ export const SubscriptionManagement = () => {
   const { toast } = useToast();
   const [isInvoking, setIsInvoking] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const checkSubscription = async (showToast = true) => {
     if (!session?.access_token || !user) {
@@ -36,6 +38,9 @@ export const SubscriptionManagement = () => {
 
     try {
       setStatus(prev => ({ ...prev, loading: true, error: undefined }));
+      setActionError(null);
+      
+      console.log("Checking subscription status with token:", session.access_token.substring(0, 10) + "...");
       
       const { data, error } = await Promise.race([
         supabase.functions.invoke('check-subscription', {
@@ -44,11 +49,16 @@ export const SubscriptionManagement = () => {
           }
         }),
         new Promise<{data: null, error: Error}>((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 15000)
+          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 30000)
         )
       ]) as any;
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("Error invoking check-subscription:", error);
+        throw new Error(error.message);
+      }
+      
+      console.log("Subscription check response:", data);
       
       // Check if the data contains an error field (from our custom error handling)
       if (data.error) {
@@ -114,6 +124,10 @@ export const SubscriptionManagement = () => {
 
     try {
       setIsInvoking(true);
+      setActionError(null);
+      
+      console.log("Starting subscription process for plan:", planType);
+      console.log("Using access token:", session.access_token.substring(0, 10) + "...");
       
       const { data, error } = await Promise.race([
         supabase.functions.invoke('create-checkout', {
@@ -123,25 +137,38 @@ export const SubscriptionManagement = () => {
           body: { plan: planType }
         }),
         new Promise<{data: null, error: Error}>((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 15000)
+          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 30000)
         )
       ]) as any;
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("Error invoking create-checkout:", error);
+        throw new Error(error.message);
+      }
+      
+      console.log("Checkout response:", data);
       
       // Check if the data contains an error field (from our custom error handling)
       if (data.error) {
+        console.error("Checkout returned error:", data.error);
+        setActionError(data.error);
         throw new Error(data.error);
       }
       
       if (data.url) {
+        console.log("Redirecting to Stripe:", data.url);
         window.location.href = data.url;
+      } else {
+        throw new Error("No URL returned from checkout process");
       }
     } catch (err) {
       console.error('Error creating checkout:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to initiate subscription process';
+      setActionError(errorMsg);
+      
       toast({
         title: "Subscription Error",
-        description: err instanceof Error ? err.message : 'Failed to initiate subscription process',
+        description: errorMsg,
         variant: "destructive"
       });
     } finally {
@@ -154,6 +181,9 @@ export const SubscriptionManagement = () => {
     
     try {
       setIsInvoking(true);
+      setActionError(null);
+      
+      console.log("Opening customer portal with token:", session.access_token.substring(0, 10) + "...");
       
       const { data, error } = await Promise.race([
         supabase.functions.invoke('customer-portal', {
@@ -162,25 +192,38 @@ export const SubscriptionManagement = () => {
           }
         }),
         new Promise<{data: null, error: Error}>((_, reject) => 
-          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 15000)
+          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 30000)
         )
       ]) as any;
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("Error invoking customer-portal:", error);
+        throw new Error(error.message);
+      }
+      
+      console.log("Customer portal response:", data);
       
       // Check if the data contains an error field (from our custom error handling)
       if (data.error) {
+        console.error("Customer portal returned error:", data.error);
+        setActionError(data.error);
         throw new Error(data.error);
       }
       
       if (data.url) {
+        console.log("Redirecting to customer portal:", data.url);
         window.location.href = data.url;
+      } else {
+        throw new Error("No URL returned from customer portal");
       }
     } catch (err) {
       console.error('Error opening customer portal:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to open subscription management';
+      setActionError(errorMsg);
+      
       toast({
         title: "Portal Error",
-        description: err instanceof Error ? err.message : 'Failed to open subscription management',
+        description: errorMsg,
         variant: "destructive"
       });
     } finally {
@@ -191,6 +234,7 @@ export const SubscriptionManagement = () => {
   // Check subscription on mount and when authentication changes
   useEffect(() => {
     if (user) {
+      console.log("Checking subscription for user:", user.id);
       checkSubscription(false);
     } else {
       setStatus({ subscribed: false, loading: false });
@@ -240,6 +284,13 @@ export const SubscriptionManagement = () => {
       </CardHeader>
       
       <CardContent className="space-y-4">
+        {actionError && (
+          <Alert variant="destructive" className="mb-3">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{actionError}</AlertDescription>
+          </Alert>
+        )}
+      
         {status.loading ? (
           <div className="flex justify-center py-4">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -284,6 +335,13 @@ export const SubscriptionManagement = () => {
                 <span className="text-sm">{status.error}</span>
               </div>
             )}
+            
+            <Alert variant="default" className="mb-4 bg-blue-500/10 border-blue-500/30">
+              <Info className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-sm">
+                Make sure you have your <strong>STRIPE_SECRET_KEY</strong> set in the Supabase Edge Function secrets.
+              </AlertDescription>
+            </Alert>
             
             <Tabs defaultValue="monthly" onValueChange={(val) => setSelectedPlan(val as 'monthly' | 'annual')}>
               <TabsList className="w-full mb-4">
