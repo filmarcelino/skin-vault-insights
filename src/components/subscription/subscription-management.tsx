@@ -2,11 +2,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CheckCircle, AlertCircle, CreditCard } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, CreditCard, RefreshCw } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -21,6 +22,7 @@ export const SubscriptionManagement = () => {
     subscribed: false,
     loading: true
   });
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');
   const { user, session } = useAuth();
   const { toast } = useToast();
   const [isInvoking, setIsInvoking] = useState(false);
@@ -34,19 +36,16 @@ export const SubscriptionManagement = () => {
     try {
       setStatus(prev => ({ ...prev, loading: true }));
       
-      // Adicionando timeout para evitar que a requisição fique pendente indefinidamente
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Tempo limite excedido")), 10000)
-      );
-      
-      const fetchPromise = supabase.functions.invoke('check-subscription', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      // Race entre o timeout e a requisição
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      const { data, error } = await Promise.race([
+        supabase.functions.invoke('check-subscription', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }),
+        new Promise<{data: null, error: Error}>((_, reject) => 
+          setTimeout(() => reject(new Error("Tempo limite excedido. Por favor, tente novamente.")), 15000)
+        )
+      ]) as any;
 
       if (error) throw new Error(error.message);
       
@@ -72,7 +71,7 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (planType: 'monthly' | 'annual' = 'monthly') => {
     if (!session?.access_token) {
       toast({
         title: "Autenticação necessária",
@@ -85,19 +84,17 @@ export const SubscriptionManagement = () => {
     try {
       setIsInvoking(true);
       
-      // Adicionando timeout para evitar que a requisição fique pendente indefinidamente
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Tempo limite excedido")), 10000)
-      );
-      
-      const fetchPromise = supabase.functions.invoke('create-checkout', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      // Race entre o timeout e a requisição
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      const { data, error } = await Promise.race([
+        supabase.functions.invoke('create-checkout', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          },
+          body: { plan: planType }
+        }),
+        new Promise<{data: null, error: Error}>((_, reject) => 
+          setTimeout(() => reject(new Error("Tempo limite excedido. Por favor, tente novamente.")), 15000)
+        )
+      ]) as any;
 
       if (error) throw new Error(error.message);
       
@@ -122,19 +119,16 @@ export const SubscriptionManagement = () => {
     try {
       setIsInvoking(true);
       
-      // Adicionando timeout para evitar que a requisição fique pendente indefinidamente
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Tempo limite excedido")), 10000)
-      );
-      
-      const fetchPromise = supabase.functions.invoke('customer-portal', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      // Race entre o timeout e a requisição
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      const { data, error } = await Promise.race([
+        supabase.functions.invoke('customer-portal', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        }),
+        new Promise<{data: null, error: Error}>((_, reject) => 
+          setTimeout(() => reject(new Error("Tempo limite excedido. Por favor, tente novamente.")), 15000)
+        )
+      ]) as any;
 
       if (error) throw new Error(error.message);
       
@@ -181,10 +175,10 @@ export const SubscriptionManagement = () => {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
+    <Card className="w-full max-w-md mx-auto shadow-lg border-primary/20">
+      <CardHeader className="bg-gradient-to-br from-primary/20 to-primary/5">
         <div className="flex items-center justify-between">
-          <CardTitle>CS Skin Vault Premium</CardTitle>
+          <CardTitle className="text-gradient-to-r from-primary to-accent bg-clip-text">CS Skin Vault Premium</CardTitle>
           {status.subscribed && (
             <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
               Ativo
@@ -207,7 +201,7 @@ export const SubscriptionManagement = () => {
       <CardContent className="space-y-4">
         {status.loading ? (
           <div className="flex justify-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : status.subscribed ? (
           <>
@@ -223,20 +217,20 @@ export const SubscriptionManagement = () => {
               </p>
             )}
             
-            <div className="bg-muted/50 p-3 rounded-md">
+            <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-accent/5 backdrop-blur-sm border border-primary/10">
               <h4 className="font-medium mb-2">Seus benefícios premium:</h4>
-              <ul className="text-sm space-y-1">
+              <ul className="text-sm space-y-2">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  Skins ilimitadas no inventário
+                  <span>Skins ilimitadas no inventário</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  Análises avançadas e rastreamento de preços
+                  <span>Análises avançadas e rastreamento de preços</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  Suporte prioritário ao cliente
+                  <span>Suporte prioritário ao cliente</span>
                 </li>
               </ul>
             </div>
@@ -244,46 +238,94 @@ export const SubscriptionManagement = () => {
         ) : (
           <>
             {status.error && (
-              <div className="flex items-center gap-2 text-destructive mb-3">
-                <AlertCircle className="h-5 w-5" />
-                <span>{status.error}</span>
+              <div className="flex items-center gap-2 text-destructive mb-3 p-2 rounded-md bg-destructive/10">
+                <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm">{status.error}</span>
               </div>
             )}
             
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Plano Premium</h4>
-                  <p className="text-sm text-muted-foreground">$3.99/mês com 3 dias de teste grátis</p>
-                </div>
-              </div>
+            <Tabs defaultValue="monthly" onValueChange={(val) => setSelectedPlan(val as 'monthly' | 'annual')}>
+              <TabsList className="w-full mb-4">
+                <TabsTrigger value="monthly" className="w-1/2">Mensal</TabsTrigger>
+                <TabsTrigger value="annual" className="w-1/2">Anual (10% OFF)</TabsTrigger>
+              </TabsList>
               
-              <div className="bg-muted/50 p-3 rounded-md">
-                <h4 className="font-medium mb-2">Benefícios premium:</h4>
-                <ul className="text-sm space-y-1">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Skins ilimitadas no inventário
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Análises avançadas e rastreamento de preços
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Suporte prioritário ao cliente
-                  </li>
-                </ul>
-              </div>
-            </div>
+              <TabsContent value="monthly">
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-3 p-4 rounded-lg bg-gradient-to-br from-primary/20 to-accent/5 backdrop-blur-sm border border-primary/10">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/20 p-3 rounded-full">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Plano Mensal</h4>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl font-bold">$3.99</span>
+                          <span className="text-sm text-muted-foreground">/mês</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-sm">3 dias de teste grátis</div>
+                  </div>
+                  
+                  <ul className="text-sm space-y-2 p-4 rounded-lg bg-muted/50">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <span>Skins ilimitadas no inventário</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <span>Análises avançadas e rastreamento de preços</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <span>Suporte prioritário ao cliente</span>
+                    </li>
+                  </ul>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="annual">
+                <div className="space-y-4">
+                  <div className="flex flex-col gap-3 p-4 rounded-lg bg-gradient-to-br from-accent/20 to-primary/5 backdrop-blur-sm border border-accent/10">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-accent/20 p-3 rounded-full">
+                        <CreditCard className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium">Plano Anual <Badge variant="outline" className="ml-1 bg-green-500/10 text-green-500 border-green-500/30">ECONOMIZE 10%</Badge></h4>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl font-bold">$43.09</span>
+                          <span className="text-sm text-muted-foreground">/ano</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">Equivalente a $3.59/mês</div>
+                      </div>
+                    </div>
+                    <div className="text-sm">3 dias de teste grátis</div>
+                  </div>
+                  
+                  <ul className="text-sm space-y-2 p-4 rounded-lg bg-muted/50">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <span>Skins ilimitadas no inventário</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <span>Análises avançadas e rastreamento de preços</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <span>Suporte prioritário ao cliente</span>
+                    </li>
+                  </ul>
+                </div>
+              </TabsContent>
+            </Tabs>
           </>
         )}
       </CardContent>
       
-      <CardFooter className="flex gap-3">
+      <CardFooter className="flex flex-wrap gap-3 bg-gradient-to-tr from-background to-muted/20 pt-4">
         {status.loading ? (
           <Button disabled className="w-full">
             <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
@@ -292,7 +334,7 @@ export const SubscriptionManagement = () => {
           <Button 
             onClick={handleManageSubscription} 
             variant="outline" 
-            className="w-full"
+            className="w-full border-primary/30 hover:bg-primary/20"
             disabled={isInvoking}
           >
             {isInvoking ? (
@@ -303,21 +345,26 @@ export const SubscriptionManagement = () => {
           </Button>
         ) : (
           <Button 
-            onClick={handleSubscribe} 
-            className="w-full"
+            onClick={() => handleSubscribe(selectedPlan)} 
+            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
             disabled={isInvoking}
           >
             {isInvoking ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
               </>
-            ) : "Assinar Agora"}
+            ) : `Assinar Plano ${selectedPlan === 'monthly' ? 'Mensal' : 'Anual'}`}
           </Button>
         )}
         
         {!status.loading && !isInvoking && (
-          <Button onClick={checkSubscription} variant="ghost" size="icon">
-            <Loader2 className="h-4 w-4" />
+          <Button 
+            onClick={checkSubscription} 
+            variant="ghost" 
+            size="icon" 
+            className="hover:bg-primary/10"
+          >
+            <RefreshCw className="h-4 w-4" />
             <span className="sr-only">Atualizar</span>
           </Button>
         )}
@@ -325,4 +372,3 @@ export const SubscriptionManagement = () => {
     </Card>
   );
 };
-

@@ -22,6 +22,17 @@ serve(async (req) => {
   try {
     logStep("Function started");
     
+    // Get request body for subscription plan selection
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (e) {
+      requestData = { plan: 'monthly' }; // Default to monthly if no plan specified
+    }
+    
+    const plan = requestData?.plan || 'monthly';
+    logStep("Request data", { plan });
+    
     // Get Stripe key from environment
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
@@ -80,28 +91,51 @@ serve(async (req) => {
       }
     }
     
+    // Set up the plan details based on the selected plan
+    let line_items;
+    
+    if (plan === 'annual') {
+      // Annual plan with 10% discount ($3.99 * 12 months = $47.88, with 10% off = $43.09)
+      line_items = [{
+        price_data: {
+          currency: "usd",
+          recurring: {
+            interval: "year",
+            trial_period_days: 3,
+          },
+          product_data: {
+            name: "CS Skin Vault Premium (Anual)",
+            description: "Acesso premium ao CS Skin Vault com economia de 10%",
+          },
+          unit_amount: 4309, // $43.09 em centavos (equivalente a $3.99/mês com 10% de desconto)
+        },
+        quantity: 1,
+      }];
+    } else {
+      // Default monthly plan
+      line_items = [{
+        price_data: {
+          currency: "usd",
+          recurring: {
+            interval: "month",
+            trial_period_days: 3,
+          },
+          product_data: {
+            name: "CS Skin Vault Premium",
+            description: "Acesso premium ao CS Skin Vault",
+          },
+          unit_amount: 399, // $3.99 em centavos
+        },
+        quantity: 1,
+      }];
+    }
+    
     // Create a Stripe Checkout session for a new subscription
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       mode: "subscription",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            recurring: {
-              interval: "month",
-              trial_period_days: 3,
-            },
-            product_data: {
-              name: "CS Skin Vault Premium",
-              description: "Access premium features with CS Skin Vault",
-            },
-            unit_amount: 399, // $3.99 in cents
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: line_items,
       success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}`,
     });

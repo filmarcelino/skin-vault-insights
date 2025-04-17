@@ -40,34 +40,38 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
   const { formatPrice } = useCurrency();
   const { isLocked, daysLeft } = getTradeLockStatus(tradeLockUntil);
   
-  // Get background style based on rarity
+  // Get enhanced gradient background style based on rarity
   const getBackgroundStyle = () => {
     if (!rarity) return {};
     
-    const metallicColors: Record<string, string> = {
-      'Consumer Grade': '#8E9196',
-      'Industrial Grade': '#5E7D9A',
-      'Mil-Spec Grade': '#4A6D7C',
-      'Restricted': '#6E5AB0',
-      'Classified': '#8A4E9E',
-      'Covert': '#9A4A4A',
-      'Contraband': '#B8A246',
-      '★ Rare Special Item': '#A69D7E',
-      'Comum': '#8E9196',
-      'Pouco Comum': '#5E7D9A',
-      'Militar': '#4A6D7C',
-      'Restrita': '#6E5AB0',
-      'Classificada': '#8A4E9E',
-      'Secreta': '#9A4A4A',
-      'Contrabando': '#B8A246',
-      'Especial Rara': '#A69D7E',
+    const metallicColors: Record<string, { main: string, dark: string }> = {
+      'Consumer Grade': { main: '#8E9196', dark: '#6a6d71' },
+      'Industrial Grade': { main: '#5E7D9A', dark: '#455d72' },
+      'Mil-Spec Grade': { main: '#4A6D7C', dark: '#37515c' },
+      'Restricted': { main: '#6E5AB0', dark: '#524283' },
+      'Classified': { main: '#8A4E9E', dark: '#673976' },
+      'Covert': { main: '#9A4A4A', dark: '#733737' },
+      'Contraband': { main: '#B8A246', dark: '#8a7934' },
+      '★ Rare Special Item': { main: '#A69D7E', dark: '#7d765e' },
+      'Comum': { main: '#8E9196', dark: '#6a6d71' },
+      'Pouco Comum': { main: '#5E7D9A', dark: '#455d72' },
+      'Militar': { main: '#4A6D7C', dark: '#37515c' },
+      'Restrita': { main: '#6E5AB0', dark: '#524283' },
+      'Classificada': { main: '#8A4E9E', dark: '#673976' },
+      'Secreta': { main: '#9A4A4A', dark: '#733737' },
+      'Contrabando': { main: '#B8A246', dark: '#8a7934' },
+      'Especial Rara': { main: '#A69D7E', dark: '#7d765e' },
+      'Extraordinary': { main: '#A69D7E', dark: '#7d765e' },
     };
 
-    const bgColor = metallicColors[rarity] || getRarityColor(rarity);
+    const colorSet = metallicColors[rarity] || { 
+      main: getRarityColor(rarity), 
+      dark: getRarityColor(rarity) 
+    };
     
     return {
-      backgroundColor: bgColor,
-      boxShadow: `inset 0 0 15px rgba(0,0,0,0.4)`,
+      background: `linear-gradient(135deg, ${colorSet.main} 0%, ${colorSet.dark} 100%)`,
+      boxShadow: `inset 0 0 15px rgba(255,255,255,0.1), 0 2px 8px rgba(0,0,0,0.2)`,
       borderLeft: 'none',
       ...style
     };
@@ -84,8 +88,11 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       style={getBackgroundStyle()}
       onClick={onClick}
     >
+      {/* Overlay gradient for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-l from-black/20 to-transparent opacity-80 pointer-events-none"></div>
+      
       {/* Thumbnail */}
-      <div className="h-12 w-12 bg-black/20 rounded flex items-center justify-center shrink-0">
+      <div className="h-12 w-12 bg-black/20 rounded flex items-center justify-center shrink-0 relative z-10">
         {image ? (
           <img 
             src={image} 
@@ -93,6 +100,9 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
             className="max-h-full max-w-full object-contain"
             onError={handleImageError}
             loading="lazy"
+            style={{
+              filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.3))"
+            }}
           />
         ) : (
           <div className="text-xs text-white/50">No image</div>
@@ -100,7 +110,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       </div>
       
       {/* Main info */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 relative z-10">
         <div className="flex items-center gap-1">
           <div className="font-medium text-sm truncate text-white">
             {skinName}
@@ -127,7 +137,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       </div>
       
       {/* Price */}
-      {price && <div className="text-sm font-medium whitespace-nowrap text-white">
+      {price && <div className="text-sm font-medium whitespace-nowrap text-white relative z-10">
         {typeof price === 'number' ? formatPrice(price) : price}
       </div>}
     </div>
