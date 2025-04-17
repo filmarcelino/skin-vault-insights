@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -15,13 +14,12 @@ import { Edit, User, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
 
-// Schema para validação dos dados do perfil
 const profileSchema = z.object({
-  username: z.string().min(3, 'O nome de usuário precisa ter pelo menos 3 caracteres'),
-  full_name: z.string().min(3, 'O nome completo é obrigatório'),
+  username: z.string().min(3, 'Username must have at least 3 characters'),
+  full_name: z.string().min(3, 'Full name is required'),
   city: z.string().optional(),
   country: z.string().optional(),
-  preferred_currency: z.string(), // Mantemos como string para compatibilidade
+  preferred_currency: z.string(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -32,7 +30,6 @@ const Profile = () => {
   const { toast } = useToast();
   const { currency, setCurrency } = useCurrency();
 
-  // Inicializar o formulário com os dados do perfil
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -44,10 +41,8 @@ const Profile = () => {
     },
   });
 
-  // Função para atualizar o perfil
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      // Como o AuthContext espera uma string para preferred_currency, não precisamos converter
       const { error, data: updatedProfile } = await updateProfile({
         username: data.username,
         full_name: data.full_name,
@@ -58,17 +53,16 @@ const Profile = () => {
       
       if (error) {
         toast({
-          title: "Erro ao atualizar perfil",
+          title: "Error updating profile",
           description: error.message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Perfil atualizado",
-          description: "Suas informações foram salvas com sucesso.",
+          title: "Profile updated",
+          description: "Your information was saved successfully.",
         });
         
-        // Atualizar a moeda no contexto se foi alterada
         if (data.preferred_currency !== currency.code) {
           const newCurrency = CURRENCIES.find(c => c.code === data.preferred_currency);
           if (newCurrency) {
@@ -79,10 +73,10 @@ const Profile = () => {
         setIsEditing(false);
       }
     } catch (error) {
-      console.error("Erro ao atualizar perfil:", error);
+      console.error("Error updating profile:", error);
       toast({
-        title: "Erro inesperado",
-        description: "Não foi possível atualizar seu perfil. Tente novamente.",
+        title: "Unexpected error",
+        description: "Could not update your profile. Please try again.",
         variant: "destructive",
       });
     }
@@ -107,20 +101,20 @@ const Profile = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 p-4">
-      <h1 className="text-2xl font-bold">Perfil do Usuário</h1>
+      <h1 className="text-2xl font-bold">User Profile</h1>
       
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="grid grid-cols-2 md:w-[400px]">
-          <TabsTrigger value="info">Informações Pessoais</TabsTrigger>
-          <TabsTrigger value="settings">Configurações</TabsTrigger>
+          <TabsTrigger value="info">Personal Information</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="info" className="space-y-4 mt-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="space-y-1">
-                <CardTitle>Detalhes do Perfil</CardTitle>
-                <CardDescription>Gerencie suas informações pessoais</CardDescription>
+                <CardTitle>Profile Details</CardTitle>
+                <CardDescription>Manage your personal information</CardDescription>
               </div>
               <Avatar className="h-16 w-16">
                 {profile.avatar_url ? (
@@ -141,7 +135,7 @@ const Profile = () => {
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nome de Usuário</FormLabel>
+                        <FormLabel>Username</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -159,7 +153,7 @@ const Profile = () => {
                     name="full_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nome Completo</FormLabel>
+                        <FormLabel>Full Name</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -178,7 +172,7 @@ const Profile = () => {
                       name="city"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Cidade</FormLabel>
+                          <FormLabel>City</FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
@@ -196,7 +190,7 @@ const Profile = () => {
                       name="country"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>País</FormLabel>
+                          <FormLabel>Country</FormLabel>
                           <FormControl>
                             <Input 
                               {...field} 
@@ -215,7 +209,7 @@ const Profile = () => {
                     name="preferred_currency"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Moeda Preferida</FormLabel>
+                        <FormLabel>Preferred Currency</FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
                           defaultValue={field.value}
@@ -223,7 +217,7 @@ const Profile = () => {
                         >
                           <FormControl>
                             <SelectTrigger className={isEditing ? "" : "bg-muted"}>
-                              <SelectValue placeholder="Selecione uma moeda" />
+                              <SelectValue placeholder="Select a currency" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -235,7 +229,7 @@ const Profile = () => {
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Esta moeda será usada para exibir os valores em todo o aplicativo.
+                          This currency will be used to display values throughout the app.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -249,7 +243,7 @@ const Profile = () => {
                         variant="outline"
                         onClick={() => setIsEditing(false)}
                       >
-                        Cancelar
+                        Cancel
                       </Button>
                       <Button 
                         type="submit"
@@ -260,7 +254,7 @@ const Profile = () => {
                         ) : (
                           <Save className="mr-2 h-4 w-4" />
                         )}
-                        Salvar Alterações
+                        Save Changes
                       </Button>
                     </div>
                   )}
@@ -276,7 +270,7 @@ const Profile = () => {
                   onClick={() => setIsEditing(true)}
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  Editar Perfil
+                  Edit Profile
                 </Button>
               </CardFooter>
             )}
@@ -284,8 +278,8 @@ const Profile = () => {
           
           <Card>
             <CardHeader>
-              <CardTitle>E-mail</CardTitle>
-              <CardDescription>Seu endereço de e-mail registrado</CardDescription>
+              <CardTitle>Email</CardTitle>
+              <CardDescription>Your registered email address</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-2">
@@ -301,19 +295,19 @@ const Profile = () => {
         <TabsContent value="settings" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Configurações da Conta</CardTitle>
-              <CardDescription>Gerencie suas preferências de conta</CardDescription>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>Manage your account preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
-                <h3 className="font-medium">Membro desde</h3>
+                <h3 className="font-medium">Member since</h3>
                 <p className="text-sm text-muted-foreground">
                   {new Date(profile.created_at).toLocaleDateString()}
                 </p>
               </div>
               
               <div className="space-y-1">
-                <h3 className="font-medium">Última atualização</h3>
+                <h3 className="font-medium">Last update</h3>
                 <p className="text-sm text-muted-foreground">
                   {new Date(profile.updated_at).toLocaleDateString()}
                 </p>

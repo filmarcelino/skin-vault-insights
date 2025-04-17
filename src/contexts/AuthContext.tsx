@@ -10,7 +10,7 @@ export interface UserProfile {
   email: string;
   city?: string;
   country?: string;
-  preferred_currency: string; // Keep this as string to match database
+  preferred_currency: string; // This is a string type to match database
   avatar_url?: string;
   created_at: string;
   updated_at: string;
@@ -32,7 +32,7 @@ interface AuthContextType {
     full_name: string;
     city?: string;
     country?: string;
-    preferred_currency: string; // Updated to string
+    preferred_currency: string; // Using string to match database
   }) => Promise<{
     error: Error | null;
     data: Session | null;
@@ -156,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     full_name: string;
     city?: string;
     country?: string;
-    preferred_currency: string; // Updated to string
+    preferred_currency: string; // Using string to match database
   }) => {
     setIsLoading(true);
     
