@@ -10,6 +10,7 @@ import { SkinDetailModal } from '@/components/skins/skin-detail-modal'
 import { useNavigate } from 'react-router-dom'
 import { InventoryCard } from '@/components/dashboard/inventory-card'
 import { Skin } from '@/types/skin'
+import { useToast } from '@/hooks/use-toast'
 
 export const SkinImageAnalyzer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -20,6 +21,7 @@ export const SkinImageAnalyzer: React.FC = () => {
   const addSkinMutation = useAddSkin()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
+  const { toast } = useToast()
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -59,9 +61,21 @@ export const SkinImageAnalyzer: React.FC = () => {
       }
     }, {
       onSuccess: () => {
+        toast({
+          title: "Skin adicionada",
+          description: `${skinData.weapon} | ${skinData.name} foi adicionada ao seu inventário`
+        })
         setDetailModalOpen(false)
         navigate("/inventory")
       },
+      onError: (error) => {
+        toast({
+          title: "Erro",
+          description: "Não foi possível adicionar a skin ao inventário",
+          variant: "destructive"
+        })
+        console.error("Erro ao adicionar skin:", error)
+      }
     })
   }
 

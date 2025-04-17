@@ -47,12 +47,12 @@ export const useSkinImageAnalysis = () => {
         floatValue: data.floatValue ? parseFloat(data.floatValue) : undefined,
       }
       
-      // Buscar skins correspondentes baseado no nome da arma e nome da skin
+      // Buscar skins correspondentes usando o termo de pesquisa formatado
       let foundSkins: Skin[] = []
       
       if (data.weaponName && data.skinName) {
         console.log("Buscando skins correspondentes...")
-        // Usar o nome da arma + nome da skin como termo de pesquisa
+        // Formatar o termo de pesquisa corretamente para o site
         const searchTerm = `${data.weaponName} ${data.skinName}`.trim()
         foundSkins = await searchSkins(searchTerm)
         console.log("Skins encontradas:", foundSkins)

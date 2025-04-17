@@ -58,7 +58,12 @@ serve(async (req) => {
             6. Preço estimado em USD (estimatedPrice)
             7. Uma descrição breve da skin
             
-            Formate sua resposta em JSON com esses campos específicos. Seja o mais preciso possível na identificação dos nomes corretos tanto da arma quanto da skin, para facilitar a pesquisa no banco de dados. Se não conseguir identificar algum campo com certeza, deixe-o vazio.`
+            Lembre-se: seja extremamente preciso com o nome da arma e da skin, pois será usado para pesquisar em um banco de dados.
+            Se for uma "AK-47", escreva exatamente assim; se for uma "M4A4", não abrevie para "M4".
+            Da mesma forma, use o nome exato da skin conforme é conhecido no jogo. Por exemplo,
+            "Asiimov" em vez de "Asimov", "Dragon Lore" em vez de "DragonLore".
+            
+            Formate sua resposta em JSON com esses campos específicos. Se não conseguir identificar algum campo com certeza, deixe-o vazio.`
           },
           {
             role: "user",
