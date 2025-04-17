@@ -1,6 +1,23 @@
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z" fill="#F97316" />
-  <path d="M40 30 L60 30 L70 50 L60 70 L40 70 L30 50 Z" fill="#1A1F2C" />
-  <text x="50%" y="53%" dominant-baseline="middle" text-anchor="middle" fill="#fff" font-family="Arial" font-weight="bold" font-size="24">CS</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300">
+  <!-- Círculo externo metálico -->
+  <circle cx="150" cy="150" r="70" fill="none" stroke="#A0A0A0" stroke-width="10" />
+  
+  <!-- Círculo interno metálico -->
+  <circle cx="150" cy="150" r="50" fill="none" stroke="#A0A0A0" stroke-width="15" />
+  
+  <!-- Letra C metálica -->
+  <path d="M150 100 A50 50 0 0 1 150 200 A50 50 0 0 1 150 100" fill="none" stroke="#B0B0B0" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="157, 314" />
+  
+  <!-- Hastes cruzadas -->
+  <line x1="85" y1="85" x2="105" y2="105" stroke="#A0A0A0" stroke-width="12" stroke-linecap="round" />
+  <line x1="85" y1="215" x2="105" y2="195" stroke="#A0A0A0" stroke-width="12" stroke-linecap="round" />
+  <line x1="215" y1="85" x2="195" y2="105" stroke="#A0A0A0" stroke-width="12" stroke-linecap="round" />
+  <line x1="215" y1="215" x2="195" y2="195" stroke="#A0A0A0" stroke-width="12" stroke-linecap="round" />
+  
+  <!-- Texto CS SKIN -->
+  <text x="250" y="160" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="48" fill="#B0B0B0">CS SKIN</text>
+  
+  <!-- Texto VAULT em roxo -->
+  <text x="250" y="210" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="48" fill="#8B5CF6">VAULT</text>
 </svg>

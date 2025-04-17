@@ -21,7 +21,7 @@ export const Sidebar: FC = () => {
   return (
     <div className="hidden md:flex flex-col h-screen w-16 border-r border-border/50 bg-sidebar-background fixed left-0 top-0">
       <div className="flex items-center justify-center h-16 border-b border-border/50">
-        <Logo size="sm" />
+        <Logo size="sm" variant="compact" />
       </div>
       
       <div className="flex flex-col items-center gap-6 py-6">

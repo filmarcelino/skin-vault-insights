@@ -36,12 +36,6 @@ export const Header: FC = () => {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
           <Logo size="sm" />
-          <div className="flex flex-col items-start">
-            <div className="text-xl font-bold text-foreground">
-              <span className="cs-gradient-text">CS</span> Skin Vault
-            </div>
-            <div className="text-xs text-muted-foreground">Clutch Studio's</div>
-          </div>
         </div>
         
         <div className="flex items-center gap-4">
