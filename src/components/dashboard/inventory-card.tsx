@@ -2,7 +2,7 @@
 import { FC } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Clock, Trash2 } from "lucide-react";
-import { getRarityColor } from "@/utils/skin-utils";
+import { getRarityColor, getRarityColorClass } from "@/utils/skin-utils";
 import { Button } from "@/components/ui/button";
 
 interface InventoryCardProps {
@@ -42,21 +42,21 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     e.currentTarget.src = '/placeholder.svg';
   };
 
-  // Função para obter a cor de fundo baseada na raridade - agora mais sólida
+  // Função para obter a cor de fundo baseada na raridade - mais sólida
   const getBackgroundStyle = () => {
     if (!rarity) return {};
     
     const color = getRarityColor(rarity);
     return {
-      backgroundColor: `${color}40`, // Aumentando a opacidade para 25% (40 em hex)
-      borderColor: `${color}90`, // Aumentando a opacidade para 56% (90 em hex)
+      backgroundColor: `${color}40`, // Opacidade 25%
+      borderColor: `${color}`, // Borda sólida
       ...style
     };
   };
 
   return (
     <div 
-      className={`group relative overflow-hidden rounded-lg border transition-all duration-300 hover:scale-[1.02] ${className} cursor-pointer`}
+      className={`group relative overflow-hidden rounded-lg border border-2 transition-all duration-300 hover:scale-[1.02] ${className} cursor-pointer`}
       onClick={onClick}
       style={getBackgroundStyle()}
     >

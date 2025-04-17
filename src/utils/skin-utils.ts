@@ -8,29 +8,38 @@ export const getRarityColorClass = (rarity?: string) => {
   switch (rarity.toLowerCase()) {
     case "consumer grade":
     case "white":
+    case "comum":
       return "bg-[rgba(176,195,217,0.2)] border-[#B0C3D9]";
     case "industrial grade":
     case "light blue":
+    case "pouco comum":
       return "bg-[rgba(94,152,217,0.2)] border-[#5E98D9]";
     case "mil-spec grade":
     case "blue":
+    case "militar":
       return "bg-[rgba(75,105,255,0.2)] border-[#4B69FF]";
     case "restricted":
     case "purple":
+    case "restrita":
       return "bg-[rgba(136,71,255,0.2)] border-[#8847FF]";
     case "classified":
     case "pink":
+    case "classificada":
       return "bg-[rgba(211,44,230,0.2)] border-[#D32CE6]";
     case "covert":
     case "red":
+    case "secreta":
+    case "rara":
       return "bg-[rgba(235,75,75,0.2)] border-[#EB4B4B]";
     case "contraband":
     case "gold":
+    case "contrabando":
       return "bg-[rgba(255,215,0,0.2)] border-[#FFD700]";
     case "extraordinary":
     case "rare special":
     case "knife":
     case "glove":
+    case "especial rara":
       return "bg-[rgba(255,249,155,0.2)] border-[#FFF99B]";
     default:
       return "";
@@ -44,29 +53,38 @@ export const getRarityColor = (rarity?: string) => {
   switch (rarity.toLowerCase()) {
     case "consumer grade":
     case "white":
+    case "comum":
       return "#B0C3D9";
     case "industrial grade":
     case "light blue":
+    case "pouco comum":
       return "#5E98D9";
     case "mil-spec grade":
     case "blue":
+    case "militar":
       return "#4B69FF";
     case "restricted":
     case "purple":
+    case "restrita":
       return "#8847FF";
     case "classified":
     case "pink":
+    case "classificada":
       return "#D32CE6";
     case "covert":
     case "red":
+    case "secreta":
+    case "rara":
       return "#EB4B4B";
     case "contraband":
     case "gold":
+    case "contrabando":
       return "#FFD700";
     case "extraordinary":
     case "rare special":
     case "knife":
     case "glove":
+    case "especial rara":
       return "#FFF99B";
     default:
       return "#888888";

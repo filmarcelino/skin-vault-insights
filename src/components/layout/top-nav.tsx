@@ -14,7 +14,7 @@ export const TopNav: FC = () => {
   const getPageName = (path: string) => {
     switch (path) {
       case "/":
-        return "Início";
+        return "Dashboard";
       case "/search":
         return "Search Skins";
       case "/add":
@@ -51,10 +51,10 @@ export const TopNav: FC = () => {
             <Link 
               to="/" 
               className={getLinkClass("/")}
-              title="Início"
+              title="Dashboard"
             >
               <Home className="h-4 w-4" />
-              <span className="text-sm">Início</span>
+              <span className="text-sm">Dashboard</span>
             </Link>
             <Link 
               to="/search" 

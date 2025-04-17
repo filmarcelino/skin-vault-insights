@@ -48,10 +48,10 @@ export const Sidebar: FC<SidebarProps> = ({ collapsed }) => {
           <NavLink
             to="/"
             className={({ isActive }) => getLinkClass(isActive)}
-            title="Início"
+            title="Dashboard"
           >
             <Home className="h-5 w-5" />
-            <span className={getNameClass()}>Início</span>
+            <span className={getNameClass()}>Dashboard</span>
           </NavLink>
           
           <NavLink
