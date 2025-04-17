@@ -3,6 +3,7 @@ import { FC, ReactNode } from "react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { MobileNav } from "@/components/ui/mobile-nav";
 
 interface LayoutProps {
   children: ReactNode;
@@ -15,8 +16,11 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
         <Header />
         <div className="flex-1 flex">
           <Sidebar />
-          <main className="flex-1 p-6 overflow-auto">{children}</main>
+          <main className="flex-1 p-6 pl-6 md:pl-24 overflow-auto pb-20 md:pb-6">
+            {children}
+          </main>
         </div>
+        <MobileNav />
       </div>
     </CurrencyProvider>
   );

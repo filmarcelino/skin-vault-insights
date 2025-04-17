@@ -33,13 +33,13 @@ export const Header: FC = () => {
   const displayName = profile?.username || profile?.full_name || user?.email || "Usuário";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Logo size="sm" variant="text-only" />
+    <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-16 items-center px-4 md:px-6">
+        <div className="flex items-center gap-2 md:ml-16">
+          <Logo size="sm" variant="text-only" className="hidden md:block" />
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-4">
           <CurrencySelector />
           
           <Link 
@@ -61,7 +61,7 @@ export const Header: FC = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-56 bg-popover border-border" align="end" forceMount>
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{displayName}</p>

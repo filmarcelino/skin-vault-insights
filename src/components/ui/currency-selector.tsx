@@ -21,7 +21,7 @@ export const CurrencySelector: React.FC = () => {
           <span>{currency.code}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="bg-popover border-border">
+      <DropdownMenuContent align="end" className="bg-popover border-border z-50">
         {CURRENCIES.map((curr) => (
           <DropdownMenuItem 
             key={curr.code}

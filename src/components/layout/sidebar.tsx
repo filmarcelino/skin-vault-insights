@@ -1,3 +1,4 @@
+
 import { FC } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Plus, LayoutGrid, LineChart, Settings, Search } from "lucide-react";
@@ -17,9 +18,9 @@ export const Sidebar: FC = () => {
   };
 
   return (
-    <div className="hidden md:flex flex-col h-screen w-16 border-r border-border/50 bg-sidebar-background fixed left-0 top-0">
+    <div className="hidden md:flex flex-col h-screen w-16 border-r border-border/50 bg-sidebar-background fixed left-0 top-0 z-30">
       <div className="flex items-center justify-center h-16 border-b border-border/50">
-        {/* Removed Logo component */}
+        {/* Logo space */}
       </div>
       
       <div className="flex flex-col items-center gap-6 py-6">
