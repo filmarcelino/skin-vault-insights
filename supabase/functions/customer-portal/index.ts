@@ -22,7 +22,16 @@ serve(async (req) => {
     logStep("Function started");
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!stripeKey) {
+      logStep("Missing Stripe key");
+      return new Response(JSON.stringify({ 
+        error: "Configuração de pagamento não disponível no momento" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
+    
     logStep("Stripe key verified");
 
     // Initialize Supabase client
@@ -33,35 +42,76 @@ serve(async (req) => {
 
     // Get user token from request headers
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader) {
+      logStep("Missing authorization header");
+      return new Response(JSON.stringify({ 
+        error: "Autenticação necessária" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
     
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    
+    if (userError) {
+      logStep("Authentication error", { message: userError.message });
+      return new Response(JSON.stringify({ 
+        error: "Erro de autenticação" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
     
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      logStep("No user email found");
+      return new Response(JSON.stringify({ 
+        error: "Email do usuário não disponível" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
+    
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     try {
       // Initialize Stripe
       const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
       
-      // Check if user exists as a customer
-      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      // Check if user exists as a customer with timeout
+      const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
+      const customers = await Promise.race([
+        customersPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao buscar cliente")), 15000))
+      ]) as Stripe.ApiList<Stripe.Customer>;
       
       if (customers.data.length === 0) {
-        throw new Error("No Stripe customer found for this user");
+        logStep("No customer found");
+        return new Response(JSON.stringify({ 
+          error: "Nenhuma assinatura encontrada para este usuário" 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
       }
 
       const customerId = customers.data[0].id;
       logStep("Found Stripe customer", { customerId });
 
-      // Create Stripe customer portal session
-      const session = await stripe.billingPortal.sessions.create({
+      // Create Stripe customer portal session with timeout
+      const sessionPromise = stripe.billingPortal.sessions.create({
         customer: customerId,
         return_url: `${req.headers.get("origin")}/`,
       });
+      
+      const session = await Promise.race([
+        sessionPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao criar portal")), 15000))
+      ]) as Stripe.BillingPortal.Session;
       
       logStep("Created customer portal session", { session_id: session.id });
       

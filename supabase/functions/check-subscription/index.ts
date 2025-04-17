@@ -34,22 +34,56 @@ serve(async (req) => {
 
     // Get user token from request headers
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader) {
+      logStep("Missing authorization header");
+      return new Response(JSON.stringify({ 
+        error: "Autenticação necessária", 
+        subscribed: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Retornamos 200 mesmo com erro para evitar erros Non-2xx
+      });
+    }
     
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    
+    if (userError) {
+      logStep("Authentication error", { message: userError.message });
+      return new Response(JSON.stringify({ 
+        error: "Erro de autenticação", 
+        subscribed: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Retornamos 200 mesmo com erro para evitar erros Non-2xx
+      });
+    }
     
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      logStep("No user email found");
+      return new Response(JSON.stringify({ 
+        error: "Email do usuário não disponível", 
+        subscribed: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Retornamos 200 mesmo com erro para evitar erros Non-2xx
+      });
+    }
+    
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Initialize Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     
     try {
-      // Check if user exists as a customer
-      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      // Check if user exists as a customer with a timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Tempo limite excedido ao buscar cliente Stripe")), 15000);
+      });
+      
+      const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
+      const customers = await Promise.race([customersPromise, timeoutPromise]) as Stripe.ApiList<Stripe.Customer>;
       
       if (customers.data.length === 0) {
         logStep("No customer found for user");
@@ -72,12 +106,17 @@ serve(async (req) => {
       const customerId = customers.data[0].id;
       logStep("Found Stripe customer", { customerId });
 
-      // Check for active subscriptions
-      const subscriptions = await stripe.subscriptions.list({
+      // Check for active subscriptions with timeout
+      const subscriptionsPromise = stripe.subscriptions.list({
         customer: customerId,
         status: "active",
         limit: 1,
       });
+      
+      const subscriptions = await Promise.race([
+        subscriptionsPromise, 
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao buscar assinaturas")), 15000))
+      ]) as Stripe.ApiList<Stripe.Subscription>;
 
       const hasActiveSubscription = subscriptions.data.length > 0;
       let subscriptionEndDate = null;

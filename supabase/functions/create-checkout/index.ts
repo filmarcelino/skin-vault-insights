@@ -35,8 +35,15 @@ serve(async (req) => {
     
     // Get Stripe key from environment
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
+    if (!stripeKey) {
+      logStep("Missing Stripe key");
+      return new Response(JSON.stringify({ 
+        error: "Configuração de pagamento não disponível no momento" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
     
     // Initialize Supabase client with service role key
     const supabaseClient = createClient(
@@ -46,24 +53,54 @@ serve(async (req) => {
     
     // Get user token from request headers
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
+    if (!authHeader) {
+      logStep("Missing authorization header");
+      return new Response(JSON.stringify({ 
+        error: "Autenticação necessária" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
     
     // Authenticate user
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    
+    if (userError) {
+      logStep("Authentication error", { message: userError.message });
+      return new Response(JSON.stringify({ 
+        error: "Erro de autenticação" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
     
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      logStep("No user email found");
+      return new Response(JSON.stringify({ 
+        error: "Email do usuário não disponível" 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
+    
     logStep("User authenticated", { userId: user.id, email: user.email });
     
     try {
-      // Initialize Stripe
+      // Initialize Stripe with timeout handling
       const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
       
-      // Check if user already exists as a customer
-      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      // Check if user already exists as a customer with timeout
+      const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
+      const customers = await Promise.race([
+        customersPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao buscar cliente")), 15000))
+      ]) as Stripe.ApiList<Stripe.Customer>;
+      
       let customerId: string | undefined;
       
       if (customers.data.length > 0) {
@@ -71,11 +108,16 @@ serve(async (req) => {
         logStep("Found existing customer", { customerId });
         
         // Check if customer already has an active subscription
-        const subscriptions = await stripe.subscriptions.list({
+        const subscriptionsPromise = stripe.subscriptions.list({
           customer: customerId,
           status: "active",
           limit: 1,
         });
+        
+        const subscriptions = await Promise.race([
+          subscriptionsPromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao verificar assinaturas")), 15000))
+        ]) as Stripe.ApiList<Stripe.Subscription>;
         
         if (subscriptions.data.length > 0) {
           logStep("Customer already has an active subscription");
@@ -132,7 +174,7 @@ serve(async (req) => {
       }
       
       // Create a Stripe Checkout session for a new subscription
-      const session = await stripe.checkout.sessions.create({
+      const sessionPromise = stripe.checkout.sessions.create({
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
         mode: "subscription",
@@ -140,6 +182,11 @@ serve(async (req) => {
         success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get("origin")}`,
       });
+      
+      const session = await Promise.race([
+        sessionPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao criar checkout")), 15000))
+      ]) as Stripe.Checkout.Session;
       
       logStep("Checkout session created", { sessionId: session.id, url: session.url });
       

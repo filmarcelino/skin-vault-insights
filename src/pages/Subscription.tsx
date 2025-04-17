@@ -18,7 +18,7 @@ const Subscription = () => {
       
       <div className="mt-8 max-w-3xl mx-auto">
         <h2 className="text-xl font-semibold mb-4 text-center">Informações para testes</h2>
-        <div className="bg-muted/30 p-4 rounded-lg border border-border">
+        <div className="bg-muted/30 p-4 rounded-lg border border-border backdrop-blur-sm">
           <h3 className="font-medium mb-2 text-primary">Dados de cartão para teste:</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
