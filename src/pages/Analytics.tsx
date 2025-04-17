@@ -8,8 +8,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { getRarityColor, getRarityColorClass } from "@/utils/skin-utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Interface para os dados de estatísticas do inventário
+// Interface for inventory statistics data
 interface InventoryStats {
   totalValue: number;
   profitLoss: number;
@@ -21,7 +23,7 @@ interface InventoryStats {
   recentTransactions: Array<{id: string, name: string, type: string, value: number, date: string}>;
 }
 
-// Componente para exibir um card de estatística
+// Component for displaying a statistic card
 const StatCard: React.FC<{
   title: string;
   value: number | undefined;
@@ -57,7 +59,7 @@ const StatCard: React.FC<{
   );
 };
 
-// Componente para exibir o resumo de lucro/prejuízo
+// Component for displaying profit/loss summary
 const ProfitLossSummary: React.FC<{
   profitLoss: number | undefined;
   loading: boolean;
@@ -98,7 +100,7 @@ const ProfitLossSummary: React.FC<{
   );
 };
 
-// Componente para mostrar distribuição de raridade
+// Component for showing rarity distribution
 const RarityDistribution: React.FC<{
   rarities: Array<{name: string, count: number}> | undefined;
   loading: boolean;
@@ -107,7 +109,7 @@ const RarityDistribution: React.FC<{
     return (
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle className="text-lg">Distribuição de Raridades</CardTitle>
+          <CardTitle className="text-lg">Rarity Distribution</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <Skeleton className="h-20 w-full" />
@@ -119,7 +121,7 @@ const RarityDistribution: React.FC<{
   return (
     <Card className="col-span-full">
       <CardHeader>
-        <CardTitle className="text-lg">Distribuição de Raridades</CardTitle>
+        <CardTitle className="text-lg">Rarity Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -144,7 +146,7 @@ const RarityDistribution: React.FC<{
   );
 };
 
-// Componente para transações recentes
+// Component for recent transactions
 const RecentTransactions: React.FC<{
   transactions: Array<{id: string, name: string, type: string, value: number, date: string}> | undefined;
   loading: boolean;
@@ -155,7 +157,7 @@ const RecentTransactions: React.FC<{
     return (
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle className="text-lg">Transações Recentes</CardTitle>
+          <CardTitle className="text-lg">Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -171,7 +173,7 @@ const RecentTransactions: React.FC<{
   return (
     <Card className="col-span-full">
       <CardHeader>
-        <CardTitle className="text-lg">Transações Recentes</CardTitle>
+        <CardTitle className="text-lg">Recent Transactions</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -181,7 +183,7 @@ const RecentTransactions: React.FC<{
                 <div>
                   <p className="font-medium">{tx.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {tx.type === 'sell' ? 'Venda' : tx.type === 'add' ? 'Compra' : tx.type}
+                    {tx.type === 'sell' ? 'Sell' : tx.type === 'add' ? 'Buy' : tx.type}
                     {' • '}
                     {new Date(tx.date).toLocaleDateString()}
                   </p>
@@ -192,7 +194,7 @@ const RecentTransactions: React.FC<{
               </div>
             ))
           ) : (
-            <p className="text-center text-muted-foreground py-4">Nenhuma transação recente</p>
+            <p className="text-center text-muted-foreground py-4">No recent transactions</p>
           )}
         </div>
       </CardContent>
@@ -202,36 +204,126 @@ const RecentTransactions: React.FC<{
 
 const Analytics = () => {
   const { formatPrice, currency } = useCurrency();
+  const { user } = useAuth();
   
-  // Buscar dados reais do inventário
-  const { data: inventoryStats, isLoading } = useQuery<InventoryStats>({
-    queryKey: ['inventoryStats', currency.code],
+  // Fetch real inventory data from Supabase
+  const { data: inventoryStats, isLoading } = useQuery({
+    queryKey: ['inventoryStats', currency.code, user?.id],
     queryFn: async () => {
-      // Simular requisição para API real que obtém estatísticas do inventário
-      // Em uma implementação real, isto seria uma chamada para o backend
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simular delay de rede
-      
-      // Retornar dados de amostra que seriam obtidos da API
-      return {
-        totalValue: 8750.42,
-        profitLoss: 1278.65,
-        itemCount: 32,
-        averageItemValue: 273.45,
-        valueChange30d: 345.78,
-        valueChangePercent: 3.8,
-        topRarities: [
-          { name: "Covert", count: 3 },
-          { name: "Classified", count: 7 },
-          { name: "Restricted", count: 12 },
-          { name: "Mil-Spec Grade", count: 10 }
-        ],
-        recentTransactions: [
-          { id: "tx1", name: "AWP | Asiimov", type: "sell", value: 120.50, date: "2025-04-10T15:30:00Z" },
-          { id: "tx2", name: "AK-47 | Redline", type: "add", value: 45.75, date: "2025-04-08T12:15:00Z" },
-          { id: "tx3", name: "M4A4 | Neo-Noir", type: "sell", value: 32.25, date: "2025-04-05T09:45:00Z" }
-        ]
-      };
-    }
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      try {
+        console.log('Fetching inventory data for analytics...');
+        
+        // 1. Get total items and values
+        const { data: inventoryItems, error: inventoryError } = await supabase
+          .from('inventory')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_in_user_inventory', true);
+        
+        if (inventoryError) {
+          console.error('Error fetching inventory:', inventoryError);
+          throw new Error(inventoryError.message);
+        }
+        
+        console.log(`Found ${inventoryItems.length} inventory items`);
+        
+        // 2. Get recent transactions
+        const { data: transactionItems, error: transactionError } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false })
+          .limit(5);
+          
+        if (transactionError) {
+          console.error('Error fetching transactions:', transactionError);
+          throw new Error(transactionError.message);
+        }
+        
+        console.log(`Found ${transactionItems?.length || 0} transactions`);
+        
+        // Calculate inventory statistics
+        const totalValue = inventoryItems.reduce((sum, item) => {
+          const value = item.current_price || item.price || 0;
+          return sum + value;
+        }, 0);
+        
+        // Calculate profit/loss (difference between current values and purchase prices)
+        const profitLoss = inventoryItems.reduce((sum, item) => {
+          const currentValue = item.current_price || item.price || 0;
+          const purchaseValue = item.purchase_price || currentValue;
+          return sum + (currentValue - purchaseValue);
+        }, 0);
+        
+        // Calculate average item value
+        const averageItemValue = inventoryItems.length > 0 
+          ? totalValue / inventoryItems.length 
+          : 0;
+        
+        // Count rarities
+        const rarityCounts: {[key: string]: number} = {};
+        inventoryItems.forEach(item => {
+          if (item.rarity) {
+            rarityCounts[item.rarity] = (rarityCounts[item.rarity] || 0) + 1;
+          }
+        });
+        
+        const topRarities = Object.entries(rarityCounts)
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count);
+        
+        // Format transactions for display
+        const recentTransactions = transactionItems.map(tx => ({
+          id: tx.id,
+          name: `${tx.weapon_name || ''} | ${tx.skin_name || 'Unknown'}`,
+          type: tx.type,
+          value: tx.price || 0,
+          date: tx.date
+        }));
+        
+        // Simulate 30-day value change based on recent transactions
+        // This is a simple approximation - in a real app you'd have historical price data
+        const valueChange30d = transactionItems
+          .filter(tx => {
+            const txDate = new Date(tx.date);
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            return txDate > thirtyDaysAgo;
+          })
+          .reduce((sum, tx) => {
+            if (tx.type === 'sell') {
+              return sum + (tx.price || 0);
+            } else if (tx.type === 'add') {
+              return sum - (tx.price || 0);
+            }
+            return sum;
+          }, 0);
+        
+        const valueChangePercent = totalValue > 0 
+          ? (valueChange30d / totalValue) * 100
+          : 0;
+        
+        return {
+          totalValue,
+          profitLoss,
+          itemCount: inventoryItems.length,
+          averageItemValue,
+          valueChange30d,
+          valueChangePercent,
+          topRarities,
+          recentTransactions
+        };
+      } catch (error) {
+        console.error('Error calculating inventory stats:', error);
+        throw error;
+      }
+    },
+    retry: 1,
+    refetchOnWindowFocus: false
   });
 
   return (
@@ -240,18 +332,18 @@ const Analytics = () => {
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="trends">Tendências</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              title="Valor Total do Inventário"
+              title="Total Inventory Value"
               value={inventoryStats?.totalValue}
               icon={<DollarSign />}
               loading={isLoading}
-              iconColor="#4B69FF" // Azul - Mil-Spec
+              iconColor="#4B69FF" // Blue - Mil-Spec
               bgColorClass="bg-[rgba(75,105,255,0.05)]"
             />
             
@@ -261,40 +353,40 @@ const Analytics = () => {
             />
             
             <StatCard
-              title="Quantidade de Itens"
+              title="Item Count"
               value={inventoryStats?.itemCount}
               icon={<Package />}
               isCurrency={false}
               loading={isLoading}
-              iconColor="#8847FF" // Roxo - Restricted
+              iconColor="#8847FF" // Purple - Restricted
               bgColorClass="bg-[rgba(136,71,255,0.05)]"
             />
             
             <StatCard
-              title="Valor Médio por Item"
+              title="Average Item Value"
               value={inventoryStats?.averageItemValue}
               icon={<BarChart3 />}
               loading={isLoading}
-              iconColor="#D32CE6" // Rosa - Classified
+              iconColor="#D32CE6" // Pink - Classified
               bgColorClass="bg-[rgba(211,44,230,0.05)]"
             />
             
             <StatCard
-              title="Variação em 30 dias"
+              title="30 Day Change"
               value={inventoryStats?.valueChange30d}
               icon={<TrendingUp />}
               loading={isLoading}
-              iconColor="#EB4B4B" // Vermelho - Covert
+              iconColor="#EB4B4B" // Red - Covert
               bgColorClass="bg-[rgba(235,75,75,0.05)]"
             />
             
             <StatCard
-              title="Variação Percentual"
+              title="Percent Change"
               value={inventoryStats?.valueChangePercent}
               icon={<Percent />}
               isCurrency={false}
               loading={isLoading}
-              iconColor="#FFD700" // Dourado - Contraband
+              iconColor="#FFD700" // Gold - Contraband
               bgColorClass="bg-[rgba(255,215,0,0.05)]"
             />
           </div>
@@ -313,11 +405,11 @@ const Analytics = () => {
         <TabsContent value="trends" className="space-y-4">
           <Card className="col-span-4">
             <CardHeader>
-              <CardTitle className="text-lg">Histórico de Preços</CardTitle>
+              <CardTitle className="text-lg">Price History</CardTitle>
             </CardHeader>
             <CardContent className="h-[300px] flex items-center justify-center">
               <div className="text-muted-foreground">
-                Os gráficos de tendências estarão disponíveis em breve
+                Trend charts will be available soon
               </div>
             </CardContent>
           </Card>

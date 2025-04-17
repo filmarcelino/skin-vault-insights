@@ -4,7 +4,7 @@ import { InsightsCard } from "@/components/dashboard/insights-card";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
 import { InventoryListItem } from "@/components/dashboard/inventory-list-item";
 import { ActivityItem } from "@/components/dashboard/activity-item";
-import { ArrowUp, Boxes, DollarSign, ArrowDown, ArrowRightLeft, ShoppingCart } from "lucide-react";
+import { ArrowUp, Boxes, DollarSign, ArrowDown, ArrowRightLeft, ShoppingCart, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Search } from "@/components/ui/search";
 import { useSkins } from "@/hooks/use-skins";
@@ -24,6 +24,11 @@ import {
 } from "@/services/inventory-service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface IndexProps {
   activeTab?: "inventory" | "search";
@@ -49,8 +54,10 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, session } = useAuth();
   
   const { data: skins, isLoading: isSkinsLoading, error: skinsError } = useSkins({
     search: searchQuery.length > 2 ? searchQuery : undefined,
@@ -80,6 +87,32 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       setIsLoading(false);
     }
   };
+
+  // Check subscription status
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!session?.access_token) return;
+
+      try {
+        const { data, error } = await supabase.functions.invoke('check-subscription', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        });
+
+        if (error) {
+          console.error("Error checking subscription:", error);
+          return;
+        }
+
+        setIsSubscribed(data?.subscribed || false);
+      } catch (err) {
+        console.error("Failed to check subscription status:", err);
+      }
+    };
+
+    checkSubscription();
+  }, [session]);
 
   useEffect(() => {
     refreshUserData();
@@ -217,6 +250,33 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     }
   };
 
+  // Premium CTA component
+  const PremiumCTA = () => {
+    if (isSubscribed) return null;
+
+    return (
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 backdrop-blur-sm my-8 animate-fade-in" style={{ animationDelay: "0.4s" }}>
+        <CardContent className="flex flex-col md:flex-row items-center justify-between p-6">
+          <div className="space-y-2 mb-4 md:mb-0">
+            <h3 className="flex items-center text-lg font-bold">
+              <Crown className="h-5 w-5 mr-2 text-primary" />
+              Upgrade to CS Skin Vault Premium
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Get unlimited skins, advanced analytics, and priority support. Start with a 3-day free trial.
+            </p>
+          </div>
+          <Button 
+            onClick={() => navigate('/subscription')}
+            className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+          >
+            Get Premium
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <>
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
@@ -245,6 +305,9 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
           Error loading skin data. Please try again later.
         </div>
       )}
+
+      {/* Add Premium CTA */}
+      <PremiumCTA />
 
       <div className="p-2 mb-4 bg-gray-100 dark:bg-gray-800 text-xs overflow-x-auto">
         <p>{debugInfo}</p>

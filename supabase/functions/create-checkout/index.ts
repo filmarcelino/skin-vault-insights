@@ -38,7 +38,7 @@ serve(async (req) => {
     if (!stripeKey) {
       logStep("Missing Stripe key");
       return new Response(JSON.stringify({ 
-        error: "Configuração de pagamento não disponível no momento" 
+        error: "Payment configuration unavailable at the moment" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -56,7 +56,7 @@ serve(async (req) => {
     if (!authHeader) {
       logStep("Missing authorization header");
       return new Response(JSON.stringify({ 
-        error: "Autenticação necessária" 
+        error: "Authentication required" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -70,7 +70,7 @@ serve(async (req) => {
     if (userError) {
       logStep("Authentication error", { message: userError.message });
       return new Response(JSON.stringify({ 
-        error: "Erro de autenticação" 
+        error: "Authentication error" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -81,7 +81,7 @@ serve(async (req) => {
     if (!user?.email) {
       logStep("No user email found");
       return new Response(JSON.stringify({ 
-        error: "Email do usuário não disponível" 
+        error: "User email not available" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -98,7 +98,7 @@ serve(async (req) => {
       const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
       const customers = await Promise.race([
         customersPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao buscar cliente")), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while fetching customer")), 15000))
       ]) as Stripe.ApiList<Stripe.Customer>;
       
       let customerId: string | undefined;
@@ -116,7 +116,7 @@ serve(async (req) => {
         
         const subscriptions = await Promise.race([
           subscriptionsPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao verificar assinaturas")), 15000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while checking subscriptions")), 15000))
         ]) as Stripe.ApiList<Stripe.Subscription>;
         
         if (subscriptions.data.length > 0) {
@@ -147,10 +147,10 @@ serve(async (req) => {
               trial_period_days: 3,
             },
             product_data: {
-              name: "CS Skin Vault Premium (Anual)",
-              description: "Acesso premium ao CS Skin Vault com economia de 10%",
+              name: "CS Skin Vault Premium (Annual)",
+              description: "Premium access to CS Skin Vault with 10% savings",
             },
-            unit_amount: 4309, // $43.09 em centavos (equivalente a $3.99/mês com 10% de desconto)
+            unit_amount: 4309, // $43.09 in cents (equivalent to $3.99/month with 10% discount)
           },
           quantity: 1,
         }];
@@ -165,9 +165,9 @@ serve(async (req) => {
             },
             product_data: {
               name: "CS Skin Vault Premium",
-              description: "Acesso premium ao CS Skin Vault",
+              description: "Premium access to CS Skin Vault",
             },
-            unit_amount: 399, // $3.99 em centavos
+            unit_amount: 399, // $3.99 in cents
           },
           quantity: 1,
         }];
@@ -185,7 +185,7 @@ serve(async (req) => {
       
       const session = await Promise.race([
         sessionPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao criar checkout")), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while creating checkout")), 15000))
       ]) as Stripe.Checkout.Session;
       
       logStep("Checkout session created", { sessionId: session.id, url: session.url });
@@ -200,7 +200,7 @@ serve(async (req) => {
       logStep("STRIPE API ERROR", { message: errorMessage });
       
       return new Response(JSON.stringify({ 
-        error: "Falha ao criar sessão de pagamento. Por favor, tente novamente mais tarde." 
+        error: "Failed to create payment session. Please try again later." 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Still return 200 with error message inside

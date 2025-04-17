@@ -37,11 +37,11 @@ serve(async (req) => {
     if (!authHeader) {
       logStep("Missing authorization header");
       return new Response(JSON.stringify({ 
-        error: "Autenticação necessária", 
+        error: "Authentication required", 
         subscribed: false 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Retornamos 200 mesmo com erro para evitar erros Non-2xx
+        status: 200, // Return 200 even with error
       });
     }
     
@@ -51,11 +51,11 @@ serve(async (req) => {
     if (userError) {
       logStep("Authentication error", { message: userError.message });
       return new Response(JSON.stringify({ 
-        error: "Erro de autenticação", 
+        error: "Authentication error", 
         subscribed: false 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Retornamos 200 mesmo com erro para evitar erros Non-2xx
+        status: 200, // Return 200 even with error
       });
     }
     
@@ -63,11 +63,11 @@ serve(async (req) => {
     if (!user?.email) {
       logStep("No user email found");
       return new Response(JSON.stringify({ 
-        error: "Email do usuário não disponível", 
+        error: "User email not available", 
         subscribed: false 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Retornamos 200 mesmo com erro para evitar erros Non-2xx
+        status: 200, // Return 200 even with error
       });
     }
     
@@ -79,7 +79,7 @@ serve(async (req) => {
     try {
       // Check if user exists as a customer with a timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Tempo limite excedido ao buscar cliente Stripe")), 15000);
+        setTimeout(() => reject(new Error("Timeout exceeded while fetching Stripe customer")), 15000);
       });
       
       const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
@@ -115,7 +115,7 @@ serve(async (req) => {
       
       const subscriptions = await Promise.race([
         subscriptionsPromise, 
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao buscar assinaturas")), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while fetching subscriptions")), 15000))
       ]) as Stripe.ApiList<Stripe.Subscription>;
 
       const hasActiveSubscription = subscriptions.data.length > 0;
@@ -179,7 +179,7 @@ serve(async (req) => {
       // Just return a default response without trying to access Stripe
       return new Response(JSON.stringify({ 
         subscribed: false,
-        error: "Não foi possível verificar o status da assinatura. Tente novamente mais tarde."
+        error: "Could not verify subscription status. Please try again later."
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Still return 200 with error message inside

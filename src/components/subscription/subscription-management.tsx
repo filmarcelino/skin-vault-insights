@@ -44,7 +44,7 @@ export const SubscriptionManagement = () => {
           }
         }),
         new Promise<{data: null, error: Error}>((_, reject) => 
-          setTimeout(() => reject(new Error("Tempo limite excedido. Por favor, tente novamente.")), 15000)
+          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 15000)
         )
       ]) as any;
 
@@ -61,7 +61,7 @@ export const SubscriptionManagement = () => {
         
         if (showToast) {
           toast({
-            title: "Aviso",
+            title: "Notice",
             description: data.error,
             variant: "default"
           });
@@ -79,17 +79,17 @@ export const SubscriptionManagement = () => {
       // Reset retry count on success
       setRetryCount(0);
     } catch (err) {
-      console.error('Erro ao verificar assinatura:', err);
+      console.error('Error checking subscription:', err);
       setStatus(prev => ({
         ...prev,
         loading: false,
-        error: err instanceof Error ? err.message : 'Falha ao verificar o status da assinatura'
+        error: err instanceof Error ? err.message : 'Failed to verify subscription status'
       }));
       
       if (showToast) {
         toast({
-          title: "Erro de verificação",
-          description: "Não foi possível verificar seu status de assinatura. Tente novamente mais tarde.",
+          title: "Verification Error",
+          description: "Unable to verify your subscription status. Please try again later.",
           variant: "destructive"
         });
       }
@@ -105,8 +105,8 @@ export const SubscriptionManagement = () => {
   const handleSubscribe = async (planType: 'monthly' | 'annual' = 'monthly') => {
     if (!session?.access_token) {
       toast({
-        title: "Autenticação necessária",
-        description: "Por favor, faça login para assinar",
+        title: "Authentication Required",
+        description: "Please log in to subscribe",
         variant: "destructive"
       });
       return;
@@ -123,7 +123,7 @@ export const SubscriptionManagement = () => {
           body: { plan: planType }
         }),
         new Promise<{data: null, error: Error}>((_, reject) => 
-          setTimeout(() => reject(new Error("Tempo limite excedido. Por favor, tente novamente.")), 15000)
+          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 15000)
         )
       ]) as any;
 
@@ -138,10 +138,10 @@ export const SubscriptionManagement = () => {
         window.location.href = data.url;
       }
     } catch (err) {
-      console.error('Erro ao criar checkout:', err);
+      console.error('Error creating checkout:', err);
       toast({
-        title: "Erro de assinatura",
-        description: err instanceof Error ? err.message : 'Falha ao iniciar o processo de assinatura',
+        title: "Subscription Error",
+        description: err instanceof Error ? err.message : 'Failed to initiate subscription process',
         variant: "destructive"
       });
     } finally {
@@ -162,7 +162,7 @@ export const SubscriptionManagement = () => {
           }
         }),
         new Promise<{data: null, error: Error}>((_, reject) => 
-          setTimeout(() => reject(new Error("Tempo limite excedido. Por favor, tente novamente.")), 15000)
+          setTimeout(() => reject(new Error("Timeout exceeded. Please try again.")), 15000)
         )
       ]) as any;
 
@@ -177,10 +177,10 @@ export const SubscriptionManagement = () => {
         window.location.href = data.url;
       }
     } catch (err) {
-      console.error('Erro ao abrir portal do cliente:', err);
+      console.error('Error opening customer portal:', err);
       toast({
-        title: "Erro do portal",
-        description: err instanceof Error ? err.message : 'Falha ao abrir gerenciamento de assinatura',
+        title: "Portal Error",
+        description: err instanceof Error ? err.message : 'Failed to open subscription management',
         variant: "destructive"
       });
     } finally {
@@ -188,7 +188,7 @@ export const SubscriptionManagement = () => {
     }
   };
 
-  // Verificar assinatura ao montar e quando a autenticação muda
+  // Check subscription on mount and when authentication changes
   useEffect(() => {
     if (user) {
       checkSubscription(false);
@@ -203,12 +203,12 @@ export const SubscriptionManagement = () => {
         <CardHeader>
           <CardTitle>CS Skin Vault Premium</CardTitle>
           <CardDescription>
-            Faça login para gerenciar sua assinatura
+            Log in to manage your subscription
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Faça login ou crie uma conta para acessar recursos premium.
+            Log in or create an account to access premium features.
           </p>
         </CardContent>
       </Card>
@@ -222,19 +222,19 @@ export const SubscriptionManagement = () => {
           <CardTitle className="text-gradient-to-r from-primary to-accent bg-clip-text">CS Skin Vault Premium</CardTitle>
           {status.subscribed && (
             <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
-              Ativo
+              Active
             </Badge>
           )}
         </div>
         <CardDescription>
           {status.loading ? (
-            "Verificando status da assinatura..."
+            "Checking subscription status..."
           ) : status.subscribed ? (
             status.is_trial ? 
-              "Você está atualmente em um período de teste" : 
-              "Você tem uma assinatura premium ativa"
+              "You are currently in a trial period" : 
+              "You have an active premium subscription"
           ) : (
-            "Faça upgrade para acessar recursos premium"
+            "Upgrade to access premium features"
           )}
         </CardDescription>
       </CardHeader>
@@ -248,30 +248,30 @@ export const SubscriptionManagement = () => {
           <>
             <div className="flex items-center gap-2 text-green-500">
               <CheckCircle className="h-5 w-5" />
-              <span className="font-medium">Assinatura ativa</span>
+              <span className="font-medium">Active Subscription</span>
             </div>
             
             {status.subscription_end && (
               <p className="text-sm text-muted-foreground">
-                Sua {status.is_trial ? "período de teste termina" : "assinatura renova"} em {" "}
+                Your {status.is_trial ? "trial period ends" : "subscription renews"} on {" "}
                 {new Date(status.subscription_end).toLocaleDateString()}
               </p>
             )}
             
             <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-accent/5 backdrop-blur-sm border border-primary/10">
-              <h4 className="font-medium mb-2">Seus benefícios premium:</h4>
+              <h4 className="font-medium mb-2">Your premium benefits:</h4>
               <ul className="text-sm space-y-2">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Skins ilimitadas no inventário</span>
+                  <span>Unlimited skins in inventory</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Análises avançadas e rastreamento de preços</span>
+                  <span>Advanced analytics and price tracking</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Suporte prioritário ao cliente</span>
+                  <span>Priority customer support</span>
                 </li>
               </ul>
             </div>
@@ -287,8 +287,8 @@ export const SubscriptionManagement = () => {
             
             <Tabs defaultValue="monthly" onValueChange={(val) => setSelectedPlan(val as 'monthly' | 'annual')}>
               <TabsList className="w-full mb-4">
-                <TabsTrigger value="monthly" className="w-1/2">Mensal</TabsTrigger>
-                <TabsTrigger value="annual" className="w-1/2">Anual (10% OFF)</TabsTrigger>
+                <TabsTrigger value="monthly" className="w-1/2">Monthly</TabsTrigger>
+                <TabsTrigger value="annual" className="w-1/2">Annual (10% OFF)</TabsTrigger>
               </TabsList>
               
               <TabsContent value="monthly">
@@ -299,28 +299,28 @@ export const SubscriptionManagement = () => {
                         <CreditCard className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <h4 className="font-medium">Plano Mensal</h4>
+                        <h4 className="font-medium">Monthly Plan</h4>
                         <div className="flex items-baseline gap-1">
                           <span className="text-xl font-bold">$3.99</span>
-                          <span className="text-sm text-muted-foreground">/mês</span>
+                          <span className="text-sm text-muted-foreground">/month</span>
                         </div>
                       </div>
                     </div>
-                    <div className="text-sm">3 dias de teste grátis</div>
+                    <div className="text-sm">3-day free trial</div>
                   </div>
                   
                   <ul className="text-sm space-y-2 p-4 rounded-lg bg-muted/50">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Skins ilimitadas no inventário</span>
+                      <span>Unlimited skins in inventory</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Análises avançadas e rastreamento de preços</span>
+                      <span>Advanced analytics and price tracking</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Suporte prioritário ao cliente</span>
+                      <span>Priority customer support</span>
                     </li>
                   </ul>
                 </div>
@@ -334,29 +334,29 @@ export const SubscriptionManagement = () => {
                         <CreditCard className="h-5 w-5 text-accent" />
                       </div>
                       <div>
-                        <h4 className="font-medium">Plano Anual <Badge variant="outline" className="ml-1 bg-green-500/10 text-green-500 border-green-500/30">ECONOMIZE 10%</Badge></h4>
+                        <h4 className="font-medium">Annual Plan <Badge variant="outline" className="ml-1 bg-green-500/10 text-green-500 border-green-500/30">SAVE 10%</Badge></h4>
                         <div className="flex items-baseline gap-1">
                           <span className="text-xl font-bold">$43.09</span>
-                          <span className="text-sm text-muted-foreground">/ano</span>
+                          <span className="text-sm text-muted-foreground">/year</span>
                         </div>
-                        <div className="text-sm text-muted-foreground">Equivalente a $3.59/mês</div>
+                        <div className="text-sm text-muted-foreground">Equivalent to $3.59/month</div>
                       </div>
                     </div>
-                    <div className="text-sm">3 dias de teste grátis</div>
+                    <div className="text-sm">3-day free trial</div>
                   </div>
                   
                   <ul className="text-sm space-y-2 p-4 rounded-lg bg-muted/50">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Skins ilimitadas no inventário</span>
+                      <span>Unlimited skins in inventory</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Análises avançadas e rastreamento de preços</span>
+                      <span>Advanced analytics and price tracking</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span>Suporte prioritário ao cliente</span>
+                      <span>Priority customer support</span>
                     </li>
                   </ul>
                 </div>
@@ -369,7 +369,7 @@ export const SubscriptionManagement = () => {
       <CardFooter className="flex flex-wrap gap-3 bg-gradient-to-tr from-background to-muted/20 pt-4">
         {status.loading ? (
           <Button disabled className="w-full">
-            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
+            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
           </Button>
         ) : status.subscribed ? (
           <Button 
@@ -380,9 +380,9 @@ export const SubscriptionManagement = () => {
           >
             {isInvoking ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
               </>
-            ) : "Gerenciar Assinatura"}
+            ) : "Manage Subscription"}
           </Button>
         ) : (
           <Button 
@@ -392,9 +392,9 @@ export const SubscriptionManagement = () => {
           >
             {isInvoking ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
               </>
-            ) : `Assinar Plano ${selectedPlan === 'monthly' ? 'Mensal' : 'Anual'}`}
+            ) : `Subscribe to ${selectedPlan === 'monthly' ? 'Monthly' : 'Annual'} Plan`}
           </Button>
         )}
         
@@ -406,7 +406,7 @@ export const SubscriptionManagement = () => {
             className="hover:bg-primary/10"
           >
             <RefreshCw className="h-4 w-4" />
-            <span className="sr-only">Atualizar</span>
+            <span className="sr-only">Refresh</span>
           </Button>
         )}
       </CardFooter>

@@ -25,7 +25,7 @@ serve(async (req) => {
     if (!stripeKey) {
       logStep("Missing Stripe key");
       return new Response(JSON.stringify({ 
-        error: "Configuração de pagamento não disponível no momento" 
+        error: "Payment configuration unavailable at the moment" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -45,7 +45,7 @@ serve(async (req) => {
     if (!authHeader) {
       logStep("Missing authorization header");
       return new Response(JSON.stringify({ 
-        error: "Autenticação necessária" 
+        error: "Authentication required" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -58,7 +58,7 @@ serve(async (req) => {
     if (userError) {
       logStep("Authentication error", { message: userError.message });
       return new Response(JSON.stringify({ 
-        error: "Erro de autenticação" 
+        error: "Authentication error" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -69,7 +69,7 @@ serve(async (req) => {
     if (!user?.email) {
       logStep("No user email found");
       return new Response(JSON.stringify({ 
-        error: "Email do usuário não disponível" 
+        error: "User email not available" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Return 200 even with error
@@ -86,13 +86,13 @@ serve(async (req) => {
       const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
       const customers = await Promise.race([
         customersPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao buscar cliente")), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while fetching customer")), 15000))
       ]) as Stripe.ApiList<Stripe.Customer>;
       
       if (customers.data.length === 0) {
         logStep("No customer found");
         return new Response(JSON.stringify({ 
-          error: "Nenhuma assinatura encontrada para este usuário" 
+          error: "No subscription found for this user" 
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
@@ -110,7 +110,7 @@ serve(async (req) => {
       
       const session = await Promise.race([
         sessionPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite excedido ao criar portal")), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while creating portal")), 15000))
       ]) as Stripe.BillingPortal.Session;
       
       logStep("Created customer portal session", { session_id: session.id });
@@ -125,7 +125,7 @@ serve(async (req) => {
       logStep("STRIPE API ERROR", { message: errorMessage });
       
       return new Response(JSON.stringify({ 
-        error: "Falha ao acessar o portal do cliente. Por favor, tente novamente mais tarde." 
+        error: "Failed to access customer portal. Please try again later." 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200, // Still return 200 with error message inside

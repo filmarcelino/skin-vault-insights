@@ -30,7 +30,7 @@ export const Header: FC = () => {
   };
   
   const userInitials = profile ? getInitials(profile.username || profile.full_name) : "U";
-  const displayName = profile?.username || profile?.full_name || user?.email || "Usuário";
+  const displayName = profile?.username || profile?.full_name || user?.email || "User";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -83,13 +83,13 @@ export const Header: FC = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/profile" className="cursor-pointer w-full">
                     <User className="mr-2 h-4 w-4" />
-                    <span>Perfil</span>
+                    <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/subscription" className="cursor-pointer w-full">
                     <Crown className="mr-2 h-4 w-4" />
-                    <span>Assinatura Premium</span>
+                    <span>Premium Subscription</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -98,7 +98,7 @@ export const Header: FC = () => {
                   onClick={() => signOut()}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sair</span>
+                  <span>Log Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -113,4 +113,3 @@ export const Header: FC = () => {
       </div>
     </header>
   );
-};
