@@ -10,9 +10,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loading } from "@/components/ui/loading";
 import { CalendarDateRangePicker } from "@/components/analytics/date-range-picker";
 import { StatsCards } from "@/components/analytics/stats-cards";
-import { format, startOfMonth, subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { PriceHistoryItem, Transaction } from "@/types/skin";
+
+// Define the inventory stats interface to fix typing issues
+interface InventoryStats {
+  total_items: number;
+  total_value: number;
+  avg_price: number;
+  value_change_30d: number;
+  value_change_percentage_30d: number;
+}
 
 const Analytics = () => {
   const { user } = useAuth();
@@ -22,7 +31,7 @@ const Analytics = () => {
   });
 
   // Buscar estatísticas do inventário
-  const { data: inventoryStats, isLoading: statsLoading } = useQuery({
+  const { data: inventoryStats, isLoading: statsLoading } = useQuery<InventoryStats | null>({
     queryKey: ["inventory-stats", user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -345,4 +354,3 @@ const Analytics = () => {
 };
 
 export default Analytics;
-
