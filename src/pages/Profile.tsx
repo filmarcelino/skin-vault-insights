@@ -21,7 +21,7 @@ const profileSchema = z.object({
   full_name: z.string().min(3, 'O nome completo é obrigatório'),
   city: z.string().optional(),
   country: z.string().optional(),
-  preferred_currency: z.string(),
+  preferred_currency: z.string(), // Mantemos como string para compatibilidade
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -47,7 +47,14 @@ const Profile = () => {
   // Função para atualizar o perfil
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      const { error, data: updatedProfile } = await updateProfile(data);
+      // Como o AuthContext espera uma string para preferred_currency, não precisamos converter
+      const { error, data: updatedProfile } = await updateProfile({
+        username: data.username,
+        full_name: data.full_name,
+        city: data.city,
+        country: data.country,
+        preferred_currency: data.preferred_currency,
+      });
       
       if (error) {
         toast({

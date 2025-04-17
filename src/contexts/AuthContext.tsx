@@ -4,7 +4,8 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-type Currency = "USD" | "BRL" | "RUB" | "CNY";
+// Importamos o tipo Currency do CurrencyContext para garantir consistência
+import { Currency } from "@/contexts/CurrencyContext";
 
 export interface UserProfile {
   id: string;
@@ -13,7 +14,7 @@ export interface UserProfile {
   email: string;
   city?: string;
   country?: string;
-  preferred_currency: Currency;
+  preferred_currency: string; // Alteramos para string para compatibilidade com o banco de dados
   avatar_url?: string;
   created_at: string;
   updated_at: string;
