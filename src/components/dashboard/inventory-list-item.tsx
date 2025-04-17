@@ -40,14 +40,35 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
   const { formatPrice } = useCurrency();
   const { isLocked, daysLeft } = getTradeLockStatus(tradeLockUntil);
   
-  // Get border color based on rarity
-  const getBorderStyle = () => {
+  // Get background style based on rarity
+  const getBackgroundStyle = () => {
     if (!rarity) return {};
     
-    const color = getRarityColor(rarity);
+    const metallicColors: Record<string, string> = {
+      'Consumer Grade': '#8E9196',
+      'Industrial Grade': '#5E7D9A',
+      'Mil-Spec Grade': '#4A6D7C',
+      'Restricted': '#6E5AB0',
+      'Classified': '#8A4E9E',
+      'Covert': '#9A4A4A',
+      'Contraband': '#B8A246',
+      '★ Rare Special Item': '#A69D7E',
+      'Comum': '#8E9196',
+      'Pouco Comum': '#5E7D9A',
+      'Militar': '#4A6D7C',
+      'Restrita': '#6E5AB0',
+      'Classificada': '#8A4E9E',
+      'Secreta': '#9A4A4A',
+      'Contrabando': '#B8A246',
+      'Especial Rara': '#A69D7E',
+    };
+
+    const bgColor = metallicColors[rarity] || getRarityColor(rarity);
+    
     return {
-      borderLeftColor: color,
-      backgroundColor: color,
+      backgroundColor: bgColor,
+      boxShadow: `inset 0 0 15px rgba(0,0,0,0.4)`,
+      borderLeft: 'none',
       ...style
     };
   };
@@ -59,12 +80,12 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
 
   return (
     <div 
-      className={`border-l-4 p-3 flex items-center gap-3 hover:brightness-110 transition-all ${className} ${onClick ? 'cursor-pointer' : ''}`}
-      style={getBorderStyle()}
+      className={`p-3 flex items-center gap-3 hover:brightness-110 transition-all ${className} ${onClick ? 'cursor-pointer' : ''} rounded-md`}
+      style={getBackgroundStyle()}
       onClick={onClick}
     >
       {/* Thumbnail */}
-      <div className="h-12 w-12 bg-black/10 rounded flex items-center justify-center shrink-0">
+      <div className="h-12 w-12 bg-black/20 rounded flex items-center justify-center shrink-0">
         {image ? (
           <img 
             src={image} 
@@ -74,15 +95,16 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
             loading="lazy"
           />
         ) : (
-          <div className="text-xs text-black/50">No image</div>
+          <div className="text-xs text-white/50">No image</div>
         )}
       </div>
       
       {/* Main info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1">
-          <div className="font-medium text-sm truncate text-black">
-            {weaponName} | <span className="text-black/70">{skinName}</span>
+          <div className="font-medium text-sm truncate text-white">
+            {skinName}
+            <span className="text-white/70 ml-1">{weaponName}</span>
           </div>
           {isStatTrak && (
             <Badge 
@@ -93,10 +115,10 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-black/60">
+        <div className="flex items-center gap-1 text-xs text-white/70">
           {wear && <span>{wear}</span>}
           {isLocked && daysLeft > 0 && (
-            <div className="flex items-center text-[10px] text-yellow-500 ml-1">
+            <div className="flex items-center text-[10px] text-yellow-400 ml-1">
               <Lock className="h-3 w-3 mr-0.5" />
               {daysLeft}d
             </div>
@@ -105,7 +127,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       </div>
       
       {/* Price */}
-      {price && <div className="text-sm font-medium whitespace-nowrap text-black">
+      {price && <div className="text-sm font-medium whitespace-nowrap text-white">
         {typeof price === 'number' ? formatPrice(price) : price}
       </div>}
     </div>

@@ -14,35 +14,68 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
   const acquiredDate = formatDate(item.acquiredDate);
   const { formatPrice } = useCurrency();
   
+  // Get metallic background style based on rarity
+  const getBackgroundStyle = () => {
+    if (!item.rarity) return {};
+    
+    const metallicColors: Record<string, string> = {
+      'Consumer Grade': '#8E9196',
+      'Industrial Grade': '#5E7D9A',
+      'Mil-Spec Grade': '#4A6D7C',
+      'Restricted': '#6E5AB0',
+      'Classified': '#8A4E9E',
+      'Covert': '#9A4A4A',
+      'Contraband': '#B8A246',
+      '★ Rare Special Item': '#A69D7E',
+      'Comum': '#8E9196',
+      'Pouco Comum': '#5E7D9A',
+      'Militar': '#4A6D7C',
+      'Restrita': '#6E5AB0',
+      'Classificada': '#8A4E9E',
+      'Secreta': '#9A4A4A',
+      'Contrabando': '#B8A246',
+      'Especial Rara': '#A69D7E',
+    };
+
+    const bgColor = metallicColors[item.rarity] || getRarityColor(item.rarity);
+    
+    return {
+      background: `linear-gradient(135deg, ${bgColor} 0%, ${adjustColor(bgColor, -20)} 100%)`,
+      boxShadow: `inset 0 0 20px rgba(0,0,0,0.4)`,
+      border: 'none',
+    };
+  };
+
+  // Helper function to darken/lighten a color
+  const adjustColor = (color: string, amount: number) => {
+    return color;
+  };
+  
   return (
     <div 
-      className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-2 transition-all shadow-sm`}
-      style={{ 
-        backgroundColor: `${getRarityColor(item.rarity)}30`,
-        borderColor: getRarityColor(item.rarity)
-      }}
+      className="flex flex-col md:flex-row gap-6 p-5 rounded-xl mb-2 transition-all shadow-md"
+      style={getBackgroundStyle()}
     >
       <div className="w-full md:w-1/3 flex items-center justify-center">
         {item.image ? (
           <img 
             src={item.image} 
             alt={item.name} 
-            className="max-h-[20rem] max-w-full object-contain scale-[0.55] transform-origin-center"
-            style={{ transform: 'scale(0.55)' }}
+            className="max-h-[20rem] max-w-full object-contain transform transition-all hover:scale-105"
             onError={(e) => {
               (e.target as HTMLImageElement).src = '/placeholder.svg';
             }}
           />
         ) : (
-          <div className="h-40 w-full flex items-center justify-center bg-muted/20 rounded-lg">
-            <span className="text-muted-foreground">No image available</span>
+          <div className="h-40 w-full flex items-center justify-center bg-black/20 rounded-lg">
+            <span className="text-white/70">No image available</span>
           </div>
         )}
       </div>
       
       <div className="w-full md:w-2/3 flex flex-col justify-center">
         <div className="flex items-center gap-2 mb-2">
-          <h3 className="text-xl font-semibold">
+          <h3 className="text-xl font-bold text-white">
             {item.isStatTrak && (
               <span className="text-[#CF6A32] font-bold">StatTrak™ </span>
             )}
@@ -50,10 +83,10 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
           </h3>
         </div>
         
-        <div className="text-sm text-[#8A898C] mb-4 space-y-3">
+        <div className="text-sm text-white/80 mb-4 space-y-3">
           {/* Trade Lock Status */}
           {isLocked ? (
-            <div className="flex items-center text-yellow-500 bg-yellow-500/10 p-2 rounded-md">
+            <div className="flex items-center text-yellow-400 bg-black/20 p-2 rounded-md">
               <Lock className="h-4 w-4 mr-2" />
               <span>
                 Trade Locked for {daysLeft} {daysLeft === 1 ? 'day' : 'days'} 
@@ -61,14 +94,14 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
               </span>
             </div>
           ) : (
-            <div className="flex items-center text-green-500 bg-green-500/10 p-2 rounded-md">
+            <div className="flex items-center text-green-400 bg-black/20 p-2 rounded-md">
               <Info className="h-4 w-4 mr-2" />
               <span>No Trade Lock - Available for trading</span>
             </div>
           )}
 
           {/* Basic Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-white/90">
             {/* Rarity */}
             {item.rarity && (
               <div className="flex items-center">
@@ -113,7 +146,7 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
                 <TrendingUp className="h-3 w-3 mr-2" />
                 <span className="font-medium">Current:</span> {formatPrice(item.currentPrice)}
                 {item.currentPrice > item.purchasePrice && (
-                  <span className="ml-1 text-green-500 text-xs">
+                  <span className="ml-1 text-green-400 text-xs">
                     (+{formatPrice(item.currentPrice - item.purchasePrice)})
                   </span>
                 )}
