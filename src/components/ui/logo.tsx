@@ -2,7 +2,7 @@
 import { FC } from "react"
 
 interface LogoProps {
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
   className?: string;
   variant?: "default" | "compact" | "text-only";
 }
@@ -14,6 +14,8 @@ export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "de
     lg: "h-24",
     xl: "h-32",
     "2xl": "h-48",
+    "3xl": "h-64",
+    "4xl": "h-80",
   };
 
   // Para o logo compacto, mostramos apenas o símbolo C com as hastes

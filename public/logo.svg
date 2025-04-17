@@ -1,23 +1,52 @@
 
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
-  <!-- Círculo externo metálico -->
-  <circle cx="200" cy="250" r="150" fill="none" stroke="#A0A0A0" stroke-width="15" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <!-- Metallic C with Crossed Weapons -->
+  <defs>
+    <linearGradient id="metalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A0A0A0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#E0E0E0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#808080;stop-opacity:1" />
+    </linearGradient>
+  </defs>
   
-  <!-- Círculo interno metálico -->
-  <circle cx="200" cy="250" r="110" fill="none" stroke="#A0A0A0" stroke-width="20" />
+  <!-- Outer Circle -->
+  <circle cx="200" cy="200" r="180" fill="none" stroke="url(#metalGradient)" stroke-width="20" />
   
-  <!-- Letra C metálica -->
-  <path d="M200 150 A100 100 0 0 1 200 350 A100 100 0 0 1 200 150" fill="none" stroke="#B0B0B0" stroke-width="35" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="314, 628" />
+  <!-- Inner Circle -->
+  <circle cx="200" cy="200" r="140" fill="none" stroke="url(#metalGradient)" stroke-width="25" />
   
-  <!-- Hastes cruzadas -->
-  <line x1="100" y1="150" x2="135" y2="185" stroke="#A0A0A0" stroke-width="20" stroke-linecap="round" />
-  <line x1="100" y1="350" x2="135" y2="315" stroke="#A0A0A0" stroke-width="20" stroke-linecap="round" />
-  <line x1="300" y1="150" x2="265" y2="185" stroke="#A0A0A0" stroke-width="20" stroke-linecap="round" />
-  <line x1="300" y1="350" x2="265" y2="315" stroke="#A0A0A0" stroke-width="20" stroke-linecap="round" />
+  <!-- Metallic C -->
+  <path d="M200 60 A140 140 0 0 1 200 340 A140 140 0 0 1 200 60" 
+        fill="none" 
+        stroke="url(#metalGradient)" 
+        stroke-width="45" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        stroke-dasharray="440, 880" />
   
-  <!-- Texto CS SKIN -->
-  <text x="400" y="250" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="80" fill="#B0B0B0">CS SKIN</text>
+  <!-- Crossed Weapons/Bars -->
+  <line x1="50" y1="50" x2="120" y2="120" stroke="url(#metalGradient)" stroke-width="25" stroke-linecap="round" />
+  <line x1="50" y1="350" x2="120" y2="280" stroke="url(#metalGradient)" stroke-width="25" stroke-linecap="round" />
+  <line x1="350" y1="50" x2="280" y2="120" stroke="url(#metalGradient)" stroke-width="25" stroke-linecap="round" />
+  <line x1="350" y1="350" x2="280" y2="280" stroke="url(#metalGradient)" stroke-width="25" stroke-linecap="round" />
   
-  <!-- Texto VAULT em roxo -->
-  <text x="400" y="330" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="80" fill="#8B5CF6">VAULT</text>
+  <!-- CS SKIN Text -->
+  <text x="450" y="200" 
+        font-family="Arial, Helvetica, sans-serif" 
+        font-weight="bold" 
+        font-size="120" 
+        fill="#B0B0B0"
+        dominant-baseline="middle">
+    CS SKIN
+  </text>
+  
+  <!-- VAULT Text in Purple -->
+  <text x="450" y="300" 
+        font-family="Arial, Helvetica, sans-serif" 
+        font-weight="bold" 
+        font-size="120" 
+        fill="#8B5CF6"
+        dominant-baseline="middle">
+    VAULT
+  </text>
 </svg>
