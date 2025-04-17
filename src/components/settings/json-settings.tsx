@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { DataSourceConfig } from "@/services/api";
 import { useQueryClient } from "@tanstack/react-query";
+import { Shield } from "lucide-react";
 
 export const JsonSettings = () => {
   const queryClient = useQueryClient();
@@ -40,15 +41,15 @@ export const JsonSettings = () => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Custom JSON Settings</CardTitle>
-        <CardDescription>
-          Configure custom JSON files for your CS skin data
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center space-x-2">
+      <form id="settings-form" onSubmit={handleSubmit} className="space-y-4">
+        <CardHeader>
+          <CardTitle>Custom JSON Settings</CardTitle>
+          <CardDescription>
+            Configure custom JSON files for your CS skin data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2 mb-4">
             <Switch 
               id="use-local" 
               checked={useLocal} 
@@ -91,11 +92,14 @@ export const JsonSettings = () => {
               />
             </div>
           </div>
-        </form>
-      </CardContent>
-      <CardFooter>
-        <Button type="button" onClick={handleSubmit}>Save Settings</Button>
-      </CardFooter>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <Button type="submit" className="ml-auto">
+            <Shield className="h-4 w-4 mr-2" />
+            Authorize
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   );
 };

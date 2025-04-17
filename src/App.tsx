@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +13,7 @@ import Inventory from "./pages/Inventory";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import RequireAuth from "./components/auth/require-auth";
+import Analytics from "./pages/Analytics";
 
 // Configuração do React Query para 15 minutos de staleTime em vez de 5 minutos
 const queryClient = new QueryClient({
@@ -66,7 +66,7 @@ const App = () => (
               } />
               <Route path="/analytics" element={
                 <RequireAuth>
-                  <Layout><Index /></Layout>
+                  <Layout><Analytics /></Layout>
                 </RequireAuth>
               } />
               <Route path="/settings" element={

@@ -2,15 +2,23 @@
 import React from "react";
 import { JsonSettings } from "@/components/settings/json-settings";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Shield, Save } from "lucide-react";
 
 const Settings = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Configure your CS Skin Vault application settings
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">
+            Configure your CS Skin Vault application settings
+          </p>
+        </div>
+        <Button type="submit" form="settings-form" className="shrink-0">
+          <Save className="h-4 w-4 mr-2" />
+          Save Settings
+        </Button>
       </div>
       
       <Separator />
