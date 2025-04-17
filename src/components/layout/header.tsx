@@ -2,7 +2,7 @@
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
-import { ArrowRight, User, LogOut } from "lucide-react";
+import { ArrowRight, User, LogOut, Crown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +42,15 @@ export const Header: FC = () => {
         <div className="ml-auto flex items-center gap-4">
           <CurrencySelector />
           
+          {user && (
+            <Button variant="ghost" size="sm" asChild className="hidden md:flex items-center gap-1">
+              <Link to="/subscription" className="text-primary">
+                <Crown className="h-4 w-4 mr-1" />
+                <span>Premium</span>
+              </Link>
+            </Button>
+          )}
+          
           <Link 
             to="https://clutch.studio" 
             target="_blank"
@@ -72,9 +81,15 @@ export const Header: FC = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/settings" className="cursor-pointer w-full">
+                  <Link to="/profile" className="cursor-pointer w-full">
                     <User className="mr-2 h-4 w-4" />
                     <span>Perfil</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/subscription" className="cursor-pointer w-full">
+                    <Crown className="mr-2 h-4 w-4" />
+                    <span>Assinatura Premium</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

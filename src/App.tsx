@@ -16,6 +16,7 @@ import ResetPassword from "./pages/ResetPassword";
 import RequireAuth from "./components/auth/require-auth";
 import Analytics from "./pages/Analytics";
 import Profile from "./pages/Profile";
+import Subscription from "./pages/Subscription";
 
 // Configuração do React Query para 15 minutos de staleTime em vez de 5 minutos
 const queryClient = new QueryClient({
@@ -79,6 +80,11 @@ const App = () => (
               <Route path="/settings" element={
                 <RequireAuth>
                   <Layout><Settings /></Layout>
+                </RequireAuth>
+              } />
+              <Route path="/subscription" element={
+                <RequireAuth>
+                  <Layout><Subscription /></Layout>
                 </RequireAuth>
               } />
               <Route path="*" element={<Layout><NotFound /></Layout>} />
