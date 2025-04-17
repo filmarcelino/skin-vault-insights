@@ -23,6 +23,7 @@ export const SubscriptionManagement = () => {
   });
   const { user, session } = useAuth();
   const { toast } = useToast();
+  const [isInvoking, setIsInvoking] = useState(false);
 
   const checkSubscription = async () => {
     if (!session?.access_token || !user) {
@@ -33,11 +34,19 @@ export const SubscriptionManagement = () => {
     try {
       setStatus(prev => ({ ...prev, loading: true }));
       
-      const { data, error } = await supabase.functions.invoke('check-subscription', {
+      // Adicionando timeout para evitar que a requisição fique pendente indefinidamente
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Tempo limite excedido")), 10000)
+      );
+      
+      const fetchPromise = supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
       });
+      
+      // Race entre o timeout e a requisição
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       if (error) throw new Error(error.message);
       
@@ -48,11 +57,17 @@ export const SubscriptionManagement = () => {
         loading: false
       });
     } catch (err) {
-      console.error('Error checking subscription:', err);
+      console.error('Erro ao verificar assinatura:', err);
       setStatus({
         subscribed: false,
         loading: false,
-        error: err instanceof Error ? err.message : 'Failed to check subscription status'
+        error: err instanceof Error ? err.message : 'Falha ao verificar o status da assinatura'
+      });
+      
+      toast({
+        title: "Erro de verificação",
+        description: "Não foi possível verificar seu status de assinatura. Tente novamente mais tarde.",
+        variant: "destructive"
       });
     }
   };
@@ -60,19 +75,29 @@ export const SubscriptionManagement = () => {
   const handleSubscribe = async () => {
     if (!session?.access_token) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to subscribe",
+        title: "Autenticação necessária",
+        description: "Por favor, faça login para assinar",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
+      setIsInvoking(true);
+      
+      // Adicionando timeout para evitar que a requisição fique pendente indefinidamente
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Tempo limite excedido")), 10000)
+      );
+      
+      const fetchPromise = supabase.functions.invoke('create-checkout', {
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
       });
+      
+      // Race entre o timeout e a requisição
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       if (error) throw new Error(error.message);
       
@@ -80,12 +105,14 @@ export const SubscriptionManagement = () => {
         window.location.href = data.url;
       }
     } catch (err) {
-      console.error('Error creating checkout:', err);
+      console.error('Erro ao criar checkout:', err);
       toast({
-        title: "Subscription error",
-        description: err instanceof Error ? err.message : 'Failed to start subscription process',
+        title: "Erro de assinatura",
+        description: err instanceof Error ? err.message : 'Falha ao iniciar o processo de assinatura',
         variant: "destructive"
       });
+    } finally {
+      setIsInvoking(false);
     }
   };
 
@@ -93,11 +120,21 @@ export const SubscriptionManagement = () => {
     if (!session?.access_token) return;
     
     try {
-      const { data, error } = await supabase.functions.invoke('customer-portal', {
+      setIsInvoking(true);
+      
+      // Adicionando timeout para evitar que a requisição fique pendente indefinidamente
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Tempo limite excedido")), 10000)
+      );
+      
+      const fetchPromise = supabase.functions.invoke('customer-portal', {
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
       });
+      
+      // Race entre o timeout e a requisição
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       if (error) throw new Error(error.message);
       
@@ -105,16 +142,18 @@ export const SubscriptionManagement = () => {
         window.location.href = data.url;
       }
     } catch (err) {
-      console.error('Error opening customer portal:', err);
+      console.error('Erro ao abrir portal do cliente:', err);
       toast({
-        title: "Portal error",
-        description: err instanceof Error ? err.message : 'Failed to open subscription management',
+        title: "Erro do portal",
+        description: err instanceof Error ? err.message : 'Falha ao abrir gerenciamento de assinatura',
         variant: "destructive"
       });
+    } finally {
+      setIsInvoking(false);
     }
   };
 
-  // Check subscription on mount and when auth changes
+  // Verificar assinatura ao montar e quando a autenticação muda
   useEffect(() => {
     if (user) {
       checkSubscription();
@@ -129,12 +168,12 @@ export const SubscriptionManagement = () => {
         <CardHeader>
           <CardTitle>CS Skin Vault Premium</CardTitle>
           <CardDescription>
-            Please log in to manage your subscription
+            Faça login para gerenciar sua assinatura
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Login or create an account to access premium features.
+            Faça login ou crie uma conta para acessar recursos premium.
           </p>
         </CardContent>
       </Card>
@@ -148,19 +187,19 @@ export const SubscriptionManagement = () => {
           <CardTitle>CS Skin Vault Premium</CardTitle>
           {status.subscribed && (
             <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/30">
-              Active
+              Ativo
             </Badge>
           )}
         </div>
         <CardDescription>
           {status.loading ? (
-            "Checking subscription status..."
+            "Verificando status da assinatura..."
           ) : status.subscribed ? (
             status.is_trial ? 
-              "You're currently on a trial period" : 
-              "You have an active premium subscription"
+              "Você está atualmente em um período de teste" : 
+              "Você tem uma assinatura premium ativa"
           ) : (
-            "Upgrade to access premium features"
+            "Faça upgrade para acessar recursos premium"
           )}
         </CardDescription>
       </CardHeader>
@@ -174,30 +213,30 @@ export const SubscriptionManagement = () => {
           <>
             <div className="flex items-center gap-2 text-green-500">
               <CheckCircle className="h-5 w-5" />
-              <span className="font-medium">Subscription active</span>
+              <span className="font-medium">Assinatura ativa</span>
             </div>
             
             {status.subscription_end && (
               <p className="text-sm text-muted-foreground">
-                Your subscription {status.is_trial ? "trial ends" : "renews"} on {" "}
+                Sua {status.is_trial ? "período de teste termina" : "assinatura renova"} em {" "}
                 {new Date(status.subscription_end).toLocaleDateString()}
               </p>
             )}
             
             <div className="bg-muted/50 p-3 rounded-md">
-              <h4 className="font-medium mb-2">Your premium benefits:</h4>
+              <h4 className="font-medium mb-2">Seus benefícios premium:</h4>
               <ul className="text-sm space-y-1">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  Unlimited skins in inventory
+                  Skins ilimitadas no inventário
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  Advanced analytics and price tracking
+                  Análises avançadas e rastreamento de preços
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  Priority customer support
+                  Suporte prioritário ao cliente
                 </li>
               </ul>
             </div>
@@ -217,25 +256,25 @@ export const SubscriptionManagement = () => {
                   <CreditCard className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-medium">Premium Plan</h4>
-                  <p className="text-sm text-muted-foreground">$3.99/month with 3-day free trial</p>
+                  <h4 className="font-medium">Plano Premium</h4>
+                  <p className="text-sm text-muted-foreground">$3.99/mês com 3 dias de teste grátis</p>
                 </div>
               </div>
               
               <div className="bg-muted/50 p-3 rounded-md">
-                <h4 className="font-medium mb-2">Premium benefits:</h4>
+                <h4 className="font-medium mb-2">Benefícios premium:</h4>
                 <ul className="text-sm space-y-1">
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    Unlimited skins in inventory
+                    Skins ilimitadas no inventário
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    Advanced analytics and price tracking
+                    Análises avançadas e rastreamento de preços
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    Priority customer support
+                    Suporte prioritário ao cliente
                   </li>
                 </ul>
               </div>
@@ -247,25 +286,43 @@ export const SubscriptionManagement = () => {
       <CardFooter className="flex gap-3">
         {status.loading ? (
           <Button disabled className="w-full">
-            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
+            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
           </Button>
         ) : status.subscribed ? (
-          <Button onClick={handleManageSubscription} variant="outline" className="w-full">
-            Manage Subscription
+          <Button 
+            onClick={handleManageSubscription} 
+            variant="outline" 
+            className="w-full"
+            disabled={isInvoking}
+          >
+            {isInvoking ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
+              </>
+            ) : "Gerenciar Assinatura"}
           </Button>
         ) : (
-          <Button onClick={handleSubscribe} className="w-full">
-            Subscribe Now
+          <Button 
+            onClick={handleSubscribe} 
+            className="w-full"
+            disabled={isInvoking}
+          >
+            {isInvoking ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Carregando...
+              </>
+            ) : "Assinar Agora"}
           </Button>
         )}
         
-        {!status.loading && (
+        {!status.loading && !isInvoking && (
           <Button onClick={checkSubscription} variant="ghost" size="icon">
             <Loader2 className="h-4 w-4" />
-            <span className="sr-only">Refresh</span>
+            <span className="sr-only">Atualizar</span>
           </Button>
         )}
       </CardFooter>
     </Card>
   );
 };
+
