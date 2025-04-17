@@ -12,32 +12,7 @@ import { CalendarDateRangePicker } from "@/components/analytics/date-range-picke
 import { StatsCards } from "@/components/analytics/stats-cards";
 import { format, startOfMonth, subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
-
-interface PriceHistoryItem {
-  id: string;
-  skin_id: string;
-  inventory_id: string;
-  user_id: string;
-  price: number;
-  price_date: string;
-  marketplace: string;
-  wear: string;
-  created_at: string;
-}
-
-interface Transaction {
-  id: string;
-  user_id: string;
-  item_id: string;
-  weapon_name: string;
-  skin_name: string;
-  date: string;
-  created_at: string;
-  price: number;
-  notes: string;
-  type: string;
-  transaction_id: string;
-}
+import { PriceHistoryItem, Transaction } from "@/types/skin";
 
 const Analytics = () => {
   const { user } = useAuth();
@@ -63,7 +38,7 @@ const Analytics = () => {
 
   // Buscar histórico de preços para gráficos
   const { data: priceHistory, isLoading: historyLoading } = useQuery<PriceHistoryItem[]>({
-    queryKey: ["price-history", user?.id, dateRange.from, dateRange.to],
+    queryKey: ["price-history", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!user || !dateRange.from || !dateRange.to) return [];
       
@@ -97,7 +72,7 @@ const Analytics = () => {
 
   // Buscar dados de transações para análise de ROI
   const { data: transactions, isLoading: transactionsLoading } = useQuery<Transaction[]>({
-    queryKey: ["transactions", user?.id, dateRange.from, dateRange.to],
+    queryKey: ["transactions", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!user || !dateRange.from || !dateRange.to) return [];
       
@@ -148,7 +123,7 @@ const Analytics = () => {
     const purchasesByItem = transactions
       .filter(t => t.type === 'purchase')
       .reduce((acc, item) => {
-        const key = item.item_id;
+        const key = item.itemId || item.item_id || '';
         if (!acc[key]) acc[key] = { cost: 0, revenue: 0 };
         acc[key].cost += parseFloat(String(item.price || '0'));
         return acc;
@@ -157,7 +132,7 @@ const Analytics = () => {
     const salesByItem = transactions
       .filter(t => t.type === 'sale')
       .reduce((acc, item) => {
-        const key = item.item_id;
+        const key = item.itemId || item.item_id || '';
         if (!acc[key]) acc[key] = { cost: 0, revenue: 0 };
         acc[key].revenue += parseFloat(String(item.price || '0'));
         return acc;

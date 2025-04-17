@@ -364,7 +364,7 @@ function getPayloadConfigFromPayload(
     : config[key as keyof typeof config]
 }
 
-// Novos componentes adicionados para resolver o problema de importação
+// Corrigindo a definição dos componentes de gráfico
 interface LineChartProps {
   data: any[];
   categories: string[];
@@ -412,21 +412,32 @@ export function LineChart({
           className="stroke-border"
           tickMargin={10}
         />
-        <RechartsPrimitive.Tooltip
-          content={(props) => (
-            <ChartTooltipContent
-              {...props}
-              indicator="line"
-              formatter={(value, name) => (
-                <span className="flex flex-row items-center gap-2">
-                  <span>{name}</span>
-                  <span className="font-medium text-foreground">
-                    {valueFormatter(Number(value))}
-                  </span>
-                </span>
-              )}
-            />
-          )}
+        <RechartsPrimitive.Tooltip 
+          content={(props: any) => {
+            if (!props.active || !props.payload?.length) {
+              return null;
+            }
+            
+            return (
+              <div className="grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background p-2 text-xs shadow-xl">
+                <div className="font-medium">{props.label}</div>
+                <div className="grid gap-1.5">
+                  {props.payload.map((item: any, index: number) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div 
+                        className="h-2.5 w-2.5 rounded-full" 
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-muted-foreground">{item.name}</span>
+                      <span className="font-mono font-medium ml-auto">
+                        {valueFormatter(Number(item.value))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          }}
         />
         {categories.map((category, i) => (
           <RechartsPrimitive.Line
@@ -490,21 +501,32 @@ export function BarChart({
           className="stroke-border"
           tickMargin={10}
         />
-        <RechartsPrimitive.Tooltip
-          content={(props) => (
-            <ChartTooltipContent
-              {...props}
-              indicator="line"
-              formatter={(value, name) => (
-                <span className="flex flex-row items-center gap-2">
-                  <span>{name}</span>
-                  <span className="font-medium text-foreground">
-                    {valueFormatter(Number(value))}
-                  </span>
-                </span>
-              )}
-            />
-          )}
+        <RechartsPrimitive.Tooltip 
+          content={(props: any) => {
+            if (!props.active || !props.payload?.length) {
+              return null;
+            }
+            
+            return (
+              <div className="grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background p-2 text-xs shadow-xl">
+                <div className="font-medium">{props.label}</div>
+                <div className="grid gap-1.5">
+                  {props.payload.map((item: any, index: number) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div 
+                        className="h-2.5 w-2.5 rounded-full" 
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-muted-foreground">{item.name}</span>
+                      <span className="font-mono font-medium ml-auto">
+                        {valueFormatter(Number(item.value))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          }}
         />
         {categories.map((category, i) => (
           <RechartsPrimitive.Bar
@@ -527,4 +549,3 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
-
