@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useInventory, useRemoveSkin } from "@/hooks/use-skins";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
@@ -7,7 +6,16 @@ import { InventoryItem, SellData } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { useToast } from "@/hooks/use-toast";
 import { Search } from "@/components/ui/search";
-import { searchSkins } from "@/services/api";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
+
+const ITEMS_PER_PAGE = 8;
 
 const Inventory = () => {
   const { data: inventoryItems = [], isLoading, error } = useInventory();
@@ -15,6 +23,7 @@ const Inventory = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredItems, setFilteredItems] = useState<InventoryItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const removeSkinMutation = useRemoveSkin();
 
@@ -30,6 +39,7 @@ const Inventory = () => {
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page on new search
     
     if (!value.trim()) {
       setFilteredItems([]);
@@ -69,6 +79,16 @@ const Inventory = () => {
     });
   };
 
+  // Pagination logic
+  const displayItems = searchQuery ? filteredItems : inventoryItems;
+  const totalPages = Math.ceil(displayItems.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = displayItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
@@ -85,8 +105,6 @@ const Inventory = () => {
     );
   }
 
-  const displayItems = searchQuery ? filteredItems : inventoryItems;
-
   return (
     <div className="animate-fade-in">
       <h1 className="text-2xl font-bold mb-6">Seu Inventário de Skins</h1>
@@ -99,7 +117,7 @@ const Inventory = () => {
         />
       </div>
       
-      {displayItems.length === 0 ? (
+      {paginatedItems.length === 0 ? (
         <div className="text-center py-10 border border-dashed rounded-lg">
           {searchQuery ? (
             <p className="text-muted-foreground mb-4">
@@ -120,27 +138,83 @@ const Inventory = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {displayItems.map((skin, index) => (
-            <InventoryCard
-              key={skin.inventoryId || `skin-${index}`}
-              weaponName={skin.weapon || "Unknown"}
-              skinName={skin.name}
-              wear={skin.wear || ""}
-              price={skin.currentPrice?.toString() || skin.price?.toString() || "N/A"}
-              image={skin.image}
-              rarity={skin.rarity}
-              isStatTrak={skin.isStatTrak}
-              tradeLockDays={skin.tradeLockDays}
-              tradeLockUntil={skin.tradeLockUntil}
-              className="animate-fade-in hover:scale-105 transition-transform duration-200"
-              style={{
-                animationDelay: `${0.1 + index * 0.05}s`,
-              }}
-              onClick={() => handleSkinClick(skin)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {paginatedItems.map((skin, index) => (
+              <InventoryCard
+                key={skin.inventoryId || `skin-${index}`}
+                weaponName={skin.weapon || "Unknown"}
+                skinName={skin.name}
+                wear={skin.wear || ""}
+                price={skin.currentPrice?.toString() || skin.price?.toString() || "N/A"}
+                image={skin.image}
+                rarity={skin.rarity}
+                isStatTrak={skin.isStatTrak}
+                tradeLockDays={skin.tradeLockDays}
+                tradeLockUntil={skin.tradeLockUntil}
+                className="animate-fade-in hover:scale-105 transition-transform duration-200"
+                style={{
+                  animationDelay: `${0.1 + index * 0.05}s`,
+                }}
+                onClick={() => handleSkinClick(skin)}
+              />
+            ))}
+          </div>
+          
+          {/* Pagination */}
+          {displayItems.length > ITEMS_PER_PAGE && (
+            <div className="mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                    // For simplicity, show up to 5 page links
+                    let pageNumber: number;
+                    
+                    if (totalPages <= 5) {
+                      // If we have 5 or fewer pages, show all of them
+                      pageNumber = i + 1;
+                    } else if (currentPage <= 3) {
+                      // If we're at the beginning, show pages 1-5
+                      pageNumber = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      // If we're at the end, show the last 5 pages
+                      pageNumber = totalPages - 4 + i;
+                    } else {
+                      // Otherwise, show 2 pages before and 2 after the current page
+                      pageNumber = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink 
+                          onClick={() => handlePageChange(pageNumber)}
+                          isActive={pageNumber === currentPage}
+                          className="cursor-pointer"
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </>
       )}
 
       {selectedSkin && (

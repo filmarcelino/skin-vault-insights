@@ -40,7 +40,8 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     mostValuable: {
       weapon: "None",
       skin: "None",
-      price: "$0"
+      price: "$0",
+      image: undefined as string | undefined
     }
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -109,11 +110,13 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
           weapon: mostValuableSkin.weapon || "Unknown",
           skin: mostValuableSkin.name,
           price: mostValuableSkin.currentPrice || mostValuableSkin.price ? 
-            `$${(mostValuableSkin.currentPrice || mostValuableSkin.price || 0).toLocaleString()}` : "$0"
+            `$${(mostValuableSkin.currentPrice || mostValuableSkin.price || 0).toLocaleString()}` : "$0",
+          image: mostValuableSkin.image
         } : {
           weapon: "None",
           skin: "None",
-          price: "$0"
+          price: "$0",
+          image: undefined
         }
       });
     } catch (error) {
