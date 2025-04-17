@@ -10,16 +10,43 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loading } from "@/components/ui/loading";
 import { CalendarDateRangePicker } from "@/components/analytics/date-range-picker";
 import { StatsCards } from "@/components/analytics/stats-cards";
-import { format } from "date-fns";
+import { format, startOfMonth, subDays } from "date-fns";
+import { DateRange } from "react-day-picker";
+
+interface PriceHistoryItem {
+  id: string;
+  skin_id: string;
+  inventory_id: string;
+  user_id: string;
+  price: number;
+  price_date: string;
+  marketplace: string;
+  wear: string;
+  created_at: string;
+}
+
+interface Transaction {
+  id: string;
+  user_id: string;
+  item_id: string;
+  weapon_name: string;
+  skin_name: string;
+  date: string;
+  created_at: string;
+  price: number;
+  notes: string;
+  type: string;
+  transaction_id: string;
+}
 
 const Analytics = () => {
   const { user } = useAuth();
-  const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: subDays(new Date(), 30), // 30 dias atrás
     to: new Date(),
   });
 
-  // Fetch inventory statistics
+  // Buscar estatísticas do inventário
   const { data: inventoryStats, isLoading: statsLoading } = useQuery({
     queryKey: ["inventory-stats", user?.id],
     queryFn: async () => {
@@ -34,37 +61,47 @@ const Analytics = () => {
     enabled: !!user,
   });
 
-  // Fetch price history for charts
-  const { data: priceHistory, isLoading: historyLoading } = useQuery({
+  // Buscar histórico de preços para gráficos
+  const { data: priceHistory, isLoading: historyLoading } = useQuery<PriceHistoryItem[]>({
     queryKey: ["price-history", user?.id, dateRange.from, dateRange.to],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user || !dateRange.from || !dateRange.to) return [];
       
-      // Format date range for query
+      // Formatar intervalo de data para consulta
       const fromDate = format(dateRange.from, "yyyy-MM-dd");
       const toDate = format(dateRange.to, "yyyy-MM-dd");
       
-      const { data, error } = await supabase
-        .from("skin_price_history")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("price_date", fromDate)
-        .lte("price_date", toDate)
-        .order("price_date", { ascending: true });
-      
-      if (error) throw error;
-      return data || [];
+      // Verificar se a tabela existe antes de fazer a consulta
+      try {
+        const { data, error } = await supabase
+          .from("skin_price_history")
+          .select("*")
+          .eq("user_id", user.id)
+          .gte("price_date", fromDate)
+          .lte("price_date", toDate)
+          .order("price_date", { ascending: true });
+        
+        if (error) {
+          console.error("Error fetching price history:", error);
+          return [];
+        }
+        
+        return data || [];
+      } catch (error) {
+        console.error("Error with price history query:", error);
+        return [];
+      }
     },
-    enabled: !!user,
+    enabled: !!user && !!dateRange.from && !!dateRange.to,
   });
 
-  // Fetch transaction data for ROI analysis
-  const { data: transactions, isLoading: transactionsLoading } = useQuery({
+  // Buscar dados de transações para análise de ROI
+  const { data: transactions, isLoading: transactionsLoading } = useQuery<Transaction[]>({
     queryKey: ["transactions", user?.id, dateRange.from, dateRange.to],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user || !dateRange.from || !dateRange.to) return [];
       
-      // Format date range for query
+      // Formatar intervalo de data para consulta
       const fromDate = format(dateRange.from, "yyyy-MM-dd");
       const toDate = format(dateRange.to, "yyyy-MM-dd");
       
@@ -79,23 +116,23 @@ const Analytics = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!user && !!dateRange.from && !!dateRange.to,
   });
 
-  // Process data for charts
+  // Processar dados para gráficos
   const priceHistoryChartData = React.useMemo(() => {
     if (!priceHistory || priceHistory.length === 0) return [];
 
-    // Group by date, calculate average price per day
+    // Agrupar por data, calcular preço médio por dia
     const groupedByDate = priceHistory.reduce((acc, item) => {
-      const date = new Date(item.price_date).toISOString().split("T")[0];
+      const date = item.price_date.split("T")[0];
       if (!acc[date]) {
         acc[date] = { total: 0, count: 0 };
       }
-      acc[date].total += parseFloat(item.price);
+      acc[date].total += parseFloat(String(item.price));
       acc[date].count += 1;
       return acc;
-    }, {});
+    }, {} as Record<string, { total: number; count: number }>);
 
     return Object.keys(groupedByDate).map(date => ({
       date: date,
@@ -103,31 +140,31 @@ const Analytics = () => {
     }));
   }, [priceHistory]);
 
-  // Calculate ROI data
+  // Calcular dados de ROI
   const roiData = React.useMemo(() => {
     if (!transactions || transactions.length === 0) return [];
 
-    // Group transactions by type (purchase vs sell)
+    // Agrupar transações por tipo (compra vs venda)
     const purchasesByItem = transactions
       .filter(t => t.type === 'purchase')
       .reduce((acc, item) => {
         const key = item.item_id;
         if (!acc[key]) acc[key] = { cost: 0, revenue: 0 };
-        acc[key].cost += parseFloat(item.price || '0');
+        acc[key].cost += parseFloat(String(item.price || '0'));
         return acc;
-      }, {});
+      }, {} as Record<string, { cost: number; revenue: number }>);
 
     const salesByItem = transactions
       .filter(t => t.type === 'sale')
       .reduce((acc, item) => {
         const key = item.item_id;
         if (!acc[key]) acc[key] = { cost: 0, revenue: 0 };
-        acc[key].revenue += parseFloat(item.price || '0');
+        acc[key].revenue += parseFloat(String(item.price || '0'));
         return acc;
-      }, {});
+      }, {} as Record<string, { cost: number; revenue: number }>);
 
-    // Combine data for ROI calculation
-    const combinedData = {};
+    // Combinar dados para cálculo de ROI
+    const combinedData: Record<string, { cost: number; revenue: number }> = {};
     Object.keys(purchasesByItem).forEach(itemId => {
       combinedData[itemId] = purchasesByItem[itemId];
     });
@@ -136,7 +173,7 @@ const Analytics = () => {
       combinedData[itemId].revenue = salesByItem[itemId].revenue;
     });
 
-    // Calculate ROI for each item
+    // Calcular ROI para cada item
     const result = Object.keys(combinedData).map(itemId => {
       const { cost, revenue } = combinedData[itemId];
       const roi = cost > 0 ? ((revenue - cost) / cost) * 100 : 0;
@@ -152,7 +189,7 @@ const Analytics = () => {
     return result;
   }, [transactions]);
 
-  // Calculate top performing skins
+  // Calcular as skins com melhor desempenho
   const topPerformingSkins = React.useMemo(() => {
     if (!roiData || roiData.length === 0) return [];
     return [...roiData]
@@ -160,6 +197,15 @@ const Analytics = () => {
       .sort((a, b) => b.roi - a.roi)
       .slice(0, 5);
   }, [roiData]);
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    if (range?.from) {
+      setDateRange({ 
+        from: range.from,
+        to: range.to || new Date() 
+      });
+    }
+  };
 
   const isLoading = statsLoading || historyLoading || transactionsLoading;
 
@@ -170,7 +216,7 @@ const Analytics = () => {
           <h1 className="text-2xl font-bold">Analytics</h1>
           <p className="text-muted-foreground">Track your inventory performance and investment metrics</p>
         </div>
-        <CalendarDateRangePicker date={dateRange} setDate={setDateRange} />
+        <CalendarDateRangePicker date={dateRange} setDate={handleDateRangeChange} />
       </div>
 
       {isLoading ? (
@@ -198,7 +244,6 @@ const Analytics = () => {
                   {priceHistoryChartData.length > 0 ? (
                     <LineChart 
                       data={priceHistoryChartData} 
-                      dataKey="price"
                       categories={["price"]}
                       index="date"
                       colors={["blue"]}

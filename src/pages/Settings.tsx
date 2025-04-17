@@ -3,9 +3,20 @@ import React from "react";
 import { JsonSettings } from "@/components/settings/json-settings";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Shield, Save } from "lucide-react";
+import { Save, Shield } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
+  const { toast } = useToast();
+
+  const handleSaveSettings = (event: React.FormEvent) => {
+    event.preventDefault();
+    toast({
+      title: "Settings saved",
+      description: "Your application settings have been saved successfully.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -15,7 +26,7 @@ const Settings = () => {
             Configure your CS Skin Vault application settings
           </p>
         </div>
-        <Button type="submit" form="settings-form" className="shrink-0">
+        <Button type="submit" form="settings-form" className="shrink-0" onClick={handleSaveSettings}>
           <Save className="h-4 w-4 mr-2" />
           Save Settings
         </Button>

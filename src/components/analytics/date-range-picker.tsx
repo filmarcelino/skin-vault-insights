@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/popover";
 
 interface CalendarDateRangePickerProps {
-  date: DateRange;
-  setDate: (date: DateRange) => void;
+  date: DateRange | { from: Date; to: Date };
+  setDate: (date: DateRange | { from: Date; to: Date }) => void;
   className?: string;
 }
 
@@ -55,9 +55,10 @@ export function CalendarDateRangePicker({
             initialFocus
             mode="range"
             defaultMonth={date?.from}
-            selected={date}
+            selected={date as DateRange}
             onSelect={setDate}
             numberOfMonths={2}
+            className="pointer-events-auto"
           />
         </PopoverContent>
       </Popover>

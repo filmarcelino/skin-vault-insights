@@ -1,7 +1,18 @@
+
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
+import {
+  Area,
+  Bar,
+  CartesianGrid,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
@@ -353,6 +364,161 @@ function getPayloadConfigFromPayload(
     : config[key as keyof typeof config]
 }
 
+// Novos componentes adicionados para resolver o problema de importação
+interface LineChartProps {
+  data: any[];
+  categories: string[];
+  index: string;
+  colors?: string[];
+  valueFormatter?: (value: number) => string;
+  yAxisWidth?: number;
+  className?: string;
+}
+
+export function LineChart({
+  data,
+  index,
+  categories,
+  colors = ["blue", "green", "red", "orange", "purple"],
+  valueFormatter = (value: number) => value.toString(),
+  yAxisWidth = 56,
+  className,
+}: LineChartProps) {
+  return (
+    <ChartContainer 
+      config={categories.reduce((acc, category, i) => {
+        acc[category] = {
+          label: category,
+          color: colors[i % colors.length],
+        };
+        return acc;
+      }, {} as ChartConfig)} 
+      className={className}
+    >
+      <RechartsPrimitive.ComposedChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 5 }}>
+        <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+        <RechartsPrimitive.XAxis
+          dataKey={index}
+          tick={{ transform: "translate(0, 6)" }}
+          tickLine={{ transform: "translate(0, 1)" }}
+          className="stroke-border"
+          tickMargin={10}
+        />
+        <RechartsPrimitive.YAxis
+          width={yAxisWidth}
+          tickFormatter={valueFormatter}
+          tick={{ transform: "translate(-3, 0)" }}
+          tickLine={{ transform: "translate(-3, 0)" }}
+          className="stroke-border"
+          tickMargin={10}
+        />
+        <RechartsPrimitive.Tooltip
+          content={(props) => (
+            <ChartTooltipContent
+              {...props}
+              indicator="line"
+              formatter={(value, name) => (
+                <span className="flex flex-row items-center gap-2">
+                  <span>{name}</span>
+                  <span className="font-medium text-foreground">
+                    {valueFormatter(Number(value))}
+                  </span>
+                </span>
+              )}
+            />
+          )}
+        />
+        {categories.map((category, i) => (
+          <RechartsPrimitive.Line
+            key={category}
+            type="monotone"
+            dataKey={category}
+            stroke={colors[i % colors.length]}
+            strokeWidth={2}
+            dot={{ strokeWidth: 4 }}
+          />
+        ))}
+      </RechartsPrimitive.ComposedChart>
+    </ChartContainer>
+  );
+}
+
+interface BarChartProps {
+  data: any[];
+  categories: string[];
+  index: string;
+  colors?: string[];
+  valueFormatter?: (value: number) => string;
+  yAxisWidth?: number;
+  className?: string;
+}
+
+export function BarChart({
+  data,
+  index,
+  categories,
+  colors = ["blue", "green", "red", "orange", "purple"],
+  valueFormatter = (value: number) => value.toString(),
+  yAxisWidth = 56,
+  className,
+}: BarChartProps) {
+  return (
+    <ChartContainer 
+      config={categories.reduce((acc, category, i) => {
+        acc[category] = {
+          label: category,
+          color: colors[i % colors.length],
+        };
+        return acc;
+      }, {} as ChartConfig)} 
+      className={className}
+    >
+      <RechartsPrimitive.ComposedChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 5 }}>
+        <RechartsPrimitive.CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
+        <RechartsPrimitive.XAxis
+          dataKey={index}
+          tick={{ transform: "translate(0, 6)" }}
+          tickLine={{ transform: "translate(0, 1)" }}
+          className="stroke-border"
+          tickMargin={10}
+        />
+        <RechartsPrimitive.YAxis
+          width={yAxisWidth}
+          tickFormatter={valueFormatter}
+          tick={{ transform: "translate(-3, 0)" }}
+          tickLine={{ transform: "translate(-3, 0)" }}
+          className="stroke-border"
+          tickMargin={10}
+        />
+        <RechartsPrimitive.Tooltip
+          content={(props) => (
+            <ChartTooltipContent
+              {...props}
+              indicator="line"
+              formatter={(value, name) => (
+                <span className="flex flex-row items-center gap-2">
+                  <span>{name}</span>
+                  <span className="font-medium text-foreground">
+                    {valueFormatter(Number(value))}
+                  </span>
+                </span>
+              )}
+            />
+          )}
+        />
+        {categories.map((category, i) => (
+          <RechartsPrimitive.Bar
+            key={category}
+            dataKey={category}
+            fill={colors[i % colors.length]}
+            barSize={30}
+          />
+        ))}
+      </RechartsPrimitive.ComposedChart>
+    </ChartContainer>
+  );
+}
+
 export {
   ChartContainer,
   ChartTooltip,
@@ -361,3 +527,4 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+

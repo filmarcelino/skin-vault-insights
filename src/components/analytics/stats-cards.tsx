@@ -15,7 +15,7 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ inventoryStats }: StatsCardsProps) {
-  const { formatCurrency } = useCurrency();
+  const { formatPrice } = useCurrency();
   
   // Default values when no stats available
   const stats = inventoryStats || {
@@ -37,7 +37,7 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            {formatCurrency(stats.total_value)}
+            {formatPrice(stats.total_value)}
           </div>
           <p className="text-xs text-muted-foreground">
             Your entire inventory value
@@ -69,7 +69,7 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
         </CardHeader>
         <CardContent>
           <div className={`text-2xl font-bold ${isPositiveChange ? 'text-green-500' : 'text-red-500'}`}>
-            {isPositiveChange ? "+" : ""}{formatCurrency(stats.value_change_30d)}
+            {isPositiveChange ? "+" : ""}{formatPrice(stats.value_change_30d)}
           </div>
           <p className="text-xs text-muted-foreground">
             Value change in last 30 days
