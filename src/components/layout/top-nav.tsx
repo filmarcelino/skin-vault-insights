@@ -54,7 +54,7 @@ export const TopNav: FC = () => {
               title="Dashboard"
             >
               <Home className="h-4 w-4" />
-              <span className="text-sm">Dashboard</span>
+              <span className="text-sm">Home</span>
             </Link>
             <Link 
               to="/search" 

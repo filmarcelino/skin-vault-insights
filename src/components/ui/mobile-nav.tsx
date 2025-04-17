@@ -22,7 +22,7 @@ export const MobileNav: FC = () => {
       <div className="flex items-center justify-around h-16">
         <Link to="/" className={getLinkClass("/")}>
           <Home className="h-5 w-5" />
-          <span className="text-[10px] mt-1">Dashboard</span>
+          <span className="text-[10px] mt-1">Home</span>
         </Link>
         <Link to="/add" className={getLinkClass("/add")}>
           <Plus className="h-5 w-5" />

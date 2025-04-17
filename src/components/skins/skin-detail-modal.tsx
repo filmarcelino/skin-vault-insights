@@ -138,7 +138,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currency.code);
   const [marketplace, setMarketplace] = useState<string>("steam");
   const [feePercentage, setFeePercentage] = useState<string>("0");
-  const [estimatedValue, setEstimatedValue] = useState<string>("");
+  const [expectedSalePrice, setExpectedSalePrice] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isStatTrak, setIsStatTrak] = useState<boolean>(false);
   const [tradeLockDays, setTradeLockDays] = useState<string>("0");
@@ -152,7 +152,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
       setSelectedCurrency(currency.code);
       setMarketplace("steam");
       setFeePercentage("0");
-      setEstimatedValue("");
+      setExpectedSalePrice("");
       setNotes("");
       setIsStatTrak(false);
       setTradeLockDays("7"); // Default to 7 days for fresh purchases
@@ -185,7 +185,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
     
     const currencyRate = CURRENCIES.find(c => c.code === selectedCurrency)?.rate || 1;
     const priceInUSD = purchasePrice ? parseFloat(purchasePrice) / currencyRate : undefined;
-    const estimatedValueInUSD = estimatedValue ? parseFloat(estimatedValue) / currencyRate : undefined;
+    const salePriceInUSD = expectedSalePrice ? parseFloat(expectedSalePrice) / currencyRate : undefined;
     
     const skinData = {
       skinId: skin.id,
@@ -201,7 +201,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
       originalCurrencyRate: currencyRate,
       marketplace,
       feePercentage: feePercentage ? parseFloat(feePercentage) : 0,
-      estimatedValue: estimatedValueInUSD,
+      estimatedValue: salePriceInUSD,
       notes,
       isStatTrak,
       tradeLockDays: parseInt(tradeLockDays || "0", 10),
@@ -446,15 +446,15 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="estimated-value">Estimated Value</Label>
+                  <Label htmlFor="expected-sale-price">Expected Sale Price</Label>
                   <Input
-                    id="estimated-value"
+                    id="expected-sale-price"
                     type="number"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
-                    value={estimatedValue}
-                    onChange={(e) => setEstimatedValue(e.target.value)}
+                    value={expectedSalePrice}
+                    onChange={(e) => setExpectedSalePrice(e.target.value)}
                   />
                 </div>
               </div>
