@@ -7,9 +7,19 @@ import { SkinDetailsCard } from "./skin-details-card";
 import { SkinSellingForm } from "./skin-selling-form";
 import { SkinAdditionalInfo } from "./skin-additional-info";
 import { Button } from "../ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAddSkin } from "@/hooks/use-skins";
+import { useAddSkin, useRemoveSkin } from "@/hooks/use-skins";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface InventorySkinModalProps {
   item: InventoryItem | null;
@@ -27,8 +37,10 @@ export function InventorySkinModal({
   onAddToInventory
 }: InventorySkinModalProps) {
   const [activeTab, setActiveTab] = useState("details");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
   const addSkinMutation = useAddSkin();
+  const removeSkinMutation = useRemoveSkin();
 
   const handleAddToInventory = async () => {
     if (!item) return;
@@ -102,90 +114,146 @@ export function InventorySkinModal({
       });
     }
   };
+
+  const handleDeleteSkin = () => {
+    if (!item || !item.inventoryId) return;
+    
+    removeSkinMutation.mutate(item.inventoryId, {
+      onSuccess: () => {
+        toast({
+          title: "Skin Removida",
+          description: `${item.weapon || ""} | ${item.name} foi removida do seu inventário.`,
+        });
+        onOpenChange(false);
+      },
+      onError: (error) => {
+        console.error("Error removing skin:", error);
+        toast({
+          title: "Erro",
+          description: "Falha ao remover skin do inventário",
+          variant: "destructive"
+        });
+      }
+    });
+    setIsDeleteDialogOpen(false);
+  };
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        {item && (
-          <>
-            <SkinDetailsCard item={item} />
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {item && (
+            <>
+              <SkinDetailsCard item={item} />
 
-            {!item.isInUserInventory && (onAddToInventory || addSkinMutation) && (
-              <div className="mb-4">
-                <Button 
-                  onClick={handleAddToInventory} 
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  disabled={addSkinMutation.isPending}
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  {addSkinMutation.isPending ? "Adicionando..." : "Adicionar ao Inventário"}
-                </Button>
-              </div>
-            )}
-
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="w-full">
-                <TabsTrigger value="details" className="flex-1">Detalhes</TabsTrigger>
-                {item.isInUserInventory && onSellSkin && (
-                  <TabsTrigger value="sell" className="flex-1">Vender</TabsTrigger>
+              {/* Action Buttons */}
+              <div className="mb-4 flex gap-2">
+                {!item.isInUserInventory && (onAddToInventory || addSkinMutation) && (
+                  <Button 
+                    onClick={handleAddToInventory} 
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    disabled={addSkinMutation.isPending}
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    {addSkinMutation.isPending ? "Adicionando..." : "Adicionar ao Inventário"}
+                  </Button>
                 )}
-                <TabsTrigger value="notes" className="flex-1">Notas</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="details" className="py-4">
-                <div className="space-y-6">
-                  {/* Histórico de preços - Placeholder por enquanto */}
-                  <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                    <h3 className="font-medium mb-2 text-[#8B5CF6]">Histórico de Preços</h3>
-                    <div className="h-24 flex items-center justify-center text-[#8A898C] text-sm">
-                      Gráficos de histórico de preços estarão disponíveis em breve.
-                    </div>
-                  </div>
+                
+                {item.isInUserInventory && (
+                  <Button 
+                    onClick={() => setIsDeleteDialogOpen(true)} 
+                    variant="destructive"
+                    className="flex-1"
+                    disabled={removeSkinMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {removeSkinMutation.isPending ? "Removendo..." : "Remover do Inventário"}
+                  </Button>
+                )}
+              </div>
 
-                  {/* Informações da coleção - Placeholder por enquanto */}
-                  {item.collection && (
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="details" className="flex-1">Detalhes</TabsTrigger>
+                  {item.isInUserInventory && onSellSkin && (
+                    <TabsTrigger value="sell" className="flex-1">Vender</TabsTrigger>
+                  )}
+                  <TabsTrigger value="notes" className="flex-1">Notas</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="details" className="py-4">
+                  <div className="space-y-6">
+                    {/* Histórico de preços - Placeholder por enquanto */}
                     <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                      <h3 className="font-medium mb-2 text-[#8B5CF6]">Coleção</h3>
-                      <div className="text-sm text-[#8A898C]">
-                        Esta skin faz parte de {item.collection.name || "Coleção Desconhecida"}
+                      <h3 className="font-medium mb-2 text-[#8B5CF6]">Histórico de Preços</h3>
+                      <div className="h-24 flex items-center justify-center text-[#8A898C] text-sm">
+                        Gráficos de histórico de preços estarão disponíveis em breve.
                       </div>
                     </div>
-                  )}
 
-                  {/* Informações do Float */}
-                  <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                    <h3 className="font-medium mb-2 text-[#8B5CF6]">Valor Float</h3>
-                    <div className="text-sm text-[#8A898C]">
-                      {item.floatValue ? (
-                        <>
-                          <p>Float Atual: {item.floatValue.toFixed(8)}</p>
-                          <p>Faixa de Float: {item.min_float?.toFixed(8) || "Desconhecido"} - {item.max_float?.toFixed(8) || "Desconhecido"}</p>
-                        </>
-                      ) : (
-                        <p>Informações do valor de float não disponíveis.</p>
-                      )}
+                    {/* Informações da coleção - Placeholder por enquanto */}
+                    {item.collection && (
+                      <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
+                        <h3 className="font-medium mb-2 text-[#8B5CF6]">Coleção</h3>
+                        <div className="text-sm text-[#8A898C]">
+                          Esta skin faz parte de {item.collection.name || "Coleção Desconhecida"}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Informações do Float */}
+                    <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
+                      <h3 className="font-medium mb-2 text-[#8B5CF6]">Valor Float</h3>
+                      <div className="text-sm text-[#8A898C]">
+                        {item.floatValue ? (
+                          <>
+                            <p>Float Atual: {item.floatValue.toFixed(8)}</p>
+                            <p>Faixa de Float: {item.min_float?.toFixed(8) || "Desconhecido"} - {item.max_float?.toFixed(8) || "Desconhecido"}</p>
+                          </>
+                        ) : (
+                          <p>Informações do valor de float não disponíveis.</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
-
-              {item.isInUserInventory && onSellSkin && (
-                <TabsContent value="sell" className="py-4">
-                  <SkinSellingForm 
-                    item={item} 
-                    onSell={onSellSkin} 
-                    onCancel={() => setActiveTab("details")} 
-                  />
                 </TabsContent>
-              )}
 
-              <TabsContent value="notes" className="py-4">
-                <SkinAdditionalInfo item={item} />
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+                {item.isInUserInventory && onSellSkin && (
+                  <TabsContent value="sell" className="py-4">
+                    <SkinSellingForm 
+                      item={item} 
+                      onSell={onSellSkin} 
+                      onCancel={() => setActiveTab("details")} 
+                    />
+                  </TabsContent>
+                )}
+
+                <TabsContent value="notes" className="py-4">
+                  <SkinAdditionalInfo item={item} />
+                </TabsContent>
+              </Tabs>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar remoção</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover {item?.weapon} | {item?.name} do seu inventário?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSkin} className="bg-destructive text-destructive-foreground">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

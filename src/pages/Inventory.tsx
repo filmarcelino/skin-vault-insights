@@ -1,19 +1,27 @@
 
 import { useState } from "react";
-import { useInventory } from "@/hooks/use-skins";
+import { useInventory, useRemoveSkin } from "@/hooks/use-skins";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
-import { InventoryItem } from "@/types/skin";
+import { InventoryItem, SellData } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
+import { useToast } from "@/hooks/use-toast";
 
 const Inventory = () => {
   const { data: inventoryItems = [], isLoading, error } = useInventory();
   const [selectedSkin, setSelectedSkin] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { toast } = useToast();
+  const removeSkinMutation = useRemoveSkin();
 
   const handleSkinClick = (skin: InventoryItem) => {
     setSelectedSkin(skin);
     setIsModalOpen(true);
+  };
+
+  const handleSellSkin = (itemId: string, sellData: SellData) => {
+    // Implementation will be added later in a separate feature
+    console.log("Selling skin:", itemId, sellData);
   };
 
   if (isLoading) {
@@ -77,6 +85,7 @@ const Inventory = () => {
           item={selectedSkin}
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
+          onSellSkin={handleSellSkin}
         />
       )}
     </div>

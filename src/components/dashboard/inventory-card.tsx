@@ -1,8 +1,9 @@
 
 import { FC } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Clock } from "lucide-react";
+import { Lock, Clock, Trash2 } from "lucide-react";
 import { getRarityColor } from "@/utils/skin-utils";
+import { Button } from "@/components/ui/button";
 
 interface InventoryCardProps {
   weaponName: string;
@@ -17,6 +18,8 @@ interface InventoryCardProps {
   tradeLockDays?: number;
   tradeLockUntil?: string;
   onClick?: () => void;
+  onDelete?: () => void;
+  showDeleteButton?: boolean;
 }
 
 export const InventoryCard: FC<InventoryCardProps> = ({
@@ -32,6 +35,8 @@ export const InventoryCard: FC<InventoryCardProps> = ({
   tradeLockDays,
   tradeLockUntil,
   onClick,
+  onDelete,
+  showDeleteButton = false,
 }) => {
   // Function to handle image loading error
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -104,6 +109,11 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     return `${r}, ${g}, ${b}`;
   };
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) onDelete();
+  };
+
   return (
     <div 
       className={`cs-card p-3 flex flex-col transition-all ${getRarityColorClass()} border-t-2 ${className} ${onClick ? 'cursor-pointer' : ''}`} 
@@ -123,6 +133,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
           </Badge>
         )}
       </div>
+
       <div className="relative w-full h-24 mb-2 flex items-center justify-center bg-black/10 dark:bg-white/5 rounded">
         {image ? (
           <img 
@@ -142,7 +153,25 @@ export const InventoryCard: FC<InventoryCardProps> = ({
             <Lock className="h-3 w-3 text-yellow-500" />
           </div>
         )}
+
+        {/* Delete button overlay */}
+        {showDeleteButton && onDelete && (
+          <div 
+            className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="gap-1"
+              onClick={handleDeleteClick}
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Remover
+            </Button>
+          </div>
+        )}
       </div>
+
       <div className="flex items-center justify-between mt-auto">
         <div className="flex items-center gap-1">
           {wear && <Badge variant="secondary" className="text-xs truncate max-w-[70%]">{wear}</Badge>}

@@ -14,7 +14,7 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
   
   return (
     <div 
-      className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(item.rarity)}`}
+      className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-2 transition-all shadow-sm ${getRarityColorClass(item.rarity)}`}
       style={{ backgroundColor: `${getRarityColor(item.rarity)}20` }}
     >
       <div className="w-full md:w-1/3 flex items-center justify-center">
