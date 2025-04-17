@@ -22,19 +22,19 @@ export const MobileNav: FC = () => {
       <div className="flex items-center justify-around h-16">
         <Link to="/" className={getLinkClass("/")}>
           <Home className="h-5 w-5" />
-          <span className="text-[10px] mt-1">Home</span>
+          <span className="text-[10px] mt-1">Dashboard</span>
         </Link>
         <Link to="/add" className={getLinkClass("/add")}>
           <Plus className="h-5 w-5" />
-          <span className="text-[10px] mt-1">Adicionar</span>
+          <span className="text-[10px] mt-1">Add</span>
         </Link>
         <Link to="/inventory" className={getLinkClass("/inventory")}>
           <LayoutGrid className="h-5 w-5" />
-          <span className="text-[10px] mt-1">Inventário</span>
+          <span className="text-[10px] mt-1">Inventory</span>
         </Link>
         <Link to="/more" className={getLinkClass("/more")}>
           <MoreHorizontal className="h-5 w-5" />
-          <span className="text-[10px] mt-1">Mais</span>
+          <span className="text-[10px] mt-1">More</span>
         </Link>
       </div>
     </div>

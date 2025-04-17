@@ -14,17 +14,17 @@ export const TopNav: FC = () => {
   const getPageName = (path: string) => {
     switch (path) {
       case "/":
-        return "Home";
+        return "Dashboard";
       case "/search":
-        return "Buscar Skins";
+        return "Search Skins";
       case "/add":
-        return "Adicionar Skin";
+        return "Add Skin";
       case "/inventory":
-        return "Inventário";
+        return "Inventory";
       case "/analytics":
-        return "Análises";
+        return "Analytics";
       case "/settings":
-        return "Configurações";
+        return "Settings";
       default:
         return "";
     }
@@ -51,50 +51,50 @@ export const TopNav: FC = () => {
             <Link 
               to="/" 
               className={getLinkClass("/")}
-              title="Home"
+              title="Dashboard"
             >
               <Home className="h-4 w-4" />
-              <span className="text-sm">Home</span>
+              <span className="text-sm">Dashboard</span>
             </Link>
             <Link 
               to="/search" 
               className={getLinkClass("/search")}
-              title="Buscar Skins"
+              title="Search Skins"
             >
               <Search className="h-4 w-4" />
-              <span className="text-sm">Buscar</span>
+              <span className="text-sm">Search</span>
             </Link>
             <Link 
               to="/add" 
               className={getLinkClass("/add")}
-              title="Adicionar Skin"
+              title="Add Skin"
             >
               <Plus className="h-4 w-4" />
-              <span className="text-sm">Adicionar</span>
+              <span className="text-sm">Add</span>
             </Link>
             <Link 
               to="/inventory" 
               className={getLinkClass("/inventory")}
-              title="Inventário"
+              title="Inventory"
             >
               <LayoutGrid className="h-4 w-4" />
-              <span className="text-sm">Inventário</span>
+              <span className="text-sm">Inventory</span>
             </Link>
             <Link 
               to="/analytics" 
               className={getLinkClass("/analytics")}
-              title="Análises"
+              title="Analytics"
             >
               <LineChart className="h-4 w-4" />
-              <span className="text-sm">Análises</span>
+              <span className="text-sm">Analytics</span>
             </Link>
             <Link 
               to="/settings" 
               className={getLinkClass("/settings")}
-              title="Configurações"
+              title="Settings"
             >
               <Settings className="h-4 w-4" />
-              <span className="text-sm">Configurações</span>
+              <span className="text-sm">Settings</span>
             </Link>
           </div>
         </div>
