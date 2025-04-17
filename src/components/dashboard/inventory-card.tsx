@@ -44,8 +44,6 @@ export const InventoryCard: FC<InventoryCardProps> = ({
   const getBackgroundStyle = () => {
     if (!rarity) return {};
     
-    const color = getRarityColor(rarity);
-    
     const metallicColors: Record<string, string> = {
       'Consumer Grade': '#8E9196',
       'Industrial Grade': '#5E7D9A',
@@ -65,11 +63,11 @@ export const InventoryCard: FC<InventoryCardProps> = ({
       'Especial Rara': '#A69D7E',
     };
 
-    const bgColor = metallicColors[rarity] || color;
+    const bgColor = metallicColors[rarity] || getRarityColor(rarity);
     
     return {
       backgroundColor: bgColor,
-      color: '#FFFFFF',
+      color: '#000000',
       border: 'none',
       boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
       ...style
@@ -85,16 +83,16 @@ export const InventoryCard: FC<InventoryCardProps> = ({
       <div className="p-3 space-y-2">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="font-medium text-xs text-foreground/90 truncate">
+            <h3 className="font-medium text-xs text-black/90 truncate">
               {isStatTrak && (
                 <span className="text-[#CF6A32] font-bold mr-1">StatTrak™</span>
               )}
               {weaponName}
             </h3>
-            <p className="text-[10px] text-foreground/80 truncate">{skinName}</p>
+            <p className="text-[10px] text-black/80 truncate">{skinName}</p>
           </div>
           {price && (
-            <span className="text-xs font-semibold bg-background/80 px-1.5 py-0.5 rounded shadow-sm">
+            <span className="text-xs font-semibold bg-background/80 px-1.5 py-0.5 rounded shadow-sm text-black">
               ${price}
             </span>
           )}

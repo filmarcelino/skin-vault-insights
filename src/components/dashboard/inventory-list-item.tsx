@@ -1,4 +1,3 @@
-
 import { FC } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Clock } from "lucide-react";
@@ -38,11 +37,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
   onClick,
 }) => {
   const { formatPrice } = useCurrency();
-  // Check if the item is still trade locked
-  const isLocked = tradeLockDays && tradeLockDays > 0;
-  const tradeLockDate = tradeLockUntil ? new Date(tradeLockUntil) : null;
-  const daysLeft = tradeLockDate ? Math.ceil((tradeLockDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
-
+  
   // Get border color based on rarity
   const getBorderStyle = () => {
     if (!rarity) return {};
@@ -50,7 +45,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
     const color = getRarityColor(rarity);
     return {
       borderLeftColor: color,
-      backgroundColor: `${color}10`, // Adicionar um fundo baseado na raridade
+      backgroundColor: `${color}10`, // Light background based on rarity
       ...style
     };
   };
@@ -84,8 +79,8 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       {/* Main info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1">
-          <div className="font-medium text-sm truncate">
-            {weaponName} | <span className="text-primary">{skinName}</span>
+          <div className="font-medium text-sm truncate text-black">
+            {weaponName} | <span className="text-black/70">{skinName}</span>
           </div>
           {isStatTrak && (
             <Badge 
@@ -96,8 +91,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          {/* Sempre mostrar o wear se disponível */}
+        <div className="flex items-center gap-1 text-xs text-black/60">
           {wear && <span>{wear}</span>}
           {isLocked && daysLeft > 0 && (
             <div className="flex items-center text-[10px] text-yellow-500 ml-1">
@@ -109,7 +103,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       </div>
       
       {/* Price */}
-      {price && <div className="text-sm font-medium whitespace-nowrap">
+      {price && <div className="text-sm font-medium whitespace-nowrap text-black">
         {typeof price === 'number' ? formatPrice(price) : price}
       </div>}
     </div>
