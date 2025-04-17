@@ -208,6 +208,7 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
     
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
+      // Modificado para pesquisa parcial, verificando se o termo está contido no nome ou na arma
       filteredSkins = filteredSkins.filter(skin => 
         (skin.name && skin.name.toLowerCase().includes(searchLower)) || 
         (skin.weapon && skin.weapon.toLowerCase().includes(searchLower)));
@@ -246,7 +247,21 @@ export const fetchSkinById = async (id: string): Promise<Skin | null> => {
 
 /**
  * Search for skins by name or weapon
+ * Pesquisa melhorada para encontrar termos parciais
  */
 export const searchSkins = async (query: string): Promise<Skin[]> => {
-  return fetchSkins({ search: query });
+  if (!query || query.trim().length === 0) {
+    return [];
+  }
+  
+  const skins = await fetchSkins();
+  const searchLower = query.toLowerCase().trim();
+  
+  // Filtragem mais tolerante para encontrar correspondências parciais
+  return skins.filter(skin => 
+    (skin.name && skin.name.toLowerCase().includes(searchLower)) || 
+    (skin.weapon && skin.weapon.toLowerCase().includes(searchLower)) ||
+    (skin.rarity && skin.rarity.toLowerCase().includes(searchLower)) ||
+    (skin.collection?.name && skin.collection.name.toLowerCase().includes(searchLower))
+  );
 };
