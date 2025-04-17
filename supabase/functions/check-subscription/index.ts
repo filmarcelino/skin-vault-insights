@@ -47,97 +47,115 @@ serve(async (req) => {
     // Initialize Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
     
-    // Check if user exists as a customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
-    if (customers.data.length === 0) {
-      logStep("No customer found for user");
-      // Update subscriber status in database as not subscribed
-      await supabaseClient.from("subscribers").upsert({
-        user_id: user.id,
-        email: user.email,
+    try {
+      // Check if user exists as a customer
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      
+      if (customers.data.length === 0) {
+        logStep("No customer found for user");
+        // Update subscriber status in database as not subscribed
+        await supabaseClient.from("subscribers").upsert({
+          user_id: user.id,
+          email: user.email,
+          subscribed: false,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+        
+        return new Response(JSON.stringify({ 
+          subscribed: false 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      const customerId = customers.data[0].id;
+      logStep("Found Stripe customer", { customerId });
+
+      // Check for active subscriptions
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 1,
+      });
+
+      const hasActiveSubscription = subscriptions.data.length > 0;
+      let subscriptionEndDate = null;
+      let isInTrialPeriod = false;
+      
+      if (hasActiveSubscription) {
+        const subscription = subscriptions.data[0];
+        subscriptionEndDate = new Date(subscription.current_period_end * 1000).toISOString();
+        isInTrialPeriod = subscription.status === "trialing";
+        
+        logStep("Subscription status", { 
+          active: true, 
+          end: subscriptionEndDate, 
+          trial: isInTrialPeriod 
+        });
+        
+        // Update subscriber record in database
+        await supabaseClient.from("subscribers").upsert({
+          user_id: user.id,
+          email: user.email,
+          stripe_customer_id: customerId,
+          subscribed: true,
+          subscription_end: subscriptionEndDate,
+          is_trial: isInTrialPeriod,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+        
+        return new Response(JSON.stringify({ 
+          subscribed: true, 
+          subscription_end: subscriptionEndDate,
+          is_trial: isInTrialPeriod
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else {
+        logStep("No active subscription found");
+        
+        // Update subscriber record in database
+        await supabaseClient.from("subscribers").upsert({
+          user_id: user.id,
+          email: user.email,
+          stripe_customer_id: customerId,
+          subscribed: false,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+        
+        return new Response(JSON.stringify({ 
+          subscribed: false 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+    } catch (stripeError) {
+      // Handle Stripe API errors separately
+      const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
+      logStep("STRIPE API ERROR", { message: errorMessage });
+      
+      // Just return a default response without trying to access Stripe
+      return new Response(JSON.stringify({ 
         subscribed: false,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
-      
-      return new Response(JSON.stringify({ 
-        subscribed: false 
+        error: "Não foi possível verificar o status da assinatura. Tente novamente mais tarde."
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
-
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
-
-    // Check for active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
-
-    const hasActiveSubscription = subscriptions.data.length > 0;
-    let subscriptionEndDate = null;
-    let isInTrialPeriod = false;
-    
-    if (hasActiveSubscription) {
-      const subscription = subscriptions.data[0];
-      subscriptionEndDate = new Date(subscription.current_period_end * 1000).toISOString();
-      isInTrialPeriod = subscription.status === "trialing";
-      
-      logStep("Subscription status", { 
-        active: true, 
-        end: subscriptionEndDate, 
-        trial: isInTrialPeriod 
-      });
-      
-      // Update subscriber record in database
-      await supabaseClient.from("subscribers").upsert({
-        user_id: user.id,
-        email: user.email,
-        stripe_customer_id: customerId,
-        subscribed: true,
-        subscription_end: subscriptionEndDate,
-        is_trial: isInTrialPeriod,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
-      
-      return new Response(JSON.stringify({ 
-        subscribed: true, 
-        subscription_end: subscriptionEndDate,
-        is_trial: isInTrialPeriod
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    } else {
-      logStep("No active subscription found");
-      
-      // Update subscriber record in database
-      await supabaseClient.from("subscribers").upsert({
-        user_id: user.id,
-        email: user.email,
-        stripe_customer_id: customerId,
-        subscribed: false,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
-      
-      return new Response(JSON.stringify({ 
-        subscribed: false 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        status: 200, // Still return 200 with error message inside
       });
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      subscribed: false 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: 200, // Still return 200 with error details inside
     });
   }
 });

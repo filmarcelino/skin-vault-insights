@@ -58,101 +58,114 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
     
-    // Initialize Stripe
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
-    
-    // Check if user already exists as a customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId: string | undefined;
-    
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      logStep("Found existing customer", { customerId });
+    try {
+      // Initialize Stripe
+      const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
       
-      // Check if customer already has an active subscription
-      const subscriptions = await stripe.subscriptions.list({
-        customer: customerId,
-        status: "active",
-        limit: 1,
-      });
+      // Check if user already exists as a customer
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      let customerId: string | undefined;
       
-      if (subscriptions.data.length > 0) {
-        logStep("Customer already has an active subscription");
-        // Return URL to manage subscription instead
-        const session = await stripe.billingPortal.sessions.create({
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logStep("Found existing customer", { customerId });
+        
+        // Check if customer already has an active subscription
+        const subscriptions = await stripe.subscriptions.list({
           customer: customerId,
-          return_url: `${req.headers.get("origin")}`,
+          status: "active",
+          limit: 1,
         });
         
-        return new Response(JSON.stringify({ url: session.url, existingSubscription: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
+        if (subscriptions.data.length > 0) {
+          logStep("Customer already has an active subscription");
+          // Return URL to manage subscription instead
+          const session = await stripe.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: `${req.headers.get("origin")}`,
+          });
+          
+          return new Response(JSON.stringify({ url: session.url, existingSubscription: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
       }
+      
+      // Set up the plan details based on the selected plan
+      let line_items;
+      
+      if (plan === 'annual') {
+        // Annual plan with 10% discount ($3.99 * 12 months = $47.88, with 10% off = $43.09)
+        line_items = [{
+          price_data: {
+            currency: "usd",
+            recurring: {
+              interval: "year",
+              trial_period_days: 3,
+            },
+            product_data: {
+              name: "CS Skin Vault Premium (Anual)",
+              description: "Acesso premium ao CS Skin Vault com economia de 10%",
+            },
+            unit_amount: 4309, // $43.09 em centavos (equivalente a $3.99/mês com 10% de desconto)
+          },
+          quantity: 1,
+        }];
+      } else {
+        // Default monthly plan
+        line_items = [{
+          price_data: {
+            currency: "usd",
+            recurring: {
+              interval: "month",
+              trial_period_days: 3,
+            },
+            product_data: {
+              name: "CS Skin Vault Premium",
+              description: "Acesso premium ao CS Skin Vault",
+            },
+            unit_amount: 399, // $3.99 em centavos
+          },
+          quantity: 1,
+        }];
+      }
+      
+      // Create a Stripe Checkout session for a new subscription
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        customer_email: customerId ? undefined : user.email,
+        mode: "subscription",
+        line_items: line_items,
+        success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get("origin")}`,
+      });
+      
+      logStep("Checkout session created", { sessionId: session.id, url: session.url });
+      
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } catch (stripeError) {
+      // Handle Stripe API errors separately
+      const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
+      logStep("STRIPE API ERROR", { message: errorMessage });
+      
+      return new Response(JSON.stringify({ 
+        error: "Falha ao criar sessão de pagamento. Por favor, tente novamente mais tarde." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Still return 200 with error message inside
+      });
     }
-    
-    // Set up the plan details based on the selected plan
-    let line_items;
-    
-    if (plan === 'annual') {
-      // Annual plan with 10% discount ($3.99 * 12 months = $47.88, with 10% off = $43.09)
-      line_items = [{
-        price_data: {
-          currency: "usd",
-          recurring: {
-            interval: "year",
-            trial_period_days: 3,
-          },
-          product_data: {
-            name: "CS Skin Vault Premium (Anual)",
-            description: "Acesso premium ao CS Skin Vault com economia de 10%",
-          },
-          unit_amount: 4309, // $43.09 em centavos (equivalente a $3.99/mês com 10% de desconto)
-        },
-        quantity: 1,
-      }];
-    } else {
-      // Default monthly plan
-      line_items = [{
-        price_data: {
-          currency: "usd",
-          recurring: {
-            interval: "month",
-            trial_period_days: 3,
-          },
-          product_data: {
-            name: "CS Skin Vault Premium",
-            description: "Acesso premium ao CS Skin Vault",
-          },
-          unit_amount: 399, // $3.99 em centavos
-        },
-        quantity: 1,
-      }];
-    }
-    
-    // Create a Stripe Checkout session for a new subscription
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      mode: "subscription",
-      line_items: line_items,
-      success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}`,
-    });
-    
-    logStep("Checkout session created", { sessionId: session.id, url: session.url });
-    
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: 200, // Still return 200 with error details inside
     });
   }
 });

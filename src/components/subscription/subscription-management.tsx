@@ -26,15 +26,16 @@ export const SubscriptionManagement = () => {
   const { user, session } = useAuth();
   const { toast } = useToast();
   const [isInvoking, setIsInvoking] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
-  const checkSubscription = async () => {
+  const checkSubscription = async (showToast = true) => {
     if (!session?.access_token || !user) {
       setStatus({ subscribed: false, loading: false });
       return;
     }
 
     try {
-      setStatus(prev => ({ ...prev, loading: true }));
+      setStatus(prev => ({ ...prev, loading: true, error: undefined }));
       
       const { data, error } = await Promise.race([
         supabase.functions.invoke('check-subscription', {
@@ -49,25 +50,55 @@ export const SubscriptionManagement = () => {
 
       if (error) throw new Error(error.message);
       
+      // Check if the data contains an error field (from our custom error handling)
+      if (data.error) {
+        console.warn("Subscription check returned error:", data.error);
+        setStatus(prev => ({
+          ...prev,
+          loading: false,
+          error: data.error
+        }));
+        
+        if (showToast) {
+          toast({
+            title: "Aviso",
+            description: data.error,
+            variant: "default"
+          });
+        }
+        return;
+      }
+      
       setStatus({
         subscribed: data.subscribed,
         subscription_end: data.subscription_end,
         is_trial: data.is_trial,
         loading: false
       });
+      
+      // Reset retry count on success
+      setRetryCount(0);
     } catch (err) {
       console.error('Erro ao verificar assinatura:', err);
-      setStatus({
-        subscribed: false,
+      setStatus(prev => ({
+        ...prev,
         loading: false,
         error: err instanceof Error ? err.message : 'Falha ao verificar o status da assinatura'
-      });
+      }));
       
-      toast({
-        title: "Erro de verificação",
-        description: "Não foi possível verificar seu status de assinatura. Tente novamente mais tarde.",
-        variant: "destructive"
-      });
+      if (showToast) {
+        toast({
+          title: "Erro de verificação",
+          description: "Não foi possível verificar seu status de assinatura. Tente novamente mais tarde.",
+          variant: "destructive"
+        });
+      }
+      
+      // Handle retry logic
+      if (retryCount < 2) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => checkSubscription(false), 3000);
+      }
     }
   };
 
@@ -97,6 +128,11 @@ export const SubscriptionManagement = () => {
       ]) as any;
 
       if (error) throw new Error(error.message);
+      
+      // Check if the data contains an error field (from our custom error handling)
+      if (data.error) {
+        throw new Error(data.error);
+      }
       
       if (data.url) {
         window.location.href = data.url;
@@ -132,6 +168,11 @@ export const SubscriptionManagement = () => {
 
       if (error) throw new Error(error.message);
       
+      // Check if the data contains an error field (from our custom error handling)
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
       if (data.url) {
         window.location.href = data.url;
       }
@@ -150,7 +191,7 @@ export const SubscriptionManagement = () => {
   // Verificar assinatura ao montar e quando a autenticação muda
   useEffect(() => {
     if (user) {
-      checkSubscription();
+      checkSubscription(false);
     } else {
       setStatus({ subscribed: false, loading: false });
     }
@@ -359,7 +400,7 @@ export const SubscriptionManagement = () => {
         
         {!status.loading && !isInvoking && (
           <Button 
-            onClick={checkSubscription} 
+            onClick={() => checkSubscription(true)} 
             variant="ghost" 
             size="icon" 
             className="hover:bg-primary/10"

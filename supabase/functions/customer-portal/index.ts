@@ -43,38 +43,51 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Initialize Stripe
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
-    
-    // Check if user exists as a customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
-    if (customers.data.length === 0) {
-      throw new Error("No Stripe customer found for this user");
+    try {
+      // Initialize Stripe
+      const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+      
+      // Check if user exists as a customer
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      
+      if (customers.data.length === 0) {
+        throw new Error("No Stripe customer found for this user");
+      }
+
+      const customerId = customers.data[0].id;
+      logStep("Found Stripe customer", { customerId });
+
+      // Create Stripe customer portal session
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${req.headers.get("origin")}/`,
+      });
+      
+      logStep("Created customer portal session", { session_id: session.id });
+      
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    } catch (stripeError) {
+      // Handle Stripe API errors separately
+      const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
+      logStep("STRIPE API ERROR", { message: errorMessage });
+      
+      return new Response(JSON.stringify({ 
+        error: "Falha ao acessar o portal do cliente. Por favor, tente novamente mais tarde." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Still return 200 with error message inside
+      });
     }
-
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
-
-    // Create Stripe customer portal session
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${req.headers.get("origin")}/`,
-    });
-    
-    logStep("Created customer portal session", { session_id: session.id });
-    
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: 200, // Still return 200 with error details inside
     });
   }
 });
