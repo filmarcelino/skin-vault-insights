@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export interface UserProfile {
   id: string;
@@ -10,7 +11,7 @@ export interface UserProfile {
   email: string;
   city?: string;
   country?: string;
-  preferred_currency: string; // This is a string type to match database
+  preferred_currency: string;
   avatar_url?: string;
   created_at: string;
   updated_at: string;
@@ -32,7 +33,7 @@ interface AuthContextType {
     full_name: string;
     city?: string;
     country?: string;
-    preferred_currency: string; // Using string to match database
+    preferred_currency: string;
   }) => Promise<{
     error: Error | null;
     data: Session | null;
@@ -56,17 +57,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { toast } = useToast();
+  const { toast: useToastToast } = useToast();
+
+  console.log("AuthProvider rendering. isLoading:", isLoading, "user:", user?.email);
 
   useEffect(() => {
+    console.log("AuthProvider useEffect running");
+    
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        console.log("Auth state changed:", event, "user:", newSession?.user?.email);
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
         
-        if (session?.user) {
+        if (newSession?.user) {
+          // Defer profile fetching to avoid potential deadlocks
           setTimeout(() => {
-            fetchProfile(session.user.id);
+            fetchProfile(newSession.user.id);
           }, 0);
         } else {
           setProfile(null);
@@ -74,24 +82,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Got current session:", currentSession?.user?.email);
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
       
-      if (session?.user) {
-        fetchProfile(session.user.id);
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id);
       }
       
+      setIsLoading(false);
+    }).catch(error => {
+      console.error("Error getting session:", error);
       setIsLoading(false);
     });
 
     return () => {
+      console.log("Unsubscribing from auth state changes");
       subscription.unsubscribe();
     };
   }, []);
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -104,10 +119,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (data) {
+        console.log("Profile fetched:", data);
         setProfile(data as UserProfile);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error("Exception fetching profile:", error);
     }
   };
 
@@ -156,7 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     full_name: string;
     city?: string;
     country?: string;
-    preferred_currency: string; // Using string to match database
+    preferred_currency: string;
   }) => {
     setIsLoading(true);
     

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -33,8 +32,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useEffect } from "react";
 import { Logo } from "@/components/ui/logo";
+import { toast } from "sonner";
 import { CURRENCIES } from "@/contexts/CurrencyContext";
 
 const loginSchema = z.object({
@@ -74,6 +73,8 @@ const Auth = () => {
   );
   const [showResetPassword, setShowResetPassword] = useState(false);
 
+  console.log("Auth component rendering. User:", user, "isLoading:", isLoading);
+
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -105,19 +106,27 @@ const Auth = () => {
   });
 
   useEffect(() => {
+    console.log("Auth useEffect triggered. User:", user);
     if (user) {
+      console.log("User is authenticated, navigating to home");
       navigate("/");
     }
   }, [user, navigate]);
 
   const handleLoginSubmit = async (data: LoginFormValues) => {
+    console.log("Login attempt with:", data.email);
     const { error } = await signIn(data.email, data.password, data.rememberMe);
     if (!error) {
+      console.log("Login successful");
+      toast.success("Login realizado com sucesso");
       navigate("/");
+    } else {
+      console.error("Login error:", error);
     }
   };
 
   const handleRegisterSubmit = async (data: RegisterFormValues) => {
+    console.log("Register attempt with:", data.email);
     const { error } = await signUp({
       email: data.email,
       password: data.password,
@@ -125,15 +134,20 @@ const Auth = () => {
       full_name: data.fullName,
       city: data.city,
       country: data.country,
-      preferred_currency: data.preferredCurrency, // This is now correctly a string
+      preferred_currency: data.preferredCurrency,
     });
     
     if (!error) {
+      console.log("Registration successful");
+      toast.success("Conta criada com sucesso");
       navigate("/");
+    } else {
+      console.error("Registration error:", error);
     }
   };
 
   const handleResetPasswordSubmit = async (data: ResetPasswordFormValues) => {
+    console.log("Password reset attempt for:", data.email);
     await resetPassword(data.email);
     setShowResetPassword(false);
     loginForm.setValue("email", data.email);
