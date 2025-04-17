@@ -40,9 +40,9 @@ export const Sidebar: FC = () => {
   };
 
   return (
-    <div className="hidden md:flex flex-col h-screen w-64 border-r border-border/50 bg-sidebar-background fixed left-0 top-0 z-30">
+    <div className="hidden md:flex flex-col h-screen w-16 border-r border-border/50 bg-sidebar-background fixed left-0 top-0 z-30">
       <div className="flex items-center justify-center h-16 border-b border-border/50">
-        <h2 className="text-lg font-medium text-primary">{currentPageName}</h2>
+        <h2 className="text-xs font-medium text-primary rotate-90">{currentPageName}</h2>
       </div>
       
       <div className="flex flex-col items-center gap-6 py-6">
@@ -53,7 +53,7 @@ export const Sidebar: FC = () => {
         >
           <div className="w-full flex flex-col items-center justify-center py-2">
             <Home className="h-5 w-5" />
-            <span className="mt-1 text-xs">Home</span>
+            <span className="mt-1 text-[10px]">Home</span>
           </div>
         </Link>
         <Link 
@@ -63,7 +63,7 @@ export const Sidebar: FC = () => {
         >
           <div className="w-full flex flex-col items-center justify-center py-2">
             <Search className="h-5 w-5" />
-            <span className="mt-1 text-xs">Buscar</span>
+            <span className="mt-1 text-[10px]">Buscar</span>
           </div>
         </Link>
         <Link 
@@ -73,7 +73,7 @@ export const Sidebar: FC = () => {
         >
           <div className="w-full flex flex-col items-center justify-center py-2">
             <Plus className="h-5 w-5" />
-            <span className="mt-1 text-xs">Adicionar</span>
+            <span className="mt-1 text-[10px]">Adicionar</span>
           </div>
         </Link>
         <Link 
@@ -83,7 +83,7 @@ export const Sidebar: FC = () => {
         >
           <div className="w-full flex flex-col items-center justify-center py-2">
             <LayoutGrid className="h-5 w-5" />
-            <span className="mt-1 text-xs">Inventário</span>
+            <span className="mt-1 text-[10px]">Inventário</span>
           </div>
         </Link>
         <Link 
@@ -93,7 +93,7 @@ export const Sidebar: FC = () => {
         >
           <div className="w-full flex flex-col items-center justify-center py-2">
             <LineChart className="h-5 w-5" />
-            <span className="mt-1 text-xs">Análises</span>
+            <span className="mt-1 text-[10px]">Análises</span>
           </div>
         </Link>
       </div>
@@ -106,7 +106,7 @@ export const Sidebar: FC = () => {
         >
           <div className="w-full flex flex-col items-center justify-center py-2">
             <Settings className="h-5 w-5" />
-            <span className="mt-1 text-xs">Configurações</span>
+            <span className="mt-1 text-[10px]">Configurações</span>
           </div>
         </Link>
       </div>
