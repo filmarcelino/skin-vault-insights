@@ -1,4 +1,3 @@
-
 import { FC } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
@@ -21,7 +20,7 @@ export const Sidebar: FC = () => {
   return (
     <div className="hidden md:flex flex-col h-screen w-16 border-r border-border/50 bg-sidebar-background fixed left-0 top-0">
       <div className="flex items-center justify-center h-16 border-b border-border/50">
-        <Logo size="sm" variant="compact" />
+        <Logo size="sm" variant="text-only" />
       </div>
       
       <div className="flex flex-col items-center gap-6 py-6">

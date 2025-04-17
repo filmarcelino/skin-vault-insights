@@ -1,5 +1,5 @@
 
-import { FC } from "react"
+import { FC, useState } from "react"
 
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
@@ -8,6 +8,8 @@ interface LogoProps {
 }
 
 export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "default" }) => {
+  const [imageError, setImageError] = useState(false);
+  
   const sizeClasses = {
     sm: "h-12",
     md: "h-16",
@@ -19,7 +21,7 @@ export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "de
   };
 
   // Para o logo apenas texto, mostramos apenas o texto "CS SKIN VAULT"
-  if (variant === "text-only") {
+  if (variant === "text-only" || imageError) {
     return (
       <div className={`flex items-center gap-1 ${className}`}>
         <span className="font-bold text-foreground">CS SKIN</span>
@@ -33,10 +35,11 @@ export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "de
     return (
       <div className={`flex items-center ${className}`}>
         <img 
-          src="/logo.png" 
+          src="/placeholder.svg" 
           alt="CS Skin Vault Logo" 
           className={`${sizeClasses[size]} w-auto`} 
           style={{ objectFit: 'contain', objectPosition: 'left' }} 
+          onError={() => setImageError(true)}
         />
       </div>
     );
@@ -46,10 +49,11 @@ export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "de
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <img 
-        src="/logo.png" 
+        src="/placeholder.svg" 
         alt="CS Skin Vault Logo" 
         className={`${sizeClasses[size]} w-auto`} 
         style={{ objectFit: 'contain' }}
+        onError={() => setImageError(true)}
       />
     </div>
   );
