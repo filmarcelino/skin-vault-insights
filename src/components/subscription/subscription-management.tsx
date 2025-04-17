@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +14,7 @@ export const SubscriptionManagement = () => {
   };
 
   const handleManageSubscription = () => {
-    window.location.href = "https://billing.stripe.com/p/login/test_COLOQUE_SEU_LINK_PORTAL";
+    window.location.href = "https://billing.stripe.com/p/login/test_dR6eW239Ze1L4ec9AA";
   };
 
   return (
