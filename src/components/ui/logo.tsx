@@ -4,7 +4,7 @@ import { FC } from "react"
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
   className?: string;
-  variant?: "text-only";
+  variant?: "text-only" | "icon-only" | "default"; // Updated to include the variants needed by sidebar
 }
 
 export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "text-only" }) => {
