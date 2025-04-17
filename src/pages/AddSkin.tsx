@@ -9,11 +9,23 @@ import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
 import { SkinImageAnalyzer } from "@/components/SkinImageAnalyzer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
+
+// Definindo o número de itens por página
+const ITEMS_PER_PAGE = 8;
 
 const AddSkin = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSkin, setSelectedSkin] = useState<Skin | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -22,8 +34,18 @@ const AddSkin = () => {
   const { data: weapons = [] } = useWeapons();
   const addSkinMutation = useAddSkin();
   
+  // Cálculo da paginação
+  const totalPages = Math.max(1, Math.ceil(searchResults.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedResults = searchResults.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+  
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setCurrentPage(1); // Reset para a primeira página ao fazer uma nova pesquisa
   };
 
   const handleSelectSkin = (skin: Skin) => {
@@ -126,23 +148,78 @@ const AddSkin = () => {
       )}
       
       {searchResults.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {searchResults.slice(0, 8).map((skin) => (
-            <div 
-              key={skin.id || `temp-${skin.name}`}
-              onClick={() => handleSelectSkin(skin)}
-              className="cursor-pointer transition-all hover:scale-[1.02]"
-            >
-              <InventoryCard
-                weaponName={skin.weapon || ""}
-                skinName={skin.name}
-                image={skin.image}
-                rarity={skin.rarity}
-                className={selectedSkin?.id === skin.id ? 'ring-2 ring-primary' : ''}
-              />
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {paginatedResults.map((skin) => (
+              <div 
+                key={skin.id || `temp-${skin.name}`}
+                onClick={() => handleSelectSkin(skin)}
+                className="cursor-pointer transition-all hover:scale-[1.02]"
+              >
+                <InventoryCard
+                  weaponName={skin.weapon || ""}
+                  skinName={skin.name}
+                  image={skin.image}
+                  rarity={skin.rarity}
+                  className={selectedSkin?.id === skin.id ? 'ring-2 ring-primary' : ''}
+                />
+              </div>
+            ))}
+          </div>
+          
+          {/* Paginação - mostrar sempre que houver resultados */}
+          {searchResults.length > 0 && (
+            <div className="mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                    let pageNumber: number;
+                    
+                    if (totalPages <= 5) {
+                      // Se tivermos 5 ou menos páginas, mostrar todas
+                      pageNumber = i + 1;
+                    } else if (currentPage <= 3) {
+                      // Se estivermos no início, mostrar páginas 1-5
+                      pageNumber = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      // Se estivermos no final, mostrar as últimas 5 páginas
+                      pageNumber = totalPages - 4 + i;
+                    } else {
+                      // Caso contrário, mostrar 2 páginas antes e 2 depois da atual
+                      pageNumber = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <PaginationItem key={pageNumber}>
+                        <PaginationLink 
+                          onClick={() => handlePageChange(pageNumber)}
+                          isActive={pageNumber === currentPage}
+                          className="cursor-pointer"
+                        >
+                          {pageNumber}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
       
       <SkinDetailModal 

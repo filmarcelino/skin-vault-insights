@@ -169,8 +169,6 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
     } : undefined
   }));
   
-  console.log("Fetched skins:", mappedSkins.slice(0, 2)); // Debug log for the first 2 skins
-  
   // Apply filters if provided
   if (filters) {
     let filteredSkins = mappedSkins;
@@ -207,11 +205,19 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
     }
     
     if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
-      // Modificado para pesquisa parcial, verificando se o termo está contido no nome ou na arma
-      filteredSkins = filteredSkins.filter(skin => 
-        (skin.name && skin.name.toLowerCase().includes(searchLower)) || 
-        (skin.weapon && skin.weapon.toLowerCase().includes(searchLower)));
+      const searchTerms = filters.search.toLowerCase().split(/\s+/).filter(term => term.length > 0);
+      
+      // Pesquisa melhorada: cada termo de pesquisa deve corresponder a pelo menos uma parte do nome ou arma
+      filteredSkins = filteredSkins.filter(skin => {
+        const fullName = `${skin.weapon || ""} ${skin.name || ""}`.toLowerCase();
+        
+        // Cada termo deve corresponder a alguma parte do nome
+        return searchTerms.every(term => 
+          fullName.includes(term) || 
+          (skin.rarity && skin.rarity.toLowerCase().includes(term)) ||
+          (skin.collection?.name && skin.collection.name.toLowerCase().includes(term))
+        );
+      });
     }
     
     return filteredSkins;
@@ -255,13 +261,17 @@ export const searchSkins = async (query: string): Promise<Skin[]> => {
   }
   
   const skins = await fetchSkins();
-  const searchLower = query.toLowerCase().trim();
+  const searchTerms = query.toLowerCase().trim().split(/\s+/).filter(term => term.length > 0);
   
-  // Filtragem mais tolerante para encontrar correspondências parciais
-  return skins.filter(skin => 
-    (skin.name && skin.name.toLowerCase().includes(searchLower)) || 
-    (skin.weapon && skin.weapon.toLowerCase().includes(searchLower)) ||
-    (skin.rarity && skin.rarity.toLowerCase().includes(searchLower)) ||
-    (skin.collection?.name && skin.collection.name.toLowerCase().includes(searchLower))
-  );
+  // Filtro melhorado: cada termo deve corresponder a pelo menos uma parte do nome completo
+  return skins.filter(skin => {
+    const fullName = `${skin.weapon || ""} ${skin.name || ""}`.toLowerCase();
+    
+    // Cada termo deve corresponder a alguma parte do nome
+    return searchTerms.every(term => 
+      fullName.includes(term) || 
+      (skin.rarity && skin.rarity.toLowerCase().includes(term)) ||
+      (skin.collection?.name && skin.collection.name.toLowerCase().includes(term))
+    );
+  });
 };
