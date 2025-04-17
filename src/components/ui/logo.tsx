@@ -1,60 +1,17 @@
 
-import { FC, useState } from "react"
+import { FC } from "react"
 
 interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
   className?: string;
-  variant?: "default" | "compact" | "text-only";
+  variant?: "text-only";
 }
 
-export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "default" }) => {
-  const [imageError, setImageError] = useState(false);
-  
-  const sizeClasses = {
-    sm: "h-12",
-    md: "h-16",
-    lg: "h-24",
-    xl: "h-32",
-    "2xl": "h-48",
-    "3xl": "h-64",
-    "4xl": "h-80",
-  };
-
-  // Para o logo apenas texto, mostramos apenas o texto "CS SKIN VAULT"
-  if (variant === "text-only" || imageError) {
-    return (
-      <div className={`flex items-center gap-1 ${className}`}>
-        <span className="font-bold text-foreground">CS SKIN</span>
-        <span className="font-bold text-primary">VAULT</span>
-      </div>
-    );
-  }
-
-  // Para o logo compacto, mostramos apenas o símbolo do logo
-  if (variant === "compact") {
-    return (
-      <div className={`flex items-center ${className}`}>
-        <img 
-          src="/placeholder.svg" 
-          alt="CS Skin Vault Logo" 
-          className={`${sizeClasses[size]} w-auto`} 
-          style={{ objectFit: 'contain', objectPosition: 'left' }} 
-          onError={() => setImageError(true)}
-        />
-      </div>
-    );
-  }
-
-  // Logo completo (default)
+export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "text-only" }) => {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <img 
-        src="/placeholder.svg" 
-        alt="CS Skin Vault Logo" 
-        className={`${sizeClasses[size]} w-auto`} 
-        style={{ objectFit: 'contain' }}
-        onError={() => setImageError(true)}
-      />
+    <div className={`flex items-center gap-1 ${className}`}>
+      <span className="font-bold text-foreground">CS SKIN</span>
+      <span className="font-bold text-primary">VAULT</span>
     </div>
   );
 };
