@@ -1,3 +1,4 @@
+
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { InsightsCard } from "@/components/dashboard/insights-card";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
@@ -64,7 +65,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       const loadedTransactions = await getUserTransactions();
       setTransactions(loadedTransactions || []);
 
-      await prepareStats();
+      await prepareStats(loadedInventory);
     } catch (error) {
       console.error("Error refreshing user data:", error);
       toast({
@@ -97,9 +98,15 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     }
   }, [skins, isSkinsLoading, skinsError, userInventory, currentTab]);
 
-  const prepareStats = async () => {
+  const prepareStats = async (inventory?: InventoryItem[]) => {
     try {
-      const totalSkins = userInventory.length;
+      // Use passed inventory if available, otherwise use the state
+      const inventoryToUse = inventory || userInventory;
+      
+      // Calculate the total number of skins directly from the inventory array
+      const totalSkins = inventoryToUse.length;
+      console.log("Total skins in inventory:", totalSkins);
+      
       const totalValue = await calculateInventoryValue();
       const mostValuableSkin = await findMostValuableSkin();
 
