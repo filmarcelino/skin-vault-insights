@@ -12,7 +12,7 @@ import { DollarSign, ArrowUp } from "lucide-react";
 import { MARKETPLACE_OPTIONS, calculateProfit } from "@/utils/skin-utils";
 import { useState } from "react";
 import { useSellSkin } from "@/hooks/use-skins";
-import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 
 interface SkinSellingFormProps {
   item: InventoryItem;
@@ -22,28 +22,39 @@ interface SkinSellingFormProps {
 
 export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps) => {
   const [soldPrice, setSoldPrice] = useState("");
+  const [soldCurrency, setSoldCurrency] = useState(() => {
+    // Use a moeda atual do sistema como padrão
+    return CURRENCIES.find(c => c.code === localStorage.getItem("selectedCurrency"))?.code || "USD";
+  });
   const [soldMarketplace, setSoldMarketplace] = useState("steam");
   const [soldFeePercentage, setSoldFeePercentage] = useState("0");
   const [soldNotes, setSoldNotes] = useState("");
   
   const sellSkinMutation = useSellSkin();
-  const { currency, formatPrice, convertPrice } = useCurrency();
+  const { currency, formatPrice, convertPrice, formatWithCurrency } = useCurrency();
 
+  // Determinar a moeda original de compra
+  const purchaseCurrency = item.currency || "USD";
+  
   const handleSellSkin = () => {
     if (!item || !soldPrice) return;
 
     const price = parseFloat(soldPrice);
     const fee = parseFloat(soldFeePercentage) || 0;
     
-    // Calcular lucro com base na moeda atual
-    // Convertemos para USD antes de calcular o lucro
+    // Converter para USD antes de calcular o lucro
+    // Se a moeda de venda não é USD, convertemos para USD
+    const soldCurrencyObj = CURRENCIES.find(c => c.code === soldCurrency) || CURRENCIES[0];
+    const priceInUSD = price / soldCurrencyObj.rate;
+    
+    // O preço de compra já deve estar em USD no banco de dados
     const purchasePrice = item.purchasePrice || 0;
-    const priceInUSD = price / currency.rate; // Converte para USD
     const netProfit = calculateProfit(priceInUSD.toString(), soldFeePercentage, purchasePrice);
 
     const sellData: SellData = {
       soldDate: new Date().toISOString(),
       soldPrice: priceInUSD, // Salvamos em USD
+      soldCurrency: soldCurrency, // Guardamos a moeda usada na venda
       soldMarketplace,
       soldFeePercentage: fee,
       soldNotes,
@@ -58,9 +69,36 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
     });
   };
 
+  const calculateDisplayProfit = () => {
+    if (!soldPrice || item.purchasePrice === undefined) return 0;
+    
+    // Converter o preço de venda para USD
+    const soldCurrencyObj = CURRENCIES.find(c => c.code === soldCurrency) || CURRENCIES[0];
+    const priceInUSD = parseFloat(soldPrice) / soldCurrencyObj.rate;
+    
+    // Calcular a taxa
+    const feePercentage = parseFloat(soldFeePercentage) || 0;
+    const feeAmount = priceInUSD * (feePercentage / 100);
+    
+    // Calcular o lucro (em USD)
+    const netProfit = priceInUSD - feeAmount - item.purchasePrice;
+    
+    // Converter de volta para a moeda atual de exibição
+    return netProfit * currency.rate;
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold text-[#8B5CF6]">Detalhes da Venda</h3>
+      
+      {/* Informação sobre a compra original */}
+      {item.purchasePrice !== undefined && (
+        <div className="p-3 rounded-md bg-opacity-10 bg-blue-900 border border-blue-800">
+          <p className="text-sm text-muted-foreground">
+            Comprado por {formatWithCurrency(item.purchasePrice, purchaseCurrency)} {purchaseCurrency !== "USD" && `(${formatPrice(item.purchasePrice)})`}
+          </p>
+        </div>
+      )}
       
       {/* Formulário de Venda */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -68,7 +106,7 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
         <div className="space-y-2">
           <Label htmlFor="sold-price" className="flex items-center">
             <DollarSign className="h-4 w-4 mr-1 text-green-500" />
-            Preço de Venda ({currency.symbol})
+            Preço de Venda
           </Label>
           <Input
             id="sold-price"
@@ -80,6 +118,26 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
             onChange={(e) => setSoldPrice(e.target.value)}
             className="border-[#333] bg-[#221F26]/50"
           />
+        </div>
+        
+        {/* Moeda */}
+        <div className="space-y-2">
+          <Label htmlFor="sold-currency">Moeda</Label>
+          <Select
+            value={soldCurrency}
+            onValueChange={setSoldCurrency}
+          >
+            <SelectTrigger id="sold-currency" className="border-[#333] bg-[#221F26]/50">
+              <SelectValue placeholder="Selecione a moeda" />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1A1F2C] border-[#333]">
+              {CURRENCIES.map(curr => (
+                <SelectItem key={curr.code} value={curr.code}>
+                  {curr.symbol} {curr.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         {/* Marketplace */}
@@ -125,23 +183,25 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
             
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>Preço de Venda:</div>
-              <div className="text-right">{formatPrice(parseFloat(soldPrice))}</div>
+              <div className="text-right">
+                {formatWithCurrency(parseFloat(soldPrice), soldCurrency)}
+                {soldCurrency !== currency.code && ` (${formatPrice(parseFloat(soldPrice) / (CURRENCIES.find(c => c.code === soldCurrency)?.rate || 1))})`}
+              </div>
               
               <div>Taxa do Marketplace ({parseFloat(soldFeePercentage) || 0}%):</div>
               <div className="text-right text-red-400">
-                -{formatPrice((parseFloat(soldPrice) * (parseFloat(soldFeePercentage) || 0) / 100))}
+                -{formatWithCurrency((parseFloat(soldPrice) * (parseFloat(soldFeePercentage) || 0) / 100), soldCurrency)}
               </div>
               
               <div>Preço de Compra:</div>
-              <div className="text-right text-red-400">-{formatPrice(item.purchasePrice)}</div>
+              <div className="text-right text-red-400">
+                -{formatPrice(item.purchasePrice)}
+              </div>
               
               <div className="font-bold border-t border-green-800 pt-1">Lucro Líquido:</div>
-              <div className="font-bold border-t border-green-800 pt-1 text-right text-green-500">
-                {formatPrice(
-                  parseFloat(soldPrice) - 
-                  (parseFloat(soldPrice) * (parseFloat(soldFeePercentage) || 0) / 100) - 
-                  item.purchasePrice
-                )}
+              <div className="font-bold border-t border-green-800 pt-1 text-right" 
+                   style={{ color: calculateDisplayProfit() >= 0 ? "#10B981" : "#EF4444" }}>
+                {formatPrice(calculateDisplayProfit())}
               </div>
             </div>
           </div>

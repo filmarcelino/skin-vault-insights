@@ -1,4 +1,3 @@
-
 export interface Skin {
   id: string;
   name: string;
@@ -42,6 +41,7 @@ export interface InventoryItem extends Skin {
   floatValue?: number;
   notes?: string;
   isInUserInventory: boolean;
+  currency?: string; // Moeda usada na compra
   // Supabase fields mapping
   inventory_id?: string; 
   skin_id?: string;
@@ -54,6 +54,7 @@ export interface InventoryItem extends Skin {
   trade_lock_days?: number;
   trade_lock_until?: string;
   is_in_user_inventory?: boolean;
+  currency_code?: string;
 }
 
 export interface Transaction {
@@ -99,6 +100,7 @@ export interface SellData {
   soldFeePercentage: number;
   soldNotes?: string;
   profit?: number;
+  soldCurrency?: string; // Moeda usada na venda
 }
 
 export interface PriceHistoryItem {
