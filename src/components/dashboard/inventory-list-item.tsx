@@ -1,9 +1,10 @@
+
 import { FC } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Clock } from "lucide-react";
-import { getRarityColor } from "@/utils/skin-utils";
-import { InventoryItem } from "@/types/skin";
+import { Lock } from "lucide-react";
+import { getRarityColor, getTradeLockStatus } from "@/utils/skin-utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { InventoryItem } from "@/types/skin";
 
 interface InventoryListItemProps {
   weaponName: string;
@@ -37,6 +38,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
   onClick,
 }) => {
   const { formatPrice } = useCurrency();
+  const { isLocked, daysLeft } = getTradeLockStatus(tradeLockUntil);
   
   // Get border color based on rarity
   const getBorderStyle = () => {
@@ -45,7 +47,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
     const color = getRarityColor(rarity);
     return {
       borderLeftColor: color,
-      backgroundColor: `${color}10`, // Light background based on rarity
+      backgroundColor: color,
       ...style
     };
   };
@@ -57,12 +59,12 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
 
   return (
     <div 
-      className={`border-l-4 p-3 flex items-center gap-3 hover:bg-accent/20 transition-colors ${className} ${onClick ? 'cursor-pointer' : ''}`}
+      className={`border-l-4 p-3 flex items-center gap-3 hover:brightness-110 transition-all ${className} ${onClick ? 'cursor-pointer' : ''}`}
       style={getBorderStyle()}
       onClick={onClick}
     >
       {/* Thumbnail */}
-      <div className="h-12 w-12 bg-black/10 dark:bg-white/5 rounded flex items-center justify-center shrink-0">
+      <div className="h-12 w-12 bg-black/10 rounded flex items-center justify-center shrink-0">
         {image ? (
           <img 
             src={image} 
@@ -72,7 +74,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
             loading="lazy"
           />
         ) : (
-          <div className="text-xs text-muted-foreground">No image</div>
+          <div className="text-xs text-black/50">No image</div>
         )}
       </div>
       

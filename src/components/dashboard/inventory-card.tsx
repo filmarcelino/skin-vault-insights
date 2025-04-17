@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Clock, Trash2 } from "lucide-react";
+import { Lock, Trash2 } from "lucide-react";
 import { getRarityColor } from "@/utils/skin-utils";
 import { Button } from "@/components/ui/button";
 
@@ -69,7 +69,6 @@ export const InventoryCard: FC<InventoryCardProps> = ({
       backgroundColor: bgColor,
       color: '#000000',
       border: 'none',
-      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
       ...style
     };
   };
@@ -92,7 +91,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
             <p className="text-[10px] text-black/80 truncate">{skinName}</p>
           </div>
           {price && (
-            <span className="text-xs font-semibold bg-background/80 px-1.5 py-0.5 rounded shadow-sm text-black">
+            <span className="text-xs font-semibold bg-transparent px-1.5 py-0.5 rounded text-black">
               ${price}
             </span>
           )}
