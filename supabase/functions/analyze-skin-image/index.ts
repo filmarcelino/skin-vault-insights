@@ -63,6 +63,10 @@ serve(async (req) => {
             Da mesma forma, use o nome exato da skin conforme é conhecido no jogo. Por exemplo,
             "Asiimov" em vez de "Asimov", "Dragon Lore" em vez de "DragonLore".
             
+            EXTREMAMENTE IMPORTANTE: Use EXATAMENTE o nome oficial da skin como é usado no jogo, com a mesma capitalização
+            e pontuação. Por exemplo, "Neo-Noir", não "Neo Noir" ou "Neonoir". Isso é crucial pois os nomes serão usados
+            para buscar em um banco de dados.
+
             Formate sua resposta em JSON com esses campos específicos. Se não conseguir identificar algum campo com certeza, deixe-o vazio.`
           },
           {

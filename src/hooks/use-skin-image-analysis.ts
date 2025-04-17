@@ -36,15 +36,14 @@ export const useSkinImageAnalysis = () => {
       console.log("Resposta da análise:", data)
 
       // Criar um objeto Skin temporário com os dados retornados da análise
-      // Mas não incluiremos a imagem do usuário
       const skinData: Skin = {
         id: `skin-${Date.now()}`,
         name: data.skinName || "Unknown Skin",
         weapon: data.weaponName || "Unknown",
         rarity: data.rarity || "",
         wear: data.wear || "",
-        // Note que não estamos mais usando a imagem do usuário
-        image: "", // Deixamos vazio para usar a imagem do banco
+        // Não usamos a imagem do usuário, deixamos em branco inicialmente
+        image: "",
         price: data.estimatedPrice || 0,
         floatValue: data.floatValue ? parseFloat(data.floatValue) : undefined,
       }
@@ -58,6 +57,12 @@ export const useSkinImageAnalysis = () => {
         const searchTerm = `${data.weaponName} ${data.skinName}`.trim()
         foundSkins = await searchSkins(searchTerm)
         console.log("Skins encontradas:", foundSkins)
+        
+        // Se encontrarmos skins correspondentes, atualizamos nosso skinData
+        // com a imagem da primeira skin encontrada
+        if (foundSkins.length > 0) {
+          skinData.image = foundSkins[0].image || ""
+        }
       }
 
       setAnalysisResult({
