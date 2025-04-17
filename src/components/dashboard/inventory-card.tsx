@@ -1,8 +1,7 @@
-
 import { FC } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Clock, Trash2 } from "lucide-react";
-import { getRarityColor, getRarityColorClass } from "@/utils/skin-utils";
+import { getRarityColor } from "@/utils/skin-utils";
 import { Button } from "@/components/ui/button";
 
 interface InventoryCardProps {
@@ -42,54 +41,48 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     e.currentTarget.src = '/placeholder.svg';
   };
 
-  // Função para obter a cor de fundo baseada na raridade - cores mais sólidas
   const getBackgroundStyle = () => {
     if (!rarity) return {};
     
-    let color = getRarityColor(rarity);
-    let bgColor = color;
+    const color = getRarityColor(rarity);
     
-    // Mapeamento de raridades para cores sólidas conforme a lista fornecida
-    const solidColors: Record<string, string> = {
-      'Consumer Grade': '#B0C3D9',
-      'Industrial Grade': '#5E98D9',
-      'Mil-Spec Grade': '#4B69FF',
-      'Restricted': '#8847FF',
-      'Classified': '#D32CE6',
-      'Covert': '#EB4B4B',
-      'Contraband': '#FFD700',
-      '★ Rare Special Item': '#FFF99B',
-      // PT-BR translations
-      'Comum': '#B0C3D9',
-      'Pouco Comum': '#5E98D9',
-      'Militar': '#4B69FF',
-      'Restrita': '#8847FF',
-      'Classificada': '#D32CE6',
-      'Secreta': '#EB4B4B',
-      'Contrabando': '#FFD700',
-      'Especial Rara': '#FFF99B',
+    const metallicColors: Record<string, string> = {
+      'Consumer Grade': '#8E9196',
+      'Industrial Grade': '#5E7D9A',
+      'Mil-Spec Grade': '#4A6D7C',
+      'Restricted': '#6E5AB0',
+      'Classified': '#8A4E9E',
+      'Covert': '#9A4A4A',
+      'Contraband': '#B8A246',
+      '★ Rare Special Item': '#A69D7E',
+      'Comum': '#8E9196',
+      'Pouco Comum': '#5E7D9A',
+      'Militar': '#4A6D7C',
+      'Restrita': '#6E5AB0',
+      'Classificada': '#8A4E9E',
+      'Secreta': '#9A4A4A',
+      'Contrabando': '#B8A246',
+      'Especial Rara': '#A69D7E',
     };
 
-    if (solidColors[rarity]) {
-      bgColor = solidColors[rarity];
-    }
+    const bgColor = metallicColors[rarity] || color;
     
     return {
-      backgroundColor: `${bgColor}`,
-      borderColor: `${color}`,
-      color: '#000', // Texto preto para melhor contraste com cores claras
+      backgroundColor: bgColor,
+      color: '#FFFFFF',
+      border: 'none',
+      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
       ...style
     };
   };
 
   return (
     <div 
-      className={`group relative overflow-hidden rounded-lg border border-2 transition-all duration-300 hover:scale-[1.02] ${className} cursor-pointer`}
+      className={`group relative overflow-hidden rounded-lg transition-all duration-300 hover:scale-[1.02] ${className} cursor-pointer`}
       onClick={onClick}
       style={getBackgroundStyle()}
     >
       <div className="p-3 space-y-2">
-        {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="font-medium text-xs text-foreground/90 truncate">
@@ -107,7 +100,6 @@ export const InventoryCard: FC<InventoryCardProps> = ({
           )}
         </div>
 
-        {/* Image */}
         <div className="relative aspect-[16/9] flex items-center justify-center bg-black/30 rounded overflow-hidden">
           {image ? (
             <img 
@@ -128,7 +120,6 @@ export const InventoryCard: FC<InventoryCardProps> = ({
           )}
         </div>
 
-        {/* Footer - sempre exibir o wear se disponível */}
         <div className="flex items-center justify-between">
           {wear && (
             <Badge variant="secondary" className="text-[8px] px-1.5 py-0.5 bg-background/80 text-foreground font-medium shadow-sm">
@@ -138,7 +129,6 @@ export const InventoryCard: FC<InventoryCardProps> = ({
         </div>
       </div>
 
-      {/* Delete overlay */}
       {showDeleteButton && onDelete && (
         <div 
           className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"

@@ -1,8 +1,8 @@
-
 import React from "react";
 import { ArrowUpIcon, ArrowDownIcon, DollarSignIcon, PackageIcon, PercentIcon, TrendingUpIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { getRarityColor } from "@/utils/skin-utils";
 
 interface StatsCardsProps {
   inventoryStats: {
@@ -17,7 +17,6 @@ interface StatsCardsProps {
 export function StatsCards({ inventoryStats }: StatsCardsProps) {
   const { formatPrice } = useCurrency();
   
-  // Default values when no stats available
   const stats = inventoryStats || {
     total_items: 0,
     total_value: 0,
@@ -28,86 +27,105 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
   
   const isPositiveChange = stats.value_change_30d >= 0;
 
-  // Cores das raridades de skins conforme solicitado
-  const rarityColors = {
-    consumerGrade: "#B0C3D9", // Comum / Consumer Grade - Cinza-azulado
-    industrialGrade: "#5E98D9", // Pouco Comum / Industrial Grade - Azul claro
-    milSpec: "#4B69FF", // Militar / Mil-Spec - Azul forte
-    restricted: "#8847FF", // Restrita / Restricted - Roxo
-    classified: "#D32CE6", // Classificada / Classified - Rosa/roxo
-    covert: "#EB4B4B", // Secreta / Covert - Vermelho
-    contraband: "#FFD700", // Contrabando / Contraband - Dourado
-    special: "#FFF99B", // Especial Rara - Dourado pálido
+  const metallicRarityColors = {
+    consumerGrade: '#8E9196', // Neutral metallic gray
+    industrialGrade: '#5E7D9A', // Steel blue
+    milSpec: '#4A6D7C', // Deep steel blue
+    restricted: '#6E5AB0', // Metallic purple
+    classified: '#8A4E9E', // Metallic magenta
+    covert: '#9A4A4A', // Metallic deep red
+    contraband: '#B8A246', // Metallic gold
+    special: '#A69D7E', // Metallic pale gold
   };
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
+      <Card style={{ 
+        backgroundColor: metallicRarityColors.milSpec, 
+        color: '#FFFFFF', 
+        border: 'none', 
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+      }}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-          <div className="rounded-full p-2" style={{ backgroundColor: `${rarityColors.milSpec}30` }}>
-            <DollarSignIcon className="h-4 w-4" style={{ color: rarityColors.milSpec }} />
+          <CardTitle className="text-sm font-medium text-white/80">Total Value</CardTitle>
+          <div className="rounded-full p-2 bg-white/20">
+            <DollarSignIcon className="h-4 w-4 text-white" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">
+          <div className="text-2xl font-bold text-white">
             {formatPrice(stats.total_value)}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-white/70">
             Your entire inventory value
           </p>
         </CardContent>
       </Card>
       
-      <Card>
+      <Card style={{ 
+        backgroundColor: metallicRarityColors.restricted, 
+        color: '#FFFFFF', 
+        border: 'none', 
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+      }}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Items Count</CardTitle>
-          <div className="rounded-full p-2" style={{ backgroundColor: `${rarityColors.restricted}30` }}>
-            <PackageIcon className="h-4 w-4" style={{ color: rarityColors.restricted }} />
+          <CardTitle className="text-sm font-medium text-white/80">Items Count</CardTitle>
+          <div className="rounded-full p-2 bg-white/20">
+            <PackageIcon className="h-4 w-4 text-white" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.total_items}</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="text-2xl font-bold text-white">{stats.total_items}</div>
+          <p className="text-xs text-white/70">
             Total skins in your inventory
           </p>
         </CardContent>
       </Card>
       
-      <Card>
+      <Card style={{ 
+        backgroundColor: isPositiveChange ? '#4A6D7C' : '#9A4A4A', 
+        color: '#FFFFFF', 
+        border: 'none', 
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+      }}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">30 Day Change</CardTitle>
-          <div className="rounded-full p-2" style={{ backgroundColor: isPositiveChange ? `rgba(16,185,129,0.2)` : `rgba(239,68,68,0.2)` }}>
+          <CardTitle className="text-sm font-medium text-white/80">30 Day Change</CardTitle>
+          <div className="rounded-full p-2 bg-white/20">
             {isPositiveChange ? (
-              <ArrowUpIcon className="h-4 w-4 text-green-500" />
+              <ArrowUpIcon className="h-4 w-4 text-white" />
             ) : (
-              <ArrowDownIcon className="h-4 w-4 text-red-500" />
+              <ArrowDownIcon className="h-4 w-4 text-white" />
             )}
           </div>
         </CardHeader>
         <CardContent>
-          <div className={`text-2xl font-bold ${isPositiveChange ? 'text-green-500' : 'text-red-500'}`}>
+          <div className="text-2xl font-bold text-white">
             {isPositiveChange ? "+" : ""}{formatPrice(stats.value_change_30d)}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-white/70">
             Value change in last 30 days
           </p>
         </CardContent>
       </Card>
       
-      <Card>
+      <Card style={{ 
+        backgroundColor: metallicRarityColors.classified, 
+        color: '#FFFFFF', 
+        border: 'none', 
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+      }}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">ROI (30 Days)</CardTitle>
-          <div className="rounded-full p-2" style={{ backgroundColor: `${rarityColors.classified}30` }}>
-            <PercentIcon className="h-4 w-4" style={{ color: rarityColors.classified }} />
+          <CardTitle className="text-sm font-medium text-white/80">ROI (30 Days)</CardTitle>
+          <div className="rounded-full p-2 bg-white/20">
+            <PercentIcon className="h-4 w-4 text-white" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className={`text-2xl font-bold ${stats.value_change_percentage_30d >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+          <div className="text-2xl font-bold text-white">
             {stats.value_change_percentage_30d >= 0 ? "+" : ""}
             {stats.value_change_percentage_30d.toFixed(2)}%
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-white/70">
             Percentage return on investment
           </p>
         </CardContent>
