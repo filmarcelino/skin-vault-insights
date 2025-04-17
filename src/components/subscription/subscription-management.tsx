@@ -7,11 +7,11 @@ import { CheckCircle, CreditCard } from "lucide-react";
 
 export const SubscriptionManagement = () => {
   const handleSubscribeMonthly = () => {
-    window.location.href = "https://buy.stripe.com/test_COLOQUE_SEU_LINK_MENSAL";
+    window.location.href = "https://buy.stripe.com/test_4gwaGB5RJagj70QbII";
   };
 
   const handleSubscribeAnnual = () => {
-    window.location.href = "https://buy.stripe.com/test_COLOQUE_SEU_LINK_ANUAL";
+    window.location.href = "https://buy.stripe.com/test_4gwaGB5RJagj70QbII";
   };
 
   const handleManageSubscription = () => {
