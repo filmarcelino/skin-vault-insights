@@ -40,7 +40,7 @@ export const Sidebar: FC = () => {
   };
 
   return (
-    <div className="hidden md:flex flex-col h-screen w-32 border-r border-border/50 bg-sidebar-background fixed left-0 top-0 z-30">
+    <div className="hidden md:flex flex-col h-screen w-64 border-r border-border/50 bg-sidebar-background fixed left-0 top-0 z-30">
       <div className="flex items-center justify-center h-16 border-b border-border/50">
         <h2 className="text-lg font-medium text-primary">{currentPageName}</h2>
       </div>

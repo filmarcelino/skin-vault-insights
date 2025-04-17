@@ -16,7 +16,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
         <Header />
         <div className="flex-1 flex">
           <Sidebar />
-          <main className="flex-1 p-4 md:p-6 pl-6 md:pl-24 overflow-auto pb-20 md:pb-6">
+          <main className="flex-1 p-4 md:p-6 pl-6 md:pl-[16rem] overflow-auto pb-20 md:pb-6">
             {children}
           </main>
         </div>
