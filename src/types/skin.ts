@@ -101,15 +101,14 @@ export interface SellData {
   profit?: number;
 }
 
-// Adicionar interface PriceHistoryItem para uso na análise de preços históricos
 export interface PriceHistoryItem {
   id: string;
   skin_id: string;
-  inventory_id: string | null;
+  inventory_id?: string | null;
   user_id: string;
   price: number;
   price_date: string;
-  marketplace: string | null;
-  wear: string | null;
+  marketplace?: string | null;
+  wear?: string | null;
   created_at: string;
 }

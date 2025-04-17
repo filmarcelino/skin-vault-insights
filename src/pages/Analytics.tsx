@@ -36,9 +36,9 @@ const Analytics = () => {
     enabled: !!user,
   });
 
-  // Buscar histórico de preços para gráficos
-  const { data: priceHistory, isLoading: historyLoading } = useQuery<PriceHistoryItem[]>({
-    queryKey: ["price-history", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
+  // Buscar dados do inventário para simular histórico de preços
+  const { data: inventoryData, isLoading: historyLoading } = useQuery({
+    queryKey: ["inventory-data", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!user || !dateRange.from || !dateRange.to) return [];
       
@@ -46,33 +46,66 @@ const Analytics = () => {
       const fromDate = format(dateRange.from, "yyyy-MM-dd");
       const toDate = format(dateRange.to, "yyyy-MM-dd");
       
-      // Verificar se a tabela existe antes de fazer a consulta
-      try {
-        const { data, error } = await supabase
-          .from("skin_price_history")
-          .select("*")
-          .eq("user_id", user.id)
-          .gte("price_date", fromDate)
-          .lte("price_date", toDate)
-          .order("price_date", { ascending: true });
-        
-        if (error) {
-          console.error("Error fetching price history:", error);
-          return [];
-        }
-        
-        return data || [];
-      } catch (error) {
-        console.error("Error with price history query:", error);
+      // Buscar dados do inventário já que não temos ainda a tabela skin_price_history
+      const { data, error } = await supabase
+        .from("inventory")
+        .select("*")
+        .eq("user_id", user.id);
+      
+      if (error) {
+        console.error("Error fetching inventory data:", error);
         return [];
       }
+      
+      // Transformar os dados de inventário em dados de histórico de preços simulados
+      const priceHistoryData: PriceHistoryItem[] = [];
+      
+      if (data) {
+        // Gerar pontos de dados para cada item do inventário
+        data.forEach(item => {
+          // Data de aquisição como primeiro ponto
+          const acquiredDate = new Date(item.acquired_date);
+          
+          // Se a data de aquisição estiver dentro do intervalo selecionado
+          if (acquiredDate >= dateRange.from && acquiredDate <= dateRange.to) {
+            priceHistoryData.push({
+              id: `${item.id}-acquired`,
+              skin_id: item.skin_id,
+              inventory_id: item.id,
+              user_id: item.user_id,
+              price: item.purchase_price || 0,
+              price_date: item.acquired_date,
+              marketplace: item.marketplace,
+              wear: item.wear,
+              created_at: item.created_at
+            });
+          }
+          
+          // Se o item tiver um preço atual diferente do preço de compra, adicionar como ponto atual
+          if (item.current_price && item.current_price !== item.purchase_price) {
+            priceHistoryData.push({
+              id: `${item.id}-current`,
+              skin_id: item.skin_id,
+              inventory_id: item.id,
+              user_id: item.user_id,
+              price: item.current_price,
+              price_date: new Date().toISOString(),
+              marketplace: item.marketplace,
+              wear: item.wear,
+              created_at: item.created_at
+            });
+          }
+        });
+      }
+      
+      return priceHistoryData;
     },
     enabled: !!user && !!dateRange.from && !!dateRange.to,
   });
 
   // Buscar dados de transações para análise de ROI
-  const { data: transactions, isLoading: transactionsLoading } = useQuery<Transaction[]>({
-    queryKey: ["transactions", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
+  const { data: transactionsData, isLoading: transactionsLoading } = useQuery({
+    queryKey: ["transactions-data", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!user || !dateRange.from || !dateRange.to) return [];
       
@@ -89,17 +122,28 @@ const Analytics = () => {
         .order("date", { ascending: true });
       
       if (error) throw error;
-      return data || [];
+      
+      // Converter os tipos de dados para o formato Transaction
+      return (data || []).map(item => ({
+        id: item.id || item.transaction_id || "",
+        type: item.type as 'add' | 'sell' | 'trade' | 'purchase',
+        itemId: item.item_id || "",
+        weaponName: item.weapon_name || "",
+        skinName: item.skin_name || "",
+        date: item.date || "",
+        price: item.price || 0,
+        notes: item.notes || ""
+      })) as Transaction[];
     },
     enabled: !!user && !!dateRange.from && !!dateRange.to,
   });
 
   // Processar dados para gráficos
   const priceHistoryChartData = React.useMemo(() => {
-    if (!priceHistory || priceHistory.length === 0) return [];
+    if (!inventoryData || inventoryData.length === 0) return [];
 
     // Agrupar por data, calcular preço médio por dia
-    const groupedByDate = priceHistory.reduce((acc, item) => {
+    const groupedByDate = inventoryData.reduce((acc, item) => {
       const date = item.price_date.split("T")[0];
       if (!acc[date]) {
         acc[date] = { total: 0, count: 0 };
@@ -113,28 +157,28 @@ const Analytics = () => {
       date: date,
       price: groupedByDate[date].total / groupedByDate[date].count
     }));
-  }, [priceHistory]);
+  }, [inventoryData]);
 
   // Calcular dados de ROI
   const roiData = React.useMemo(() => {
-    if (!transactions || transactions.length === 0) return [];
+    if (!transactionsData || transactionsData.length === 0) return [];
 
     // Agrupar transações por tipo (compra vs venda)
-    const purchasesByItem = transactions
+    const purchasesByItem = transactionsData
       .filter(t => t.type === 'purchase')
       .reduce((acc, item) => {
-        const key = item.itemId || item.item_id || '';
+        const key = item.itemId || '';
         if (!acc[key]) acc[key] = { cost: 0, revenue: 0 };
-        acc[key].cost += parseFloat(String(item.price || '0'));
+        acc[key].cost += typeof item.price === 'number' ? item.price : parseFloat(String(item.price || '0'));
         return acc;
       }, {} as Record<string, { cost: number; revenue: number }>);
 
-    const salesByItem = transactions
-      .filter(t => t.type === 'sale')
+    const salesByItem = transactionsData
+      .filter(t => t.type === 'sell')
       .reduce((acc, item) => {
-        const key = item.itemId || item.item_id || '';
+        const key = item.itemId || '';
         if (!acc[key]) acc[key] = { cost: 0, revenue: 0 };
-        acc[key].revenue += parseFloat(String(item.price || '0'));
+        acc[key].revenue += typeof item.price === 'number' ? item.price : parseFloat(String(item.price || '0'));
         return acc;
       }, {} as Record<string, { cost: number; revenue: number }>);
 
@@ -162,7 +206,7 @@ const Analytics = () => {
     });
 
     return result;
-  }, [transactions]);
+  }, [transactionsData]);
 
   // Calcular as skins com melhor desempenho
   const topPerformingSkins = React.useMemo(() => {

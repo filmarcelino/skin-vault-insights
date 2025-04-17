@@ -1,3 +1,4 @@
+
 import { FC } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Clock, Trash2 } from "lucide-react";
@@ -41,38 +42,23 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     e.currentTarget.src = '/placeholder.svg';
   };
 
-  const getRarityColorClass = () => {
-    if (!rarity) return "";
+  // Nova função para obter a cor de fundo baseada na raridade
+  const getBackgroundStyle = () => {
+    if (!rarity) return {};
     
-    switch (rarity.toLowerCase()) {
-      case "consumer grade":
-      case "white":
-        return "from-[#B0C3D9]/10 to-[#B0C3D9]/20 border-[#B0C3D9]/50";
-      case "industrial grade":
-      case "light blue":
-        return "from-[#5E98D9]/10 to-[#5E98D9]/20 border-[#5E98D9]/50";
-      case "mil-spec grade":
-      case "blue":
-        return "from-[#4B69FF]/10 to-[#4B69FF]/20 border-[#4B69FF]/50";
-      case "restricted":
-      case "purple":
-        return "from-[#8847FF]/10 to-[#8847FF]/20 border-[#8847FF]/50";
-      case "classified":
-      case "pink":
-        return "from-[#D32CE6]/10 to-[#D32CE6]/20 border-[#D32CE6]/50";
-      case "covert":
-      case "red":
-        return "from-[#EB4B4B]/10 to-[#EB4B4B]/20 border-[#EB4B4B]/50";
-      default:
-        return "from-gray-500/10 to-gray-500/20 border-gray-500/50";
-    }
+    const color = getRarityColor(rarity);
+    return {
+      backgroundColor: `${color}10`,
+      borderColor: `${color}50`,
+      ...style
+    };
   };
 
   return (
     <div 
-      className={`group relative overflow-hidden rounded-lg bg-gradient-to-br ${getRarityColorClass()} border transition-all duration-300 hover:scale-[1.02] ${className} cursor-pointer`}
+      className={`group relative overflow-hidden rounded-lg border transition-all duration-300 hover:scale-[1.02] ${className} cursor-pointer`}
       onClick={onClick}
-      style={style}
+      style={getBackgroundStyle()}
     >
       <div className="p-3 space-y-2">
         {/* Header */}
@@ -87,7 +73,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
             <p className="text-[10px] text-primary truncate">{skinName}</p>
           </div>
           {price && (
-            <span className="text-xs font-semibold bg-background/40 px-1.5 py-0.5 rounded">
+            <span className="text-xs font-semibold bg-background/60 px-1.5 py-0.5 rounded">
               ${price}
             </span>
           )}
@@ -114,7 +100,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer - sempre exibir o wear se disponível */}
         <div className="flex items-center justify-between">
           {wear && (
             <Badge variant="secondary" className="text-[8px] px-1.5 py-0.5">

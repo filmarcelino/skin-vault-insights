@@ -50,6 +50,8 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
     const color = getRarityColor(rarity);
     return {
       borderLeftColor: color,
+      backgroundColor: `${color}10`, // Adicionar um fundo baseado na raridade
+      ...style
     };
   };
 
@@ -60,8 +62,8 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
 
   return (
     <div 
-      className={`border-l-4 p-3 flex items-center gap-3 bg-card hover:bg-accent/20 transition-colors ${className} ${onClick ? 'cursor-pointer' : ''}`}
-      style={{...style, ...getBorderStyle()}}
+      className={`border-l-4 p-3 flex items-center gap-3 hover:bg-accent/20 transition-colors ${className} ${onClick ? 'cursor-pointer' : ''}`}
+      style={getBorderStyle()}
       onClick={onClick}
     >
       {/* Thumbnail */}
@@ -95,6 +97,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
           )}
         </div>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          {/* Sempre mostrar o wear se disponível */}
           {wear && <span>{wear}</span>}
           {isLocked && daysLeft > 0 && (
             <div className="flex items-center text-[10px] text-yellow-500 ml-1">

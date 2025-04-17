@@ -1,114 +1,117 @@
 
 import { FC } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Home, Plus, LayoutGrid, LineChart, Settings, Search } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { Logo } from "@/components/ui/logo";
+import { useMobile } from "@/hooks/use-mobile";
+import {
+  Home,
+  Plus,
+  LayoutGrid,
+  Settings,
+  MoreHorizontal,
+  LineChart,
+  Search,
+} from "lucide-react";
 
-export const Sidebar: FC = () => {
-  const location = useLocation();
+interface SidebarProps {
+  collapsed: boolean;
+}
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
+export const Sidebar: FC<SidebarProps> = ({ collapsed }) => {
+  const isMobile = useMobile();
+  
+  const getLinkClass = (isActive: boolean) => {
+    return `flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+      isActive
+        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+    }`;
   };
   
-  // Function to get page name based on current route
-  const getPageName = (path: string) => {
-    switch (path) {
-      case "/":
-        return "Home";
-      case "/search":
-        return "Buscar Skins";
-      case "/add":
-        return "Adicionar Skin";
-      case "/inventory":
-        return "Inventário";
-      case "/analytics":
-        return "Análises";
-      case "/settings":
-        return "Configurações";
-      default:
-        return "";
-    }
+  const getNameClass = () => {
+    return `transition-all duration-300 ${
+      collapsed ? "opacity-0 max-w-0 hidden" : "opacity-100 max-w-full"
+    }`;
   };
 
-  const currentPageName = getPageName(location.pathname);
-  
-  const getLinkClass = (path: string) => {
-    const baseClass = "flex items-center rounded-md transition-colors";
-    return isActive(path)
-      ? `${baseClass} bg-sidebar-accent text-primary`
-      : `${baseClass} text-muted-foreground hover:bg-sidebar-accent hover:text-primary`;
-  };
+  // Se for mobile não mostrar a sidebar
+  if (isMobile) return null;
 
   return (
-    <div className="hidden md:flex flex-col h-screen w-16 border-r border-border/50 bg-sidebar-background fixed left-0 top-0 z-30">
-      <div className="flex items-center justify-center h-16 border-b border-border/50">
-        <h2 className="text-xs font-medium text-primary rotate-90">{currentPageName}</h2>
+    <div className="h-screen w-[var(--sidebar-width)] border-r border-sidebar-border bg-sidebar transition-all fixed left-0 top-0 z-30">
+      <div className="flex h-16 items-center px-4">
+        <Logo size="sm" variant={collapsed ? "icon-only" : "default"} />
       </div>
       
-      <div className="flex flex-col items-center gap-6 py-6">
-        <Link 
-          to="/" 
-          className={getLinkClass("/")}
-          title="Home"
-        >
-          <div className="w-full flex flex-col items-center justify-center py-2">
+      <div className="px-2 py-2">
+        <nav className="space-y-1">
+          <NavLink
+            to="/"
+            className={({ isActive }) => getLinkClass(isActive)}
+            title="Início"
+          >
             <Home className="h-5 w-5" />
-            <span className="mt-1 text-[10px]">Home</span>
-          </div>
-        </Link>
-        <Link 
-          to="/search" 
-          className={getLinkClass("/search")}
-          title="Buscar Skins"
-        >
-          <div className="w-full flex flex-col items-center justify-center py-2">
-            <Search className="h-5 w-5" />
-            <span className="mt-1 text-[10px]">Buscar</span>
-          </div>
-        </Link>
-        <Link 
-          to="/add" 
-          className={getLinkClass("/add")}
-          title="Adicionar Skin"
-        >
-          <div className="w-full flex flex-col items-center justify-center py-2">
-            <Plus className="h-5 w-5" />
-            <span className="mt-1 text-[10px]">Adicionar</span>
-          </div>
-        </Link>
-        <Link 
-          to="/inventory" 
-          className={getLinkClass("/inventory")}
-          title="Inventário"
-        >
-          <div className="w-full flex flex-col items-center justify-center py-2">
+            <span className={getNameClass()}>Início</span>
+          </NavLink>
+          
+          <NavLink
+            to="/inventory"
+            className={({ isActive }) => getLinkClass(isActive)}
+            title="Inventário"
+          >
             <LayoutGrid className="h-5 w-5" />
-            <span className="mt-1 text-[10px]">Inventário</span>
-          </div>
-        </Link>
-        <Link 
-          to="/analytics" 
-          className={getLinkClass("/analytics")}
-          title="Análises"
-        >
-          <div className="w-full flex flex-col items-center justify-center py-2">
+            <span className={getNameClass()}>Inventário</span>
+          </NavLink>
+          
+          <NavLink
+            to="/add"
+            className={({ isActive }) => getLinkClass(isActive)}
+            title="Adicionar Skin"
+          >
+            <Plus className="h-5 w-5" />
+            <span className={getNameClass()}>Adicionar Skin</span>
+          </NavLink>
+          
+          <NavLink
+            to="/analytics"
+            className={({ isActive }) => getLinkClass(isActive)}
+            title="Analytics"
+          >
             <LineChart className="h-5 w-5" />
-            <span className="mt-1 text-[10px]">Análises</span>
+            <span className={getNameClass()}>Analytics</span>
+          </NavLink>
+          
+          <NavLink
+            to="/search"
+            className={({ isActive }) => getLinkClass(isActive)}
+            title="Buscar"
+          >
+            <Search className="h-5 w-5" />
+            <span className={getNameClass()}>Buscar</span>
+          </NavLink>
+          
+          <div className="pt-3">
+            <div className="border-t border-sidebar-border/50 my-2" />
           </div>
-        </Link>
-      </div>
-      
-      <div className="mt-auto mb-6 flex flex-col items-center">
-        <Link 
-          to="/settings" 
-          className={getLinkClass("/settings")}
-          title="Configurações"
-        >
-          <div className="w-full flex flex-col items-center justify-center py-2">
+          
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => getLinkClass(isActive)}
+            title="Configurações"
+          >
             <Settings className="h-5 w-5" />
-            <span className="mt-1 text-[10px]">Configurações</span>
-          </div>
-        </Link>
+            <span className={getNameClass()}>Configurações</span>
+          </NavLink>
+          
+          <NavLink
+            to="/more"
+            className={({ isActive }) => getLinkClass(isActive)}
+            title="Mais"
+          >
+            <MoreHorizontal className="h-5 w-5" />
+            <span className={getNameClass()}>Mais</span>
+          </NavLink>
+        </nav>
       </div>
     </div>
   );
