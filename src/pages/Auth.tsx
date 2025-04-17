@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +35,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect } from "react";
 import { Logo } from "@/components/ui/logo";
+import { CURRENCIES } from "@/contexts/CurrencyContext";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -47,7 +49,7 @@ const registerSchema = z.object({
   email: z.string().email("Email inválido"),
   city: z.string().optional(),
   country: z.string().optional(),
-  preferredCurrency: z.enum(["USD", "BRL", "RUB", "CNY"]),
+  preferredCurrency: z.enum(["USD", "BRL", "RUB", "CNY", "EUR", "GBP"]),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -123,7 +125,7 @@ const Auth = () => {
       full_name: data.fullName,
       city: data.city,
       country: data.country,
-      preferred_currency: data.preferredCurrency,
+      preferred_currency: data.preferredCurrency, // This is now correctly a string
     });
     
     if (!error) {
@@ -359,6 +361,8 @@ const Auth = () => {
                               <SelectItem value="BRL">BRL (Real Brasileiro)</SelectItem>
                               <SelectItem value="RUB">RUB (Rublo Russo)</SelectItem>
                               <SelectItem value="CNY">CNY (Yuan Chinês)</SelectItem>
+                              <SelectItem value="EUR">EUR (Euro)</SelectItem>
+                              <SelectItem value="GBP">GBP (Libra Esterlina)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />

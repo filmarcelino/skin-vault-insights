@@ -1,11 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-// Importamos o tipo Currency do CurrencyContext para garantir consistência
-import { Currency } from "@/contexts/CurrencyContext";
 
 export interface UserProfile {
   id: string;
@@ -14,7 +10,7 @@ export interface UserProfile {
   email: string;
   city?: string;
   country?: string;
-  preferred_currency: string; // Alteramos para string para compatibilidade com o banco de dados
+  preferred_currency: string; // Keep this as string to match database
   avatar_url?: string;
   created_at: string;
   updated_at: string;
@@ -36,7 +32,7 @@ interface AuthContextType {
     full_name: string;
     city?: string;
     country?: string;
-    preferred_currency: Currency;
+    preferred_currency: string; // Updated to string
   }) => Promise<{
     error: Error | null;
     data: Session | null;
@@ -63,15 +59,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // If a user logs in or out, we need to fetch their profile (if logged in)
         if (session?.user) {
-          // Defer Supabase calls with setTimeout to prevent deadlock
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
@@ -81,7 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -164,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     full_name: string;
     city?: string;
     country?: string;
-    preferred_currency: Currency;
+    preferred_currency: string; // Updated to string
   }) => {
     setIsLoading(true);
     
