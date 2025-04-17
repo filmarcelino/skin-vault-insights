@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,6 +11,7 @@ import { Skin, SkinWear } from "@/types/skin";
 import { Lock, X, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 
 const WEAR_RANGES = [
   { name: "Factory New", min: 0.00, max: 0.07 },
@@ -19,13 +19,6 @@ const WEAR_RANGES = [
   { name: "Field-Tested", min: 0.15, max: 0.38 },
   { name: "Well-Worn", min: 0.38, max: 0.45 },
   { name: "Battle-Scarred", min: 0.45, max: 1.00 },
-];
-
-const CURRENCIES = [
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "BRL", symbol: "R$", name: "Brazilian Real" },
-  { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
-  { code: "RUB", symbol: "₽", name: "Russian Ruble" },
 ];
 
 const TRANSACTION_TYPES = [
@@ -136,12 +129,13 @@ const getWearFromFloat = (floatValue: number): SkinWear => {
 export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDetailModalProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { currency, formatPrice } = useCurrency();
   
   const [floatValue, setFloatValue] = useState<string>("");
   const [wear, setWear] = useState<SkinWear>("Factory New");
   const [transactionType, setTransactionType] = useState<string>("purchase");
   const [purchasePrice, setPurchasePrice] = useState<string>("");
-  const [currency, setCurrency] = useState<string>("USD");
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(currency.code);
   const [marketplace, setMarketplace] = useState<string>("steam");
   const [feePercentage, setFeePercentage] = useState<string>("0");
   const [estimatedValue, setEstimatedValue] = useState<string>("");
@@ -149,14 +143,13 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   const [isStatTrak, setIsStatTrak] = useState<boolean>(false);
   const [tradeLockDays, setTradeLockDays] = useState<string>("0");
   
-  // Reset form when skin changes
   useEffect(() => {
     if (skin) {
       setFloatValue(skin.min_float ? skin.min_float.toString() : "0");
       setWear(getWearFromFloat(skin.min_float || 0));
       setTransactionType("purchase");
       setPurchasePrice("");
-      setCurrency("USD");
+      setSelectedCurrency(currency.code);
       setMarketplace("steam");
       setFeePercentage("0");
       setEstimatedValue("");
@@ -164,9 +157,8 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
       setIsStatTrak(false);
       setTradeLockDays("7"); // Default to 7 days for fresh purchases
     }
-  }, [skin]);
+  }, [skin, currency]);
   
-  // Update wear when float changes
   useEffect(() => {
     if (floatValue) {
       const floatNum = parseFloat(floatValue);
@@ -178,7 +170,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   
   const handleFloatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow valid float values between 0 and 1
     if (value === "" || (/^\d*\.?\d*$/.test(value) && parseFloat(value) >= 0 && parseFloat(value) <= 1)) {
       setFloatValue(value);
     }
@@ -189,9 +180,12 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
     
     if (!skin) return;
     
-    // Calculate trade lock end date
     const tradeLockUntil = new Date();
     tradeLockUntil.setDate(tradeLockUntil.getDate() + parseInt(tradeLockDays || "0", 10));
+    
+    const currencyRate = CURRENCIES.find(c => c.code === selectedCurrency)?.rate || 1;
+    const priceInUSD = purchasePrice ? parseFloat(purchasePrice) / currencyRate : undefined;
+    const estimatedValueInUSD = estimatedValue ? parseFloat(estimatedValue) / currencyRate : undefined;
     
     const skinData = {
       skinId: skin.id,
@@ -202,11 +196,12 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
       wear,
       floatValue: parseFloat(floatValue || "0"),
       transactionType,
-      purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
-      currency,
+      purchasePrice: priceInUSD,
+      currency: selectedCurrency,
+      originalCurrencyRate: currencyRate,
       marketplace,
       feePercentage: feePercentage ? parseFloat(feePercentage) : 0,
-      estimatedValue: estimatedValue ? parseFloat(estimatedValue) : undefined,
+      estimatedValue: estimatedValueInUSD,
       notes,
       isStatTrak,
       tradeLockDays: parseInt(tradeLockDays || "0", 10),
@@ -255,7 +250,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <ScrollArea className="flex-grow pr-4 pl-6 pt-4 pb-4 h-[calc(90vh-10rem)] scrollbar-none">
             <div className="py-4">
-              {/* Skin Card with Rarity Colored Background - reduced size by 45% */}
               <div className={`flex flex-col md:flex-row gap-6 p-5 rounded-xl border-2 mb-6 transition-all shadow-sm ${getRarityColorClass(skin.rarity)}`}
                 style={{ backgroundColor: `${getRarityColor(skin.rarity)}20` }}
               >
@@ -307,7 +301,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                {/* StatTrak™ Option */}
                 <div className="space-y-2 flex items-center space-x-2">
                   <Checkbox 
                     id="stattrak"
@@ -323,7 +316,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </label>
                 </div>
                 
-                {/* Trade Lock */}
                 <div className="space-y-2">
                   <Label htmlFor="trade-lock" className="flex items-center">
                     <Lock className="h-4 w-4 mr-1 text-yellow-500" />
@@ -346,7 +338,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </div>
                 </div>
 
-                {/* Float and Wear */}
                 <div className="space-y-2">
                   <Label htmlFor="float-value">Float Value</Label>
                   <Input 
@@ -371,7 +362,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   />
                 </div>
                 
-                {/* Transaction Type */}
                 <div className="space-y-2">
                   <Label htmlFor="transaction-type">Transaction Type</Label>
                   <Select
@@ -389,7 +379,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </Select>
                 </div>
                 
-                {/* Purchase Price */}
                 <div className="space-y-2">
                   <Label htmlFor="purchase-price">Purchase Price</Label>
                   <Input
@@ -403,12 +392,11 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   />
                 </div>
                 
-                {/* Currency */}
                 <div className="space-y-2">
                   <Label htmlFor="currency">Currency</Label>
                   <Select
-                    value={currency}
-                    onValueChange={setCurrency}
+                    value={selectedCurrency}
+                    onValueChange={setSelectedCurrency}
                   >
                     <SelectTrigger id="currency">
                       <SelectValue placeholder="Select currency" />
@@ -423,7 +411,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </Select>
                 </div>
                 
-                {/* Marketplace */}
                 <div className="space-y-2">
                   <Label htmlFor="marketplace">Purchase Location</Label>
                   <Select
@@ -441,7 +428,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </Select>
                 </div>
                 
-                {/* Fee Percentage */}
                 <div className="space-y-2">
                   <Label htmlFor="fee-percentage">Fee Percentage (%)</Label>
                   <Input
@@ -459,7 +445,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                   </p>
                 </div>
                 
-                {/* Estimated Value */}
                 <div className="space-y-2">
                   <Label htmlFor="estimated-value">Estimated Value</Label>
                   <Input
@@ -474,7 +459,6 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
               </div>
               
-              {/* Notes */}
               <div className="space-y-2 mt-6">
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea

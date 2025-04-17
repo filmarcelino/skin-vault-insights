@@ -3,6 +3,7 @@ import { InventoryItem } from "@/types/skin";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Info, Tag, Calendar, DollarSign, TrendingUp } from "lucide-react";
 import { getRarityColor, getRarityColorClass, getTradeLockStatus, formatDate } from "@/utils/skin-utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface SkinDetailsCardProps {
   item: InventoryItem;
@@ -11,6 +12,7 @@ interface SkinDetailsCardProps {
 export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
   const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(item.tradeLockUntil);
   const acquiredDate = formatDate(item.acquiredDate);
+  const { formatPrice } = useCurrency();
   
   return (
     <div 
@@ -98,7 +100,7 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
             {item.purchasePrice !== undefined && (
               <div className="flex items-center">
                 <DollarSign className="h-3 w-3 mr-2" />
-                <span className="font-medium">Purchase:</span> ${item.purchasePrice.toFixed(2)}
+                <span className="font-medium">Purchase:</span> {formatPrice(item.purchasePrice)}
               </div>
             )}
             
@@ -106,10 +108,10 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
             {item.currentPrice !== undefined && item.purchasePrice !== undefined && (
               <div className="flex items-center">
                 <TrendingUp className="h-3 w-3 mr-2" />
-                <span className="font-medium">Current:</span> ${item.currentPrice.toFixed(2)}
+                <span className="font-medium">Current:</span> {formatPrice(item.currentPrice)}
                 {item.currentPrice > item.purchasePrice && (
                   <span className="ml-1 text-green-500 text-xs">
-                    (+${(item.currentPrice - item.purchasePrice).toFixed(2)})
+                    (+{formatPrice(item.currentPrice - item.purchasePrice)})
                   </span>
                 )}
               </div>

@@ -1,8 +1,8 @@
 
 import { FC, ReactNode } from "react";
-import { Header } from "./header";
 import { Sidebar } from "./sidebar";
-import { MobileNav } from "@/components/ui/mobile-nav";
+import { Header } from "./header";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,15 +10,14 @@ interface LayoutProps {
 
 export const Layout: FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Sidebar />
-      <div className="md:pl-16">
+    <CurrencyProvider>
+      <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="container pb-20 md:pb-8 pt-6">
-          {children}
-        </main>
+        <div className="flex-1 flex">
+          <Sidebar />
+          <main className="flex-1 p-6 overflow-auto">{children}</main>
+        </div>
       </div>
-      <MobileNav />
-    </div>
+    </CurrencyProvider>
   );
 };

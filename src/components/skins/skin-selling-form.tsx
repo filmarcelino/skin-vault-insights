@@ -12,6 +12,7 @@ import { DollarSign, ArrowUp } from "lucide-react";
 import { MARKETPLACE_OPTIONS, calculateProfit } from "@/utils/skin-utils";
 import { useState } from "react";
 import { useSellSkin } from "@/hooks/use-skins";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface SkinSellingFormProps {
   item: InventoryItem;
@@ -26,6 +27,7 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
   const [soldNotes, setSoldNotes] = useState("");
   
   const sellSkinMutation = useSellSkin();
+  const { currency, formatPrice, convertPrice } = useCurrency();
 
   const handleSellSkin = () => {
     if (!item || !soldPrice) return;
@@ -33,13 +35,15 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
     const price = parseFloat(soldPrice);
     const fee = parseFloat(soldFeePercentage) || 0;
     
-    // Calcular lucro
+    // Calcular lucro com base na moeda atual
+    // Convertemos para USD antes de calcular o lucro
     const purchasePrice = item.purchasePrice || 0;
-    const netProfit = calculateProfit(soldPrice, soldFeePercentage, purchasePrice);
+    const priceInUSD = price / currency.rate; // Converte para USD
+    const netProfit = calculateProfit(priceInUSD.toString(), soldFeePercentage, purchasePrice);
 
     const sellData: SellData = {
       soldDate: new Date().toISOString(),
-      soldPrice: price,
+      soldPrice: priceInUSD, // Salvamos em USD
       soldMarketplace,
       soldFeePercentage: fee,
       soldNotes,
@@ -64,7 +68,7 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
         <div className="space-y-2">
           <Label htmlFor="sold-price" className="flex items-center">
             <DollarSign className="h-4 w-4 mr-1 text-green-500" />
-            Preço de Venda
+            Preço de Venda ({currency.symbol})
           </Label>
           <Input
             id="sold-price"
@@ -121,23 +125,23 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
             
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>Preço de Venda:</div>
-              <div className="text-right">${parseFloat(soldPrice).toFixed(2)}</div>
+              <div className="text-right">{formatPrice(parseFloat(soldPrice))}</div>
               
               <div>Taxa do Marketplace ({parseFloat(soldFeePercentage) || 0}%):</div>
               <div className="text-right text-red-400">
-                -${(parseFloat(soldPrice) * (parseFloat(soldFeePercentage) || 0) / 100).toFixed(2)}
+                -{formatPrice((parseFloat(soldPrice) * (parseFloat(soldFeePercentage) || 0) / 100))}
               </div>
               
               <div>Preço de Compra:</div>
-              <div className="text-right text-red-400">-${item.purchasePrice.toFixed(2)}</div>
+              <div className="text-right text-red-400">-{formatPrice(item.purchasePrice)}</div>
               
               <div className="font-bold border-t border-green-800 pt-1">Lucro Líquido:</div>
               <div className="font-bold border-t border-green-800 pt-1 text-right text-green-500">
-                ${(
+                {formatPrice(
                   parseFloat(soldPrice) - 
                   (parseFloat(soldPrice) * (parseFloat(soldFeePercentage) || 0) / 100) - 
                   item.purchasePrice
-                ).toFixed(2)}
+                )}
               </div>
             </div>
           </div>

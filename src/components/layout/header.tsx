@@ -1,3 +1,4 @@
+
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
@@ -13,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CurrencySelector } from "@/components/ui/currency-selector";
 
 export const Header: FC = () => {
   const { user, profile, signOut } = useAuth();
@@ -38,6 +40,8 @@ export const Header: FC = () => {
         </div>
         
         <div className="flex items-center gap-4">
+          <CurrencySelector />
+          
           <Link 
             to="https://clutch.studio" 
             target="_blank"
