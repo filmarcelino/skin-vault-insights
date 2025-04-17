@@ -149,7 +149,6 @@ const Inventory = () => {
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
           onSellSkin={handleSellSkin}
-          onRemoveSkin={handleRemoveSkin}
         />
       )}
     </div>
