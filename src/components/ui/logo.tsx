@@ -18,15 +18,6 @@ export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "de
     "4xl": "h-80",
   };
 
-  // Para o logo compacto, mostramos apenas o símbolo C com as hastes
-  if (variant === "compact") {
-    return (
-      <div className={`flex items-center ${className}`}>
-        <img src="/logo.svg" alt="CS Skin Vault Logo" className={`${sizeClasses[size]} w-auto`} style={{ objectFit: 'contain', objectPosition: 'left' }} />
-      </div>
-    );
-  }
-
   // Para o logo apenas texto, mostramos apenas o texto "CS SKIN VAULT"
   if (variant === "text-only") {
     return (
@@ -37,11 +28,25 @@ export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "de
     );
   }
 
+  // Para o logo compacto, mostramos apenas o símbolo do logo
+  if (variant === "compact") {
+    return (
+      <div className={`flex items-center ${className}`}>
+        <img 
+          src="/logo.png" 
+          alt="CS Skin Vault Logo" 
+          className={`${sizeClasses[size]} w-auto`} 
+          style={{ objectFit: 'contain', objectPosition: 'left' }} 
+        />
+      </div>
+    );
+  }
+
   // Logo completo (default)
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <img 
-        src="/logo.svg" 
+        src="/logo.png" 
         alt="CS Skin Vault Logo" 
         className={`${sizeClasses[size]} w-auto`} 
         style={{ objectFit: 'contain' }}
