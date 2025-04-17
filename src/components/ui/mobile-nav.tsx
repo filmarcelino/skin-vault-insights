@@ -39,3 +39,4 @@ export const MobileNav: FC = () => {
       </div>
     </div>
   );
+};
