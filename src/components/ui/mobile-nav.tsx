@@ -1,7 +1,7 @@
 
 import { FC } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Plus, LayoutGrid, MoreHorizontal } from "lucide-react";
+import { Home, Plus, LayoutGrid, Search, MoreHorizontal } from "lucide-react";
 
 export const MobileNav: FC = () => {
   const location = useLocation();
@@ -39,4 +39,3 @@ export const MobileNav: FC = () => {
       </div>
     </div>
   );
-};
