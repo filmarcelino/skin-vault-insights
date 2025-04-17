@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -104,7 +103,6 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    // If user is already logged in, redirect to home
     if (user) {
       navigate("/");
     }
