@@ -2,7 +2,7 @@
 import { FC } from "react";
 import { NavLink } from "react-router-dom";
 import { Logo } from "@/components/ui/logo";
-import { useIsMobile } from "@/hooks/use-mobile"; // Fixed import name
+import { useIsMobile } from "@/hooks/use-mobile"; // Corrigido o nome do import
 import {
   Home,
   Plus,
@@ -40,7 +40,7 @@ export const Sidebar: FC<SidebarProps> = ({ collapsed }) => {
   return (
     <div className="h-screen w-[var(--sidebar-width)] border-r border-sidebar-border bg-sidebar transition-all fixed left-0 top-0 z-30">
       <div className="flex h-16 items-center px-4">
-        <Logo size="sm" variant="text-only" /> {/* Fixed variant to match available options */}
+        <Logo size="sm" variant="default" /> {/* Atualizado para usar variant="default" */}
       </div>
       
       <div className="px-2 py-2">

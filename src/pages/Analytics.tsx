@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,6 @@ import { format, subDays } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { PriceHistoryItem, Transaction } from "@/types/skin";
 
-// Define the inventory stats interface to fix typing issues
 interface InventoryStats {
   total_items: number;
   total_value: number;
@@ -26,11 +24,10 @@ interface InventoryStats {
 const Analytics = () => {
   const { user } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: subDays(new Date(), 30), // 30 dias atrás
+    from: subDays(new Date(), 30),
     to: new Date(),
   });
 
-  // Buscar estatísticas do inventário
   const { data: inventoryStats, isLoading: statsLoading } = useQuery<InventoryStats | null>({
     queryKey: ["inventory-stats", user?.id],
     queryFn: async () => {
@@ -40,22 +37,19 @@ const Analytics = () => {
       });
       
       if (error) throw error;
-      return data;
+      return data as InventoryStats;
     },
     enabled: !!user,
   });
 
-  // Buscar dados do inventário para simular histórico de preços
   const { data: inventoryData, isLoading: historyLoading } = useQuery<PriceHistoryItem[]>({
     queryKey: ["inventory-data", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!user || !dateRange.from || !dateRange.to) return [];
       
-      // Formatar intervalo de data para consulta
       const fromDate = format(dateRange.from, "yyyy-MM-dd");
       const toDate = format(dateRange.to, "yyyy-MM-dd");
       
-      // Buscar dados do inventário já que não temos ainda a tabela skin_price_history
       const { data, error } = await supabase
         .from("inventory")
         .select("*")
@@ -66,16 +60,12 @@ const Analytics = () => {
         return [];
       }
       
-      // Transformar os dados de inventário em dados de histórico de preços simulados
       const priceHistoryData: PriceHistoryItem[] = [];
       
       if (data) {
-        // Gerar pontos de dados para cada item do inventário
         data.forEach(item => {
-          // Data de aquisição como primeiro ponto
           const acquiredDate = new Date(item.acquired_date);
           
-          // Se a data de aquisição estiver dentro do intervalo selecionado
           if (acquiredDate >= dateRange.from && acquiredDate <= dateRange.to) {
             priceHistoryData.push({
               id: `${item.id}-acquired`,
@@ -90,7 +80,6 @@ const Analytics = () => {
             });
           }
           
-          // Se o item tiver um preço atual diferente do preço de compra, adicionar como ponto atual
           if (item.current_price && item.current_price !== item.purchase_price) {
             priceHistoryData.push({
               id: `${item.id}-current`,
@@ -112,13 +101,11 @@ const Analytics = () => {
     enabled: !!user && !!dateRange.from && !!dateRange.to,
   });
 
-  // Buscar dados de transações para análise de ROI
   const { data: transactionsData, isLoading: transactionsLoading } = useQuery<Transaction[]>({
     queryKey: ["transactions-data", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!user || !dateRange.from || !dateRange.to) return [];
       
-      // Formatar intervalo de data para consulta
       const fromDate = format(dateRange.from, "yyyy-MM-dd");
       const toDate = format(dateRange.to, "yyyy-MM-dd");
       
@@ -132,7 +119,6 @@ const Analytics = () => {
       
       if (error) throw error;
       
-      // Converter os tipos de dados para o formato Transaction
       return (data || []).map(item => ({
         id: item.id || item.transaction_id || "",
         type: item.type as 'add' | 'sell' | 'trade' | 'purchase',
@@ -147,11 +133,9 @@ const Analytics = () => {
     enabled: !!user && !!dateRange.from && !!dateRange.to,
   });
 
-  // Processar dados para gráficos
   const priceHistoryChartData = React.useMemo(() => {
     if (!inventoryData || inventoryData.length === 0) return [];
 
-    // Agrupar por data, calcular preço médio por dia
     const groupedByDate = inventoryData.reduce((acc, item) => {
       const date = item.price_date.split("T")[0];
       if (!acc[date]) {
@@ -168,11 +152,9 @@ const Analytics = () => {
     }));
   }, [inventoryData]);
 
-  // Calcular dados de ROI
   const roiData = React.useMemo(() => {
     if (!transactionsData || transactionsData.length === 0) return [];
 
-    // Agrupar transações por tipo (compra vs venda)
     const purchasesByItem = transactionsData
       .filter(t => t.type === 'purchase')
       .reduce((acc, item) => {
@@ -191,7 +173,6 @@ const Analytics = () => {
         return acc;
       }, {} as Record<string, { cost: number; revenue: number }>);
 
-    // Combinar dados para cálculo de ROI
     const combinedData: Record<string, { cost: number; revenue: number }> = {};
     Object.keys(purchasesByItem).forEach(itemId => {
       combinedData[itemId] = purchasesByItem[itemId];
@@ -201,7 +182,6 @@ const Analytics = () => {
       combinedData[itemId].revenue = salesByItem[itemId].revenue;
     });
 
-    // Calcular ROI para cada item
     const result = Object.keys(combinedData).map(itemId => {
       const { cost, revenue } = combinedData[itemId];
       const roi = cost > 0 ? ((revenue - cost) / cost) * 100 : 0;
@@ -217,7 +197,6 @@ const Analytics = () => {
     return result;
   }, [transactionsData]);
 
-  // Calcular as skins com melhor desempenho
   const topPerformingSkins = React.useMemo(() => {
     if (!roiData || roiData.length === 0) return [];
     return [...roiData]
@@ -261,7 +240,7 @@ const Analytics = () => {
             </TabsList>
             
             <TabsContent value="price-trends" className="space-y-4">
-              <Card>
+              <Card className="bg-[#1A1F2C] border-[#333333]">
                 <CardHeader>
                   <CardTitle>Price History</CardTitle>
                   <CardDescription>
@@ -290,7 +269,7 @@ const Analytics = () => {
             </TabsContent>
             
             <TabsContent value="roi" className="space-y-4">
-              <Card>
+              <Card className="bg-[#1A1F2C] border-[#333333]">
                 <CardHeader>
                   <CardTitle>Return on Investment</CardTitle>
                   <CardDescription>
@@ -319,7 +298,7 @@ const Analytics = () => {
             </TabsContent>
             
             <TabsContent value="top-performing" className="space-y-4">
-              <Card>
+              <Card className="bg-[#1A1F2C] border-[#333333]">
                 <CardHeader>
                   <CardTitle>Top Performing Skins</CardTitle>
                   <CardDescription>

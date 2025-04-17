@@ -42,14 +42,14 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     e.currentTarget.src = '/placeholder.svg';
   };
 
-  // Nova função para obter a cor de fundo baseada na raridade
+  // Função para obter a cor de fundo baseada na raridade - agora mais sólida
   const getBackgroundStyle = () => {
     if (!rarity) return {};
     
     const color = getRarityColor(rarity);
     return {
-      backgroundColor: `${color}10`,
-      borderColor: `${color}50`,
+      backgroundColor: `${color}40`, // Aumentando a opacidade para 25% (40 em hex)
+      borderColor: `${color}90`, // Aumentando a opacidade para 56% (90 em hex)
       ...style
     };
   };
@@ -73,14 +73,14 @@ export const InventoryCard: FC<InventoryCardProps> = ({
             <p className="text-[10px] text-primary truncate">{skinName}</p>
           </div>
           {price && (
-            <span className="text-xs font-semibold bg-background/60 px-1.5 py-0.5 rounded">
+            <span className="text-xs font-semibold bg-background/80 px-1.5 py-0.5 rounded">
               ${price}
             </span>
           )}
         </div>
 
         {/* Image */}
-        <div className="relative aspect-[16/9] flex items-center justify-center bg-black/20 rounded overflow-hidden">
+        <div className="relative aspect-[16/9] flex items-center justify-center bg-black/30 rounded overflow-hidden">
           {image ? (
             <img 
               src={image} 
@@ -103,7 +103,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
         {/* Footer - sempre exibir o wear se disponível */}
         <div className="flex items-center justify-between">
           {wear && (
-            <Badge variant="secondary" className="text-[8px] px-1.5 py-0.5">
+            <Badge variant="secondary" className="text-[8px] px-1.5 py-0.5 bg-background/70 font-medium">
               {wear}
             </Badge>
           )}
