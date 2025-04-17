@@ -42,14 +42,42 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     e.currentTarget.src = '/placeholder.svg';
   };
 
-  // Função para obter a cor de fundo baseada na raridade - mais sólida
+  // Função para obter a cor de fundo baseada na raridade - cores mais sólidas
   const getBackgroundStyle = () => {
     if (!rarity) return {};
     
-    const color = getRarityColor(rarity);
+    let color = getRarityColor(rarity);
+    let bgColor = color;
+    
+    // Mapeamento de raridades para cores sólidas conforme a lista fornecida
+    const solidColors: Record<string, string> = {
+      'Consumer Grade': '#B0C3D9',
+      'Industrial Grade': '#5E98D9',
+      'Mil-Spec Grade': '#4B69FF',
+      'Restricted': '#8847FF',
+      'Classified': '#D32CE6',
+      'Covert': '#EB4B4B',
+      'Contraband': '#FFD700',
+      '★ Rare Special Item': '#FFF99B',
+      // PT-BR translations
+      'Comum': '#B0C3D9',
+      'Pouco Comum': '#5E98D9',
+      'Militar': '#4B69FF',
+      'Restrita': '#8847FF',
+      'Classificada': '#D32CE6',
+      'Secreta': '#EB4B4B',
+      'Contrabando': '#FFD700',
+      'Especial Rara': '#FFF99B',
+    };
+
+    if (solidColors[rarity]) {
+      bgColor = solidColors[rarity];
+    }
+    
     return {
-      backgroundColor: `${color}40`, // Opacidade 25%
-      borderColor: `${color}`, // Borda sólida
+      backgroundColor: `${bgColor}`,
+      borderColor: `${color}`,
+      color: '#000', // Texto preto para melhor contraste com cores claras
       ...style
     };
   };
@@ -70,10 +98,10 @@ export const InventoryCard: FC<InventoryCardProps> = ({
               )}
               {weaponName}
             </h3>
-            <p className="text-[10px] text-primary truncate">{skinName}</p>
+            <p className="text-[10px] text-foreground/80 truncate">{skinName}</p>
           </div>
           {price && (
-            <span className="text-xs font-semibold bg-background/80 px-1.5 py-0.5 rounded">
+            <span className="text-xs font-semibold bg-background/80 px-1.5 py-0.5 rounded shadow-sm">
               ${price}
             </span>
           )}
@@ -90,7 +118,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
               loading="lazy"
             />
           ) : (
-            <div className="text-[10px] text-muted-foreground">No image</div>
+            <div className="text-[10px] text-foreground/80">No image</div>
           )}
           
           {tradeLockDays && tradeLockDays > 0 && (
@@ -103,7 +131,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
         {/* Footer - sempre exibir o wear se disponível */}
         <div className="flex items-center justify-between">
           {wear && (
-            <Badge variant="secondary" className="text-[8px] px-1.5 py-0.5 bg-background/70 font-medium">
+            <Badge variant="secondary" className="text-[8px] px-1.5 py-0.5 bg-background/80 text-foreground font-medium shadow-sm">
               {wear}
             </Badge>
           )}

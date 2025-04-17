@@ -27,14 +27,26 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
   };
   
   const isPositiveChange = stats.value_change_30d >= 0;
+
+  // Cores das raridades de skins conforme solicitado
+  const rarityColors = {
+    consumerGrade: "#B0C3D9", // Comum / Consumer Grade - Cinza-azulado
+    industrialGrade: "#5E98D9", // Pouco Comum / Industrial Grade - Azul claro
+    milSpec: "#4B69FF", // Militar / Mil-Spec - Azul forte
+    restricted: "#8847FF", // Restrita / Restricted - Roxo
+    classified: "#D32CE6", // Classificada / Classified - Rosa/roxo
+    covert: "#EB4B4B", // Secreta / Covert - Vermelho
+    contraband: "#FFD700", // Contrabando / Contraband - Dourado
+    special: "#FFF99B", // Especial Rara - Dourado pálido
+  };
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Value</CardTitle>
-          <div className="rounded-full p-2" style={{ backgroundColor: `rgba(75,105,255,0.2)` }}>
-            <DollarSignIcon className="h-4 w-4 text-[#4B69FF]" />
+          <div className="rounded-full p-2" style={{ backgroundColor: `${rarityColors.milSpec}30` }}>
+            <DollarSignIcon className="h-4 w-4" style={{ color: rarityColors.milSpec }} />
           </div>
         </CardHeader>
         <CardContent>
@@ -50,8 +62,8 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Items Count</CardTitle>
-          <div className="rounded-full p-2" style={{ backgroundColor: `rgba(136,71,255,0.2)` }}>
-            <PackageIcon className="h-4 w-4 text-[#8847FF]" />
+          <div className="rounded-full p-2" style={{ backgroundColor: `${rarityColors.restricted}30` }}>
+            <PackageIcon className="h-4 w-4" style={{ color: rarityColors.restricted }} />
           </div>
         </CardHeader>
         <CardContent>
@@ -86,8 +98,8 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">ROI (30 Days)</CardTitle>
-          <div className="rounded-full p-2" style={{ backgroundColor: `rgba(211,44,230,0.2)` }}>
-            <PercentIcon className="h-4 w-4 text-[#D32CE6]" />
+          <div className="rounded-full p-2" style={{ backgroundColor: `${rarityColors.classified}30` }}>
+            <PercentIcon className="h-4 w-4" style={{ color: rarityColors.classified }} />
           </div>
         </CardHeader>
         <CardContent>

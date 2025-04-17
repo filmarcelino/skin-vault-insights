@@ -1,3 +1,4 @@
+
 export interface Skin {
   id: string;
   name: string;
@@ -113,4 +114,25 @@ export interface PriceHistoryItem {
   marketplace?: string | null;
   wear?: string | null;
   created_at: string;
+}
+
+// Interface para os dados de estatísticas do inventário
+export interface InventoryStats {
+  total_items: number;
+  total_value: number;
+  avg_price: number;
+  value_change_30d: number;
+  value_change_percentage_30d: number;
+}
+
+// Interface detalhada para análises mais avançadas
+export interface DetailedInventoryStats {
+  totalValue: number;
+  profitLoss: number;
+  itemCount: number;
+  averageItemValue: number;
+  valueChange30d: number;
+  valueChangePercent: number;
+  topRarities: Array<{name: string, count: number}>;
+  recentTransactions: Array<{id: string, name: string, type: string, value: number, date: string}>;
 }
