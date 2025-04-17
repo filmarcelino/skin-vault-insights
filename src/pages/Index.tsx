@@ -139,14 +139,10 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       ...skin,
       inventoryId: `demo-${skin.id}`,
       acquiredDate: new Date().toISOString(),
-      purchasePrice: skin.price ? skin.price * 0.9 : 0,
+      purchasePrice: skin.price || 0,
       currentPrice: skin.price,
-      tradeLockDays: Math.floor(Math.random() * 8),
-      tradeLockUntil: new Date(new Date().getTime() + Math.floor(Math.random() * 8) * 24 * 60 * 60 * 1000).toISOString(),
-      isStatTrak: Math.random() > 0.7,
-      marketplace: "Steam Market",
-      feePercentage: 13,
-      notes: "This is a mock inventory item for demonstration purposes.",
+      tradeLockDays: 0,
+      isStatTrak: false,
       isInUserInventory: false
     };
     
@@ -423,6 +419,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
         onSellSkin={handleSellSkin}
+        onAddToInventory={handleAddToInventory}
       />
     </>
   );

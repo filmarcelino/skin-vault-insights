@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useInventory, useRemoveSkin } from "@/hooks/use-skins";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
@@ -81,7 +82,7 @@ const Inventory = () => {
 
   // Pagination logic
   const displayItems = searchQuery ? filteredItems : inventoryItems;
-  const totalPages = Math.ceil(displayItems.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(displayItems.length / ITEMS_PER_PAGE));
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedItems = displayItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   
@@ -161,8 +162,8 @@ const Inventory = () => {
             ))}
           </div>
           
-          {/* Pagination */}
-          {displayItems.length > ITEMS_PER_PAGE && (
+          {/* Pagination - Garantindo que sempre seja exibida */}
+          {displayItems.length > 0 && (
             <div className="mt-6">
               <Pagination>
                 <PaginationContent>
@@ -174,7 +175,6 @@ const Inventory = () => {
                   </PaginationItem>
                   
                   {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                    // For simplicity, show up to 5 page links
                     let pageNumber: number;
                     
                     if (totalPages <= 5) {
