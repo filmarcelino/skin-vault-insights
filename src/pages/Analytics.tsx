@@ -37,7 +37,7 @@ const Analytics = () => {
   });
 
   // Buscar dados do inventário para simular histórico de preços
-  const { data: inventoryData, isLoading: historyLoading } = useQuery({
+  const { data: inventoryData, isLoading: historyLoading } = useQuery<PriceHistoryItem[]>({
     queryKey: ["inventory-data", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!user || !dateRange.from || !dateRange.to) return [];
@@ -104,7 +104,7 @@ const Analytics = () => {
   });
 
   // Buscar dados de transações para análise de ROI
-  const { data: transactionsData, isLoading: transactionsLoading } = useQuery({
+  const { data: transactionsData, isLoading: transactionsLoading } = useQuery<Transaction[]>({
     queryKey: ["transactions-data", user?.id, dateRange.from?.toISOString(), dateRange.to?.toISOString()],
     queryFn: async () => {
       if (!user || !dateRange.from || !dateRange.to) return [];
@@ -345,3 +345,4 @@ const Analytics = () => {
 };
 
 export default Analytics;
+
