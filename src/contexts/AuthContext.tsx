@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,15 +138,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (response.error) {
-        toast({
-          title: "Erro ao fazer login",
+        toast("Erro ao fazer login", {
           description: response.error.message,
-          variant: "destructive"
         });
         return { error: response.error, data: null };
       } else if (response.data.session) {
-        toast({
-          title: "Login realizado com sucesso",
+        toast("Login realizado com sucesso", {
           description: "Bem-vindo de volta!"
         });
         return { error: null, data: response.data.session };
@@ -154,10 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: new Error("Erro desconhecido"), data: null };
     } catch (error) {
       console.error("Sign in error:", error);
-      toast({
-        title: "Erro ao fazer login",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive"
+      toast("Erro ao fazer login", {
+        description: "Ocorreu um erro inesperado. Tente novamente."
       });
       return { error: error as Error, data: null };
     } finally {
@@ -192,15 +188,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (authResponse.error) {
-        toast({
-          title: "Erro ao criar conta",
-          description: authResponse.error.message,
-          variant: "destructive"
+        toast("Erro ao criar conta", {
+          description: authResponse.error.message
         });
         return { error: authResponse.error, data: null };
       } else if (authResponse.data.session) {
-        toast({
-          title: "Conta criada com sucesso",
+        toast("Conta criada com sucesso", {
           description: "Bem-vindo ao CS Skin Vault!"
         });
         return { error: null, data: authResponse.data.session };
@@ -209,10 +202,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: new Error("Erro desconhecido"), data: null };
     } catch (error) {
       console.error("Sign up error:", error);
-      toast({
-        title: "Erro ao criar conta",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive"
+      toast("Erro ao criar conta", {
+        description: "Ocorreu um erro inesperado. Tente novamente."
       });
       return { error: error as Error, data: null };
     } finally {
@@ -226,16 +217,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       setProfile(null);
-      toast({
-        title: "Logout realizado",
+      toast("Logout realizado", {
         description: "Você saiu da sua conta com sucesso."
       });
     } catch (error) {
       console.error("Sign out error:", error);
-      toast({
-        title: "Erro ao sair",
-        description: "Ocorreu um erro ao tentar sair. Tente novamente.",
-        variant: "destructive"
+      toast("Erro ao sair", {
+        description: "Ocorreu um erro ao tentar sair. Tente novamente."
       });
     } finally {
       setIsLoading(false);
@@ -251,14 +239,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (response.error) {
-        toast({
-          title: "Erro ao enviar e-mail",
-          description: response.error.message,
-          variant: "destructive"
+        toast("Erro ao enviar e-mail", {
+          description: response.error.message
         });
       } else {
-        toast({
-          title: "E-mail enviado",
+        toast("E-mail enviado", {
           description: "Verifique sua caixa de entrada para redefinir sua senha."
         });
       }
@@ -266,10 +251,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return response;
     } catch (error) {
       console.error("Reset password error:", error);
-      toast({
-        title: "Erro ao redefinir senha",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive"
+      toast("Erro ao redefinir senha", {
+        description: "Ocorreu um erro inesperado. Tente novamente."
       });
       return { error: error as Error, data: null };
     } finally {
@@ -293,27 +276,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
         
       if (error) {
-        toast({
-          title: "Erro ao atualizar perfil",
-          description: error.message,
-          variant: "destructive"
+        toast("Erro ao atualizar perfil", {
+          description: error.message
         });
         return { error, data: null };
       }
       
       setProfile(updatedProfile as UserProfile);
-      toast({
-        title: "Perfil atualizado",
+      toast("Perfil atualizado", {
         description: "Seu perfil foi atualizado com sucesso."
       });
       
       return { error: null, data: updatedProfile as UserProfile };
     } catch (error) {
       console.error("Update profile error:", error);
-      toast({
-        title: "Erro ao atualizar perfil",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive"
+      toast("Erro ao atualizar perfil", {
+        description: "Ocorreu um erro inesperado. Tente novamente."
       });
       return { error: error as Error, data: null };
     } finally {
