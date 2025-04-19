@@ -11,6 +11,7 @@ import { useSkins } from "@/hooks/use-skins";
 import { InventoryItem, Skin, SellData, Transaction } from "@/types/skin";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { 
   getUserInventory, 
   getUserTransactions, 

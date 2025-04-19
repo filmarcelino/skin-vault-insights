@@ -60,7 +60,7 @@ export interface InventoryItem extends Skin {
 
 export interface Transaction {
   id: string;
-  type: 'add' | 'sell' | 'trade' | 'purchase';
+  type: 'add' | 'sell' | 'trade' | 'purchase' | 'remove';
   itemId: string;
   weaponName: string;
   skinName: string;
