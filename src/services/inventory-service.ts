@@ -1,4 +1,3 @@
-
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -49,6 +48,47 @@ const mapSupabaseToTransaction = (transaction: any): Transaction => {
   };
 };
 
+// Remover uma skin do inventário do usuário
+export const removeSkinFromInventory = async (inventoryId: string): Promise<boolean> => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
+      return false;
+    }
+    
+    // Hard delete the skin from inventory
+    const { error: deleteError } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('inventory_id', inventoryId)
+      .eq('user_id', session.user.id);
+    
+    if (deleteError) {
+      console.error("Error removing skin from inventory:", deleteError);
+      return false;
+    }
+    
+    // Add a transaction record for the removal
+    await addTransaction({
+      id: `trans-${Date.now()}`,
+      type: 'remove',
+      itemId: inventoryId,
+      weaponName: "Unknown", // These values will be filled by the calling code
+      skinName: "Unknown",
+      date: new Date().toISOString(),
+      price: 0,
+      notes: "Skin removed from inventory"
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error removing skin:", error);
+    return false;
+  }
+};
+
 // Recuperar o inventário do usuário atual do Supabase
 export const getUserInventory = async (): Promise<InventoryItem[]> => {
   try {
@@ -71,7 +111,6 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
       return [];
     }
     
-    console.log("Retrieved inventory:", data);
     return Array.isArray(data) ? data.map(mapSupabaseToInventoryItem).filter(Boolean) : [];
   } catch (error) {
     console.error("Error getting inventory:", error);
@@ -176,35 +215,6 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
   } catch (error) {
     console.error("Error adding skin to inventory:", error);
     return null;
-  }
-};
-
-// Remover uma skin do inventário do usuário
-export const removeSkinFromInventory = async (inventoryId: string): Promise<boolean> => {
-  try {
-    // Get current user session
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      console.error("No user session found");
-      return false;
-    }
-    
-    const { error } = await supabase
-      .from('inventory')
-      .delete()
-      .eq('inventory_id', inventoryId)
-      .eq('user_id', session.user.id);
-    
-    if (error) {
-      console.error("Error removing skin from inventory:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error removing skin:", error);
-    return false;
   }
 };
 

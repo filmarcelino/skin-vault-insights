@@ -1,4 +1,4 @@
-
+import React, { useState, useEffect } from "react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { InsightsCard } from "@/components/dashboard/insights-card";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
@@ -10,9 +10,6 @@ import { Search } from "@/components/ui/search";
 import { useSkins } from "@/hooks/use-skins";
 import { InventoryItem, Skin, SellData, Transaction } from "@/types/skin";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
-import { Loading } from "@/components/ui/loading";
-import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getUserInventory, 
@@ -88,7 +85,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     }
   };
 
-  // Check subscription status
   useEffect(() => {
     const checkSubscription = async () => {
       if (!session?.access_token) return;
@@ -136,10 +132,8 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
 
   const prepareStats = async (inventory?: InventoryItem[]) => {
     try {
-      // Use passed inventory if available, otherwise use the state
       const inventoryToUse = inventory || userInventory;
       
-      // Calculate the total number of skins directly from the inventory array
       const totalSkins = inventoryToUse.length;
       console.log("Total skins in inventory:", totalSkins);
       
@@ -172,12 +166,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   };
 
   const handleSkinClick = (skin: Skin | InventoryItem) => {
-    if ('isInUserInventory' in skin && skin.isInUserInventory) {
-      setSelectedSkin(skin);
-      setDetailModalOpen(true);
-      return;
-    }
-    
     const inventorySkin: InventoryItem = {
       ...skin,
       inventoryId: `demo-${skin.id}`,
@@ -250,7 +238,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     }
   };
 
-  // Premium CTA component
   const PremiumCTA = () => {
     if (isSubscribed) return null;
 
@@ -306,7 +293,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         </div>
       )}
 
-      {/* Add Premium CTA */}
       <PremiumCTA />
 
       <div className="p-2 mb-4 bg-gray-100 dark:bg-gray-800 text-xs overflow-x-auto">
