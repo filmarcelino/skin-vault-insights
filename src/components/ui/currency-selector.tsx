@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 export const CurrencySelector: React.FC = () => {
-  const { currency, setCurrency } = useCurrency();
+  const { currency, setCurrency, isLoading } = useCurrency();
 
   return (
     <DropdownMenu>
