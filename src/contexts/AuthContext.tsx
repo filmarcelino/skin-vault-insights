@@ -1,10 +1,10 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { CURRENCIES } from "@/contexts/CurrencyContext";
-import { useCurrency } from "@/contexts/CurrencyContext";
 
 export interface UserProfile {
   id: string;
@@ -52,6 +52,27 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
+// Interface para resolver a dependência circular com CurrencyContext
+export interface CurrencyUpdater {
+  setCurrency: (currency: { code: string; symbol: string; name: string; rate: number }) => void;
+}
+
+// Contexto para atualizações de moeda
+const CurrencyUpdateContext = createContext<CurrencyUpdater | null>(null);
+
+export const CurrencyUpdateProvider = ({ children, updater }: { children: React.ReactNode; updater: CurrencyUpdater }) => {
+  return (
+    <CurrencyUpdateContext.Provider value={updater}>
+      {children}
+    </CurrencyUpdateContext.Provider>
+  );
+};
+
+export const useCurrencyUpdate = () => {
+  const context = useContext(CurrencyUpdateContext);
+  return context;
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -60,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast: useToastToast } = useToast();
-  const { setCurrency } = useCurrency();
+  const currencyUpdater = useCurrencyUpdate();
 
   console.log("AuthProvider rendering. isLoading:", isLoading, "user:", user?.email);
 
@@ -125,9 +146,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(data as UserProfile);
         
         // Atualizar a moeda preferida do usuário no CurrencyContext
-        const currency = CURRENCIES.find(c => c.code === data.preferred_currency);
-        if (currency) {
-          setCurrency(currency);
+        if (currencyUpdater && data.preferred_currency) {
+          const currency = CURRENCIES.find(c => c.code === data.preferred_currency);
+          if (currency) {
+            currencyUpdater.setCurrency(currency);
+          }
         }
       }
     } catch (error) {
@@ -293,6 +316,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast("Perfil atualizado", {
         description: "Seu perfil foi atualizado com sucesso."
       });
+      
+      // Atualizar a moeda preferida se foi alterada
+      if (data.preferred_currency && currencyUpdater) {
+        const currency = CURRENCIES.find(c => c.code === data.preferred_currency);
+        if (currency) {
+          currencyUpdater.setCurrency(currency);
+        }
+      }
       
       return { error: null, data: updatedProfile as UserProfile };
     } catch (error) {

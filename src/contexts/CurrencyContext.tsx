@@ -1,6 +1,8 @@
+
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "./AuthContext";
 
 export interface Currency {
   code: string;
@@ -40,6 +42,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const auth = useAuth();
 
   useEffect(() => {
     const fetchExchangeRates = async () => {
@@ -125,17 +128,25 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return `${specificCurrency.symbol}${convertedAmount.toFixed(2)}`;
   };
 
-  const setCurrency = (newCurrency: Currency) => {
+  // Função unificada de setCurrency que atualiza o localStorage e o perfil do usuário
+  const handleSetCurrency = (newCurrency: Currency) => {
     localStorage.setItem("selectedCurrency", newCurrency.code);
+    setCurrency(newCurrency);
     
     // Se o usuário estiver logado, atualizar a preferência no perfil
-    
+    if (auth.user && auth.profile) {
+      auth.updateProfile({
+        preferred_currency: newCurrency.code
+      }).catch(error => {
+        console.error("Erro ao atualizar moeda preferida no perfil:", error);
+      });
+    }
   };
 
   return (
     <CurrencyContext.Provider value={{ 
       currency, 
-      setCurrency, 
+      setCurrency: handleSetCurrency, 
       formatPrice, 
       convertPrice,
       getOriginalPrice,
