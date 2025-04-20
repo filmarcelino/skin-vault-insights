@@ -8,10 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skin, SkinWear } from "@/types/skin";
-import { Lock, X, Info } from "lucide-react";
+import { Lock, X, Info, CopyPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
+import { format, addDays, parseISO } from "date-fns";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 const WEAR_RANGES = [
   { name: "Factory New", min: 0.00, max: 0.07 },
@@ -46,7 +49,7 @@ interface SkinDetailModalProps {
 const getRarityColorClass = (rarity?: string) => {
   if (!rarity) return "";
   
-  switch (rarity.toLowerCase()) {
+  switch (rarity?.toLowerCase()) {
     case "consumer grade":
     case "white":
       return "bg-[rgba(176,195,217,0.2)] border-[#B0C3D9]";
@@ -81,7 +84,7 @@ const getRarityColorClass = (rarity?: string) => {
 const getRarityColor = (rarity?: string) => {
   if (!rarity) return "#888888";
   
-  switch (rarity.toLowerCase()) {
+  switch (rarity?.toLowerCase()) {
     case "consumer grade":
     case "white":
       return "#B0C3D9";
@@ -119,18 +122,17 @@ const getWearFromFloat = (floatValue: number): SkinWear => {
       return range.name as SkinWear;
     }
   }
-  // Handle edge case for Battle-Scarred at exactly 1.0
-  if (floatValue === 1.0) {
-    return "Battle-Scarred";
-  }
-  return "Factory New"; // Default
+  if (floatValue === 1.0) return "Battle-Scarred";
+  return "Factory New";
 };
 
 export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDetailModalProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { currency, formatPrice } = useCurrency();
-  
+
+  const [addedAt, setAddedAt] = useState<Date>(new Date());
+  const [purchaseDate, setPurchaseDate] = useState<Date>(new Date());
   const [floatValue, setFloatValue] = useState<string>("");
   const [wear, setWear] = useState<SkinWear>("Factory New");
   const [transactionType, setTransactionType] = useState<string>("purchase");
@@ -141,10 +143,14 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
   const [expectedSalePrice, setExpectedSalePrice] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isStatTrak, setIsStatTrak] = useState<boolean>(false);
-  const [tradeLockDays, setTradeLockDays] = useState<string>("0");
-  
+  const [tradeLockDays, setTradeLockDays] = useState<string>("7");
+  const [tradeLockUntil, setTradeLockUntil] = useState<Date>(addDays(new Date(), 7));
+  const [duplicating, setDuplicating] = useState<boolean>(false);
+
   useEffect(() => {
-    if (skin) {
+    if (skin && !duplicating) {
+      setAddedAt(new Date());
+      setPurchaseDate(new Date());
       setFloatValue(skin.min_float ? skin.min_float.toString() : "0");
       setWear(getWearFromFloat(skin.min_float || 0));
       setTransactionType("purchase");
@@ -155,38 +161,37 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
       setExpectedSalePrice("");
       setNotes("");
       setIsStatTrak(false);
-      setTradeLockDays("7"); // Default to 7 days for fresh purchases
+      setTradeLockDays("7");
+      setTradeLockUntil(addDays(new Date(), 7));
     }
-  }, [skin, currency]);
-  
+  }, [skin, currency, duplicating]);
+
+  useEffect(() => {
+    if (purchaseDate && tradeLockDays) {
+      const tradeLockEnd = addDays(purchaseDate, parseInt(tradeLockDays || "0", 10));
+      setTradeLockUntil(tradeLockEnd);
+    }
+  }, [purchaseDate, tradeLockDays]);
+
   useEffect(() => {
     if (floatValue) {
       const floatNum = parseFloat(floatValue);
-      if (!isNaN(floatNum)) {
-        setWear(getWearFromFloat(floatNum));
-      }
+      if (!isNaN(floatNum)) setWear(getWearFromFloat(floatNum));
     }
   }, [floatValue]);
-  
+
   const handleFloatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === "" || (/^\d*\.?\d*$/.test(value) && parseFloat(value) >= 0 && parseFloat(value) <= 1)) {
       setFloatValue(value);
     }
   };
-  
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!skin) return;
-    
-    const tradeLockUntil = new Date();
-    tradeLockUntil.setDate(tradeLockUntil.getDate() + parseInt(tradeLockDays || "0", 10));
-    
-    const currencyRate = CURRENCIES.find(c => c.code === selectedCurrency)?.rate || 1;
-    const priceInUSD = purchasePrice ? parseFloat(purchasePrice) / currencyRate : undefined;
-    const salePriceInUSD = expectedSalePrice ? parseFloat(expectedSalePrice) / currencyRate : undefined;
-    
+
     const skinData = {
       skinId: skin.id,
       name: skin.name,
@@ -196,55 +201,63 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
       wear,
       floatValue: parseFloat(floatValue || "0"),
       transactionType,
-      purchasePrice: priceInUSD,
+      purchasePrice: purchasePrice ? parseFloat(purchasePrice) : 0,
       currency: selectedCurrency,
-      originalCurrencyRate: currencyRate,
+      originalCurrencyRate: CURRENCIES.find(c => c.code === selectedCurrency)?.rate || 1,
       marketplace,
       feePercentage: feePercentage ? parseFloat(feePercentage) : 0,
-      estimatedValue: salePriceInUSD,
+      estimatedValue: expectedSalePrice ? parseFloat(expectedSalePrice) : undefined,
       notes,
       isStatTrak,
-      tradeLockDays: parseInt(tradeLockDays || "0", 10),
-      tradeLockUntil: tradeLockDays !== "0" ? tradeLockUntil.toISOString() : undefined,
-      acquiredDate: new Date().toISOString(),
+      tradeLockDays: parseInt(tradeLockDays || "7", 10),
+      tradeLockUntil: tradeLockUntil.toISOString(),
+      acquiredDate: addedAt.toISOString(),
+      purchaseDate: purchaseDate.toISOString()
     };
-    
-    if (onAddSkin) {
-      onAddSkin(skinData);
-    }
-    
+
+    if (onAddSkin) onAddSkin(skinData);
+
     toast({
-      title: "Skin Added",
-      description: `${skin.weapon || ""} | ${skin.name} has been added to your inventory.`,
+      title: "Skin Adicionada",
+      description: `${skin.weapon || ""} | ${skin.name} foi adicionada ao seu inventário.`,
     });
-    
+
     onOpenChange(false);
     navigate("/inventory");
   };
 
+  const handleDuplicate = () => {
+    setDuplicating(true);
+    setAddedAt(new Date());
+    onOpenChange(true);
+  };
+
   const collectionName = useMemo(() => {
     if (!skin) return "";
-    if (skin.collections && skin.collections.length > 0) {
-      return skin.collections[0].name;
-    }
-    if (skin.collection) {
-      return skin.collection.name;
-    }
+    if (skin.collections && skin.collections.length > 0) return skin.collections[0].name;
+    if (skin.collection) return skin.collection.name;
     return "";
   }, [skin]);
-  
+
   if (!skin) return null;
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden p-0 animate-fade-in">
-        <DialogHeader className="p-6 pb-0">
+        <DialogHeader className="p-6 pb-0 flex flex-row items-center justify-between">
           <DialogTitle className="text-2xl flex justify-between items-center">
-            <span>Add Skin to Inventory</span>
-            <DialogClose className="rounded-full p-2 hover:bg-secondary">
-              <X className="h-4 w-4" />
-            </DialogClose>
+            <span>Adicionar Skin ao Inventário</span>
           </DialogTitle>
+          <Button
+            variant="outline"
+            size="icon"
+            className="ml-2"
+            type="button"
+            title="Duplicar Skin"
+            onClick={handleDuplicate}
+          >
+            <CopyPlus className="w-4 h-4" />
+          </Button>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
@@ -270,27 +283,23 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                     </div>
                   )}
                 </div>
-                
                 <div className="w-full md:w-2/3 flex flex-col justify-center">
                   <h3 className="text-xl font-semibold mb-2">
                     {skin.weapon ? `${skin.weapon} | ${skin.name}` : skin.name}
                   </h3>
-                  
                   <div className="text-sm text-muted-foreground mb-4 space-y-2">
                     {skin.rarity && (
                       <div className="flex items-center">
                         <div className="w-3 h-3 rounded-full mr-2" 
                           style={{ backgroundColor: getRarityColor(skin.rarity) }}></div>
-                        <span className="font-medium">Rarity:</span> {skin.rarity}
+                        <span className="font-medium">Raridade:</span> {skin.rarity}
                       </div>
                     )}
-                    
                     {collectionName && (
                       <div className="flex items-center">
-                        <span className="font-medium mr-1">Collection:</span> {collectionName}
+                        <span className="font-medium mr-1">Coleção:</span> {collectionName}
                       </div>
                     )}
-                    
                     {skin.min_float !== undefined && skin.max_float !== undefined && (
                       <div className="flex items-center">
                         <span className="font-medium mr-1">Float Range:</span> {skin.min_float.toFixed(4)} - {skin.max_float.toFixed(4)}
@@ -300,6 +309,40 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
               </div>
               
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label>Data de adição</Label>
+                  <Input
+                    readOnly
+                    value={format(addedAt, "dd/MM/yyyy")}
+                    className="cursor-not-allowed bg-muted/30"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Data de compra</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left"
+                        type="button"
+                      >
+                        {purchaseDate ? format(purchaseDate, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={purchaseDate}
+                        onSelect={d => d && setPurchaseDate(d)}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 <div className="space-y-2 flex items-center space-x-2">
                   <Checkbox 
@@ -312,28 +355,28 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                     htmlFor="stattrak"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    <span className="text-[#CF6A32] font-semibold">StatTrak™</span> (Counts kills)
+                    <span className="text-[#CF6A32] font-semibold">StatTrak™</span> (Conta abates)
                   </label>
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="trade-lock" className="flex items-center">
                     <Lock className="h-4 w-4 mr-1 text-yellow-500" />
-                    Trade Lock (days)
+                    Trade Lock (dias)
                   </Label>
                   <div className="flex space-x-2 items-center">
                     <Input
                       id="trade-lock"
                       type="number"
                       min="0"
-                      max="7"
+                      max="30"
                       value={tradeLockDays}
                       onChange={(e) => setTradeLockDays(e.target.value)}
                       className="w-20"
                     />
                     <div className="text-xs text-muted-foreground flex items-center">
                       <Info className="h-3 w-3 mr-1" /> 
-                      {tradeLockDays === "0" ? "No trade lock" : `Locked until ${new Date(new Date().getTime() + parseInt(tradeLockDays) * 24 * 60 * 60 * 1000).toLocaleDateString()}`}
+                      {`Bloqueio até ${format(tradeLockUntil, "dd/MM/yyyy")}`}
                     </div>
                   </div>
                 </div>
@@ -349,7 +392,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                     className="transition-all"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Float determines the visual wear of your skin
+                    O float determina o desgaste visual da sua skin
                   </p>
                 </div>
                 
@@ -363,13 +406,13 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="transaction-type">Transaction Type</Label>
+                  <Label htmlFor="transaction-type">Tipo de transação</Label>
                   <Select
                     value={transactionType}
                     onValueChange={setTransactionType}
                   >
                     <SelectTrigger id="transaction-type">
-                      <SelectValue placeholder="Select transaction type" />
+                      <SelectValue placeholder="Selecionar tipo" />
                     </SelectTrigger>
                     <SelectContent>
                       {TRANSACTION_TYPES.map(type => (
@@ -380,7 +423,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="purchase-price">Purchase Price</Label>
+                  <Label htmlFor="purchase-price">Preço de compra</Label>
                   <Input
                     id="purchase-price"
                     type="number"
@@ -393,13 +436,13 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="currency">Currency</Label>
+                  <Label htmlFor="currency">Moeda</Label>
                   <Select
                     value={selectedCurrency}
                     onValueChange={setSelectedCurrency}
                   >
                     <SelectTrigger id="currency">
-                      <SelectValue placeholder="Select currency" />
+                      <SelectValue placeholder="Selecionar moeda" />
                     </SelectTrigger>
                     <SelectContent>
                       {CURRENCIES.map(curr => (
@@ -412,13 +455,13 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="marketplace">Purchase Location</Label>
+                  <Label htmlFor="marketplace">Local de compra</Label>
                   <Select
                     value={marketplace}
                     onValueChange={setMarketplace}
                   >
                     <SelectTrigger id="marketplace">
-                      <SelectValue placeholder="Select marketplace" />
+                      <SelectValue placeholder="Selecionar marketplace" />
                     </SelectTrigger>
                     <SelectContent>
                       {MARKETPLACE_OPTIONS.map(option => (
@@ -429,7 +472,7 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="fee-percentage">Fee Percentage (%)</Label>
+                  <Label htmlFor="fee-percentage">Taxa (%)</Label>
                   <Input
                     id="fee-percentage"
                     type="number"
@@ -441,12 +484,12 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
                     onChange={(e) => setFeePercentage(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Marketplace fee (e.g., Steam: 13%, BUFF: 2.5%)
+                    Taxa do marketplace (Steam: 13%, BUFF: 2.5%...)
                   </p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="expected-sale-price">Expected Sale Price</Label>
+                  <Label htmlFor="expected-sale-price">Preço de venda esperado</Label>
                   <Input
                     id="expected-sale-price"
                     type="number"
@@ -460,10 +503,10 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
               </div>
               
               <div className="space-y-2 mt-6">
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes">Observações</Label>
                 <Textarea
                   id="notes"
-                  placeholder="Add any additional notes about this skin..."
+                  placeholder="Adicione observações sobre esta skin..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="min-h-[100px]"
@@ -471,12 +514,11 @@ export const SkinDetailModal = ({ skin, open, onOpenChange, onAddSkin }: SkinDet
               </div>
             </div>
           </ScrollArea>
-          
           <DialogFooter className="p-6 pt-4 border-t">
             <DialogClose asChild>
-              <Button type="button" variant="outline">Cancel</Button>
+              <Button type="button" variant="outline">Cancelar</Button>
             </DialogClose>
-            <Button type="submit" className="gap-1">Add Skin</Button>
+            <Button type="submit" className="gap-1">Adicionar</Button>
           </DialogFooter>
         </form>
       </DialogContent>
