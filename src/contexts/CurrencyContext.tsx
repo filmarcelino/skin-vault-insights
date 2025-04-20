@@ -33,7 +33,7 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currency, setCurrency] = useState<Currency>(() => {
+  const [currency, setCurrencyState] = useState<Currency>(() => {
     const savedCurrency = localStorage.getItem("selectedCurrency");
     return savedCurrency 
       ? CURRENCIES.find(c => c.code === savedCurrency) || CURRENCIES[0]
@@ -130,8 +130,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Função unificada de setCurrency que atualiza o localStorage e o perfil do usuário
   const handleSetCurrency = (newCurrency: Currency) => {
-    localStorage.setItem("selectedCurrency", newCurrency.code);
-    setCurrency(newCurrency);
+    setCurrencyState(newCurrency);
     
     // Se o usuário estiver logado, atualizar a preferência no perfil
     if (auth.user && auth.profile) {
