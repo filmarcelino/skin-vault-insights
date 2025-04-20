@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -124,6 +123,13 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const convertedAmount = getOriginalPrice(amount, currencyCode);
     
     return `${specificCurrency.symbol}${convertedAmount.toFixed(2)}`;
+  };
+
+  const setCurrency = (newCurrency: Currency) => {
+    localStorage.setItem("selectedCurrency", newCurrency.code);
+    
+    // Se o usuário estiver logado, atualizar a preferência no perfil
+    
   };
 
   return (

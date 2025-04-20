@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
-import { DollarSign } from "lucide-react";
+import { DollarSign, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,11 @@ export const CurrencySelector: React.FC = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 gap-1 px-2 border-border/40">
-          <DollarSign className="h-4 w-4" />
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <DollarSign className="h-4 w-4" />
+          )}
           <span>{currency.code}</span>
         </Button>
       </DropdownMenuTrigger>

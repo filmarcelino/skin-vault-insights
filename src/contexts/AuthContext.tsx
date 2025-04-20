@@ -1,9 +1,10 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
+import { CURRENCIES } from "@/contexts/CurrencyContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 export interface UserProfile {
   id: string;
@@ -59,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast: useToastToast } = useToast();
+  const { setCurrency } = useCurrency();
 
   console.log("AuthProvider rendering. isLoading:", isLoading, "user:", user?.email);
 
@@ -100,7 +102,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
-      console.log("Unsubscribing from auth state changes");
       subscription.unsubscribe();
     };
   }, []);
@@ -122,6 +123,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         console.log("Profile fetched:", data);
         setProfile(data as UserProfile);
+        
+        // Atualizar a moeda preferida do usuário no CurrencyContext
+        const currency = CURRENCIES.find(c => c.code === data.preferred_currency);
+        if (currency) {
+          setCurrency(currency);
+        }
       }
     } catch (error) {
       console.error("Exception fetching profile:", error);
