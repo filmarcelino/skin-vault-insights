@@ -354,23 +354,59 @@ export const sellSkin = async (inventoryId: string, sellData: {
     
     if (skinError) {
       console.error("Error getting skin info:", skinError);
-      // Tentativa alternativa de obter informações apenas com campos essenciais
-      const { data: basicSkinData, error: basicSkinError } = await supabase
-        .from('inventory')
-        .select('weapon, name')
-        .eq('inventory_id', inventoryId)
-        .eq('user_id', session.user.id)
-        .single();
+      
+      // Verificar se o erro é relacionado à coluna currency_code
+      if (skinError.message && skinError.message.includes("column 'currency_code' does not exist")) {
+        // Tentativa alternativa de obter informações apenas com campos essenciais
+        const { data: basicSkinData, error: basicSkinError } = await supabase
+          .from('inventory')
+          .select('weapon, name')
+          .eq('inventory_id', inventoryId)
+          .eq('user_id', session.user.id)
+          .single();
+          
+        if (basicSkinError) {
+          console.error("Error getting basic skin info:", basicSkinError);
+          // Prosseguir mesmo sem os dados exatos da skin
+          const transactionSuccess = await addTransaction({
+            id: `trans-${Date.now()}`,
+            type: 'sell',
+            itemId: inventoryId,
+            weaponName: "Unknown",
+            skinName: "Unknown Skin",
+            date: new Date().toLocaleDateString(),
+            price: sellData.soldPrice,
+            notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
+            currency: sellData.soldCurrency || "USD"
+          });
+          
+          if (!transactionSuccess) {
+            console.error("Failed to record sell transaction");
+            return false;
+          }
+          
+          // Remover do inventário
+          const { error: removeError } = await supabase
+            .from('inventory')
+            .delete()
+            .eq('inventory_id', inventoryId)
+            .eq('user_id', session.user.id);
+            
+          if (removeError) {
+            console.error("Error removing skin:", removeError);
+            return false;
+          }
+          
+          return true;
+        }
         
-      if (basicSkinError) {
-        console.error("Error getting basic skin info:", basicSkinError);
-        // Prosseguir mesmo sem os dados exatos da skin
+        // Se conseguiu obter os dados básicos
         const transactionSuccess = await addTransaction({
           id: `trans-${Date.now()}`,
           type: 'sell',
           itemId: inventoryId,
-          weaponName: "Unknown",
-          skinName: "Unknown Skin",
+          weaponName: basicSkinData?.weapon || "Unknown",
+          skinName: basicSkinData?.name || "Unknown Skin",
           date: new Date().toLocaleDateString(),
           price: sellData.soldPrice,
           notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
@@ -395,39 +431,10 @@ export const sellSkin = async (inventoryId: string, sellData: {
         }
         
         return true;
-      }
-      
-      // Se conseguiu obter os dados básicos
-      const transactionSuccess = await addTransaction({
-        id: `trans-${Date.now()}`,
-        type: 'sell',
-        itemId: inventoryId,
-        weaponName: basicSkinData?.weapon || "Unknown",
-        skinName: basicSkinData?.name || "Unknown Skin",
-        date: new Date().toLocaleDateString(),
-        price: sellData.soldPrice,
-        notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
-        currency: sellData.soldCurrency || "USD"
-      });
-      
-      if (!transactionSuccess) {
-        console.error("Failed to record sell transaction");
+      } else {
+        // Outro tipo de erro - sem tratamento específico
         return false;
       }
-      
-      // Remover do inventário
-      const { error: removeError } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('inventory_id', inventoryId)
-        .eq('user_id', session.user.id);
-        
-      if (removeError) {
-        console.error("Error removing skin:", removeError);
-        return false;
-      }
-      
-      return true;
     }
     
     // Remover do inventário
