@@ -1,4 +1,3 @@
-
 import { Skin, SkinCollection, SkinFilter } from "@/types/skin";
 import { 
   getLocalWeapons, 
@@ -66,6 +65,25 @@ export const fetchWeapons = async (): Promise<string[]> => {
     console.error("Error fetching weapons:", error);
     // Fallback to local data if API fails
     return getLocalWeapons();
+  }
+};
+
+/**
+ * Fetches all available categories from the API or custom JSON
+ */
+export const fetchCategories = async (): Promise<string[]> => {
+  try {
+    // Extrair categorias das skins
+    const skins = await fetchSkins();
+    
+    // Extrair categorias únicas
+    const categories = [...new Set(skins.map(skin => skin.category || ""))].filter(name => name);
+    
+    console.log("Found categories:", categories);
+    return categories.sort();
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
   }
 };
 
@@ -210,10 +228,12 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
       // Pesquisa melhorada: cada termo de pesquisa deve corresponder a pelo menos uma parte do nome ou arma
       filteredSkins = filteredSkins.filter(skin => {
         const fullName = `${skin.weapon || ""} ${skin.name || ""}`.toLowerCase();
+        const category = skin.category?.toLowerCase() || "";
         
-        // Cada termo deve corresponder a alguma parte do nome
+        // Cada termo deve corresponder a alguma parte do nome, categoria, raridade ou coleção
         return searchTerms.every(term => 
           fullName.includes(term) || 
+          category.includes(term) ||
           (skin.rarity && skin.rarity.toLowerCase().includes(term)) ||
           (skin.collection?.name && skin.collection.name.toLowerCase().includes(term))
         );

@@ -1,23 +1,25 @@
-
 import React, { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Loader2, Camera, Save, Search } from 'lucide-react'
+import { Loader2, Camera, Save, Search, List } from 'lucide-react'
 import { useSkinImageAnalysis } from '@/hooks/use-skin-image-analysis'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { useAddSkin } from '@/hooks/use-skins'
+import { useAddSkin, useCategories } from '@/hooks/use-skins'
 import { SkinDetailModal } from '@/components/skins/skin-detail-modal'
 import { useNavigate } from 'react-router-dom'
 import { InventoryCard } from '@/components/dashboard/inventory-card'
 import { Skin } from '@/types/skin'
 import { useToast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/badge'
 
 export const SkinImageAnalyzer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedSkin, setSelectedSkin] = useState<Skin | null>(null)
+  const [showCategories, setShowCategories] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { analyzeSkinImage, isAnalyzing, analysisResult } = useSkinImageAnalysis()
+  const { data: categories, isLoading: isCategoriesLoading } = useCategories()
   const addSkinMutation = useAddSkin()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
@@ -78,6 +80,10 @@ export const SkinImageAnalyzer: React.FC = () => {
       }
     })
   }
+  
+  const toggleCategoriesModal = () => {
+    setShowCategories(!showCategories)
+  }
 
   // Apenas mostrar o botão em dispositivos móveis
   if (!isMobile) {
@@ -94,9 +100,16 @@ export const SkinImageAnalyzer: React.FC = () => {
         onChange={handleFileChange}
         className="hidden" 
       />
-      <Button onClick={triggerFileInput} className="w-full">
-        <Camera className="mr-2 h-4 w-4" /> Analisar Skin com Câmera
-      </Button>
+      
+      <div className="flex flex-col gap-2">
+        <Button onClick={triggerFileInput} className="w-full">
+          <Camera className="mr-2 h-4 w-4" /> Analisar Skin com Câmera
+        </Button>
+        
+        <Button onClick={toggleCategoriesModal} variant="outline" className="w-full">
+          <List className="mr-2 h-4 w-4" /> Ver Categorias Disponíveis
+        </Button>
+      </div>
 
       {/* Modal de resultado da análise */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -177,6 +190,47 @@ export const SkinImageAnalyzer: React.FC = () => {
               <Button 
                 variant="outline" 
                 onClick={() => setIsOpen(false)}
+                className="w-full"
+              >
+                Fechar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de categorias */}
+      <Dialog open={showCategories} onOpenChange={setShowCategories}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Categorias Disponíveis</DialogTitle>
+          </DialogHeader>
+          {isCategoriesLoading ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mb-2" />
+              <p>Carregando categorias...</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {categories && categories.length > 0 ? (
+                  categories.map((category, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {category}
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhuma categoria encontrada na API.</p>
+                )}
+              </div>
+              
+              <p className="text-sm text-muted-foreground mt-4">
+                Total: {categories?.length || 0} categorias
+              </p>
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setShowCategories(false)}
                 className="w-full"
               >
                 Fechar

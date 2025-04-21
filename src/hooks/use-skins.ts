@@ -5,7 +5,8 @@ import {
   fetchSkinById, 
   fetchWeapons, 
   fetchCollections, 
-  searchSkins 
+  searchSkins,
+  fetchCategories
 } from "@/services/api";
 import { 
   getUserInventory, 
@@ -19,6 +20,7 @@ import { Skin, SkinFilter, InventoryItem, SellData } from "@/types/skin";
 // Custom key for inventory data
 export const INVENTORY_QUERY_KEY = "user-inventory";
 export const SKINS_QUERY_KEY = "skins";
+export const CATEGORIES_QUERY_KEY = "categories";
 
 export const useSkins = (filters?: SkinFilter) => {
   return useQuery({
@@ -36,6 +38,24 @@ export const useSkins = (filters?: SkinFilter) => {
         return Array.isArray(result) ? result : [];
       } catch (error) {
         console.error("Error in useSkins:", error);
+        return [];
+      }
+    },
+    retry: 1,
+  });
+};
+
+export const useCategories = () => {
+  return useQuery({
+    queryKey: [CATEGORIES_QUERY_KEY],
+    queryFn: async () => {
+      try {
+        // Buscamos as categorias disponíveis
+        const categories = await fetchCategories();
+        console.log("Retrieved categories:", categories);
+        return Array.isArray(categories) ? categories : [];
+      } catch (error) {
+        console.error("Error in useCategories:", error);
         return [];
       }
     },
