@@ -66,11 +66,13 @@ export interface Transaction {
   date: string;
   price?: number | string;
   notes?: string;
+  currency?: string; // Adicionada moeda da transação
   // Supabase fields mapping
   transaction_id?: string;
   item_id?: string;
   weapon_name?: string;
   skin_name?: string;
+  currency_code?: string;
 }
 
 export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';

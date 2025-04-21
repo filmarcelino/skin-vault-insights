@@ -1,4 +1,3 @@
-
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -46,7 +45,8 @@ const mapSupabaseToTransaction = (transaction: any): Transaction => {
     skinName: transaction.skin_name || '',
     date: transaction.date || new Date().toISOString(),
     price: transaction.price,
-    notes: transaction.notes
+    notes: transaction.notes,
+    currency: transaction.currency_code || "USD" // Adicionando moeda à transação
   };
 };
 
@@ -310,7 +310,8 @@ export const addTransaction = async (transaction: Transaction): Promise<boolean>
         skin_name: transaction.skinName,
         date: transaction.date,
         price: typeof transaction.price === 'string' ? parseFloat(transaction.price) : transaction.price,
-        notes: transaction.notes
+        notes: transaction.notes,
+        currency_code: transaction.currency || "USD" // Adicionando moeda à transação
       });
     
     if (error) {
@@ -344,7 +345,7 @@ export const sellSkin = async (inventoryId: string, sellData: {
     }
     
     // Obter informações da skin
-    const { data: skin, error: skinError } = await supabase
+    const { data: skinData, error: skinError } = await supabase
       .from('inventory')
       .select('weapon, name, currency_code')
       .eq('inventory_id', inventoryId)
@@ -353,7 +354,80 @@ export const sellSkin = async (inventoryId: string, sellData: {
     
     if (skinError) {
       console.error("Error getting skin info:", skinError);
-      return false;
+      // Tentativa alternativa de obter informações apenas com campos essenciais
+      const { data: basicSkinData, error: basicSkinError } = await supabase
+        .from('inventory')
+        .select('weapon, name')
+        .eq('inventory_id', inventoryId)
+        .eq('user_id', session.user.id)
+        .single();
+        
+      if (basicSkinError) {
+        console.error("Error getting basic skin info:", basicSkinError);
+        // Prosseguir mesmo sem os dados exatos da skin
+        const transactionSuccess = await addTransaction({
+          id: `trans-${Date.now()}`,
+          type: 'sell',
+          itemId: inventoryId,
+          weaponName: "Unknown",
+          skinName: "Unknown Skin",
+          date: new Date().toLocaleDateString(),
+          price: sellData.soldPrice,
+          notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
+          currency: sellData.soldCurrency || "USD"
+        });
+        
+        if (!transactionSuccess) {
+          console.error("Failed to record sell transaction");
+          return false;
+        }
+        
+        // Remover do inventário
+        const { error: removeError } = await supabase
+          .from('inventory')
+          .delete()
+          .eq('inventory_id', inventoryId)
+          .eq('user_id', session.user.id);
+          
+        if (removeError) {
+          console.error("Error removing skin:", removeError);
+          return false;
+        }
+        
+        return true;
+      }
+      
+      // Se conseguiu obter os dados básicos
+      const transactionSuccess = await addTransaction({
+        id: `trans-${Date.now()}`,
+        type: 'sell',
+        itemId: inventoryId,
+        weaponName: basicSkinData?.weapon || "Unknown",
+        skinName: basicSkinData?.name || "Unknown Skin",
+        date: new Date().toLocaleDateString(),
+        price: sellData.soldPrice,
+        notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
+        currency: sellData.soldCurrency || "USD"
+      });
+      
+      if (!transactionSuccess) {
+        console.error("Failed to record sell transaction");
+        return false;
+      }
+      
+      // Remover do inventário
+      const { error: removeError } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('inventory_id', inventoryId)
+        .eq('user_id', session.user.id);
+        
+      if (removeError) {
+        console.error("Error removing skin:", removeError);
+        return false;
+      }
+      
+      return true;
     }
     
     // Remover do inventário
@@ -373,11 +447,12 @@ export const sellSkin = async (inventoryId: string, sellData: {
       id: `trans-${Date.now()}`,
       type: 'sell',
       itemId: inventoryId,
-      weaponName: skin?.weapon || "Unknown",
-      skinName: skin?.name || "Unknown Skin",
+      weaponName: skinData?.weapon || "Unknown",
+      skinName: skinData?.name || "Unknown Skin",
       date: new Date().toLocaleDateString(),
       price: sellData.soldPrice,
-      notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})` // Incluir moeda nas notas
+      notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
+      currency: sellData.soldCurrency || "USD" // Incluir moeda na transação
     });
     
     if (!transactionSuccess) {
