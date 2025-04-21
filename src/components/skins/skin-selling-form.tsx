@@ -1,113 +1,126 @@
 
-import { InventoryItem, SellData } from "@/types/skin";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, SelectContent, SelectItem, 
-  SelectTrigger, SelectValue 
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { DollarSign, ArrowUp } from "lucide-react";
-import { MARKETPLACE_OPTIONS, calculateProfit } from "@/utils/skin-utils";
 import { useState } from "react";
-import { useSellSkin } from "@/hooks/use-skins";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { InventoryItem, SellData } from "@/types/skin";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
+import { format } from "date-fns";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 interface SkinSellingFormProps {
   item: InventoryItem;
-  onCancel: () => void;
   onSell: (itemId: string, sellData: SellData) => void;
+  onCancel: () => void;
 }
 
-export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps) => {
-  const [soldPrice, setSoldPrice] = useState("");
-  const [soldCurrency, setSoldCurrency] = useState(() => {
-    // Use a moeda atual do sistema como padrão
-    return CURRENCIES.find(c => c.code === localStorage.getItem("selectedCurrency"))?.code || "USD";
-  });
-  const [soldMarketplace, setSoldMarketplace] = useState("steam");
-  const [soldFeePercentage, setSoldFeePercentage] = useState("0");
-  const [soldNotes, setSoldNotes] = useState("");
+const MARKETPLACE_OPTIONS = [
+  { value: "steam", label: "Steam Market" },
+  { value: "buff163", label: "BUFF163" },
+  { value: "skinport", label: "Skinport" },
+  { value: "dmarket", label: "DMarket" },
+  { value: "cs_money", label: "CS.MONEY" },
+  { value: "other", label: "Other" },
+];
+
+export function SkinSellingForm({ item, onSell, onCancel }: SkinSellingFormProps) {
+  const { currency, formatPrice, convertPrice } = useCurrency();
   
-  const sellSkinMutation = useSellSkin();
-  const { currency, formatPrice, convertPrice, formatWithCurrency } = useCurrency();
+  // Estado para o formulário
+  const [soldDate, setSoldDate] = useState<Date>(new Date());
+  const [soldPrice, setSoldPrice] = useState<string>("");
+  const [soldCurrency, setSoldCurrency] = useState<string>(currency.code); // Agora armazenamos a moeda de venda
+  const [soldMarketplace, setSoldMarketplace] = useState<string>("steam");
+  const [soldFeePercentage, setSoldFeePercentage] = useState<string>("13");
+  const [soldNotes, setSoldNotes] = useState<string>("");
 
-  // Determinar a moeda original de compra
-  const purchaseCurrency = item.currency || "USD";
-  
-  const handleSellSkin = () => {
-    if (!item || !soldPrice) return;
-
-    const price = parseFloat(soldPrice);
-    const fee = parseFloat(soldFeePercentage) || 0;
+  // Calcular o lucro ou prejuízo (considerando as diferentes moedas)
+  const calculateProfit = (): number => {
+    if (!soldPrice || !item.purchasePrice) return 0;
     
-    // Converter para USD antes de calcular o lucro
-    // Se a moeda de venda não é USD, convertemos para USD
-    const soldCurrencyObj = CURRENCIES.find(c => c.code === soldCurrency) || CURRENCIES[0];
-    const priceInUSD = price / soldCurrencyObj.rate;
+    // Converter preço de venda para USD para comparação
+    const soldPriceInUSD = soldCurrency === "USD" 
+      ? parseFloat(soldPrice) 
+      : convertPrice(parseFloat(soldPrice), soldCurrency);
     
-    // O preço de compra já deve estar em USD no banco de dados
-    const purchasePrice = item.purchasePrice || 0;
-    const netProfit = calculateProfit(priceInUSD.toString(), soldFeePercentage, purchasePrice);
-
-    const sellData: SellData = {
-      soldDate: new Date().toISOString(),
-      soldPrice: priceInUSD, // Salvamos em USD
-      soldCurrency: soldCurrency, // Guardamos a moeda usada na venda
-      soldMarketplace,
-      soldFeePercentage: fee,
-      soldNotes,
-      profit: netProfit
-    };
-
-    sellSkinMutation.mutate({ 
-      itemId: item.inventoryId, 
-      sellData 
-    }, {
-      onSuccess: () => onSell(item.inventoryId, sellData)
-    });
+    // Converter preço de compra para USD para comparação
+    const purchasePriceInUSD = item.currency === "USD" 
+      ? item.purchasePrice 
+      : convertPrice(item.purchasePrice, item.currency || "USD");
+    
+    return soldPriceInUSD - purchasePriceInUSD;
   };
 
-  const calculateDisplayProfit = () => {
-    if (!soldPrice || item.purchasePrice === undefined) return 0;
+  const profit = calculateProfit();
+  const profitPercentage = item.purchasePrice ? (profit / item.purchasePrice) * 100 : 0;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // Converter o preço de venda para USD
-    const soldCurrencyObj = CURRENCIES.find(c => c.code === soldCurrency) || CURRENCIES[0];
-    const priceInUSD = parseFloat(soldPrice) / soldCurrencyObj.rate;
+    if (!soldPrice || !item.inventoryId) return;
     
-    // Calcular a taxa
-    const feePercentage = parseFloat(soldFeePercentage) || 0;
-    const feeAmount = priceInUSD * (feePercentage / 100);
+    const sellData: SellData = {
+      soldDate: soldDate.toISOString(),
+      soldPrice: parseFloat(soldPrice),
+      soldMarketplace,
+      soldFeePercentage: parseFloat(soldFeePercentage || "0"),
+      soldNotes,
+      profit,
+      soldCurrency // Incluindo moeda na venda
+    };
     
-    // Calcular o lucro (em USD)
-    const netProfit = priceInUSD - feeAmount - item.purchasePrice;
-    
-    // Converter de volta para a moeda atual de exibição
-    return netProfit * currency.rate;
+    onSell(item.inventoryId, sellData);
   };
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-[#8B5CF6]">Detalhes da Venda</h3>
-      
-      {/* Informação sobre a compra original */}
-      {item.purchasePrice !== undefined && (
-        <div className="p-3 rounded-md bg-opacity-10 bg-blue-900 border border-blue-800">
-          <p className="text-sm text-muted-foreground">
-            Comprado por {formatWithCurrency(item.purchasePrice, purchaseCurrency)} {purchaseCurrency !== "USD" && `(${formatPrice(item.purchasePrice)})`}
-          </p>
-        </div>
-      )}
-      
-      {/* Formulário de Venda */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-        {/* Preço de Venda */}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="sold-price" className="flex items-center">
-            <DollarSign className="h-4 w-4 mr-1 text-green-500" />
-            Preço de Venda
-          </Label>
+          <Label htmlFor="sold-date">Data da venda</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-start text-left"
+                id="sold-date"
+                type="button"
+              >
+                {soldDate ? format(soldDate, "dd/MM/yyyy") : <span>Selecionar data</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={soldDate}
+                onSelect={d => d && setSoldDate(d)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="marketplace">Marketplace</Label>
+          <Select
+            value={soldMarketplace}
+            onValueChange={setSoldMarketplace}
+          >
+            <SelectTrigger id="marketplace">
+              <SelectValue placeholder="Selecione onde vendeu" />
+            </SelectTrigger>
+            <SelectContent>
+              {MARKETPLACE_OPTIONS.map(option => (
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sold-price">Preço de venda</Label>
           <Input
             id="sold-price"
             type="number"
@@ -116,21 +129,20 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
             placeholder="0.00"
             value={soldPrice}
             onChange={(e) => setSoldPrice(e.target.value)}
-            className="border-[#333] bg-[#221F26]/50"
+            required
           />
         </div>
         
-        {/* Moeda */}
         <div className="space-y-2">
           <Label htmlFor="sold-currency">Moeda</Label>
           <Select
             value={soldCurrency}
             onValueChange={setSoldCurrency}
           >
-            <SelectTrigger id="sold-currency" className="border-[#333] bg-[#221F26]/50">
-              <SelectValue placeholder="Selecione a moeda" />
+            <SelectTrigger id="sold-currency">
+              <SelectValue placeholder="Selecionar moeda" />
             </SelectTrigger>
-            <SelectContent className="bg-[#1A1F2C] border-[#333]">
+            <SelectContent>
               {CURRENCIES.map(curr => (
                 <SelectItem key={curr.code} value={curr.code}>
                   {curr.symbol} {curr.name}
@@ -139,108 +151,57 @@ export const SkinSellingForm = ({ item, onCancel, onSell }: SkinSellingFormProps
             </SelectContent>
           </Select>
         </div>
-        
-        {/* Marketplace */}
+
         <div className="space-y-2">
-          <Label htmlFor="sold-marketplace">Marketplace</Label>
-          <Select
-            value={soldMarketplace}
-            onValueChange={setSoldMarketplace}
-          >
-            <SelectTrigger id="sold-marketplace" className="border-[#333] bg-[#221F26]/50">
-              <SelectValue placeholder="Selecione o marketplace" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#1A1F2C] border-[#333]">
-              {MARKETPLACE_OPTIONS.map(option => (
-                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Percentual de Taxa */}
-        <div className="space-y-2">
-          <Label htmlFor="sold-fee-percentage">Percentual de Taxa (%)</Label>
+          <Label htmlFor="fee-percentage">Taxa do marketplace (%)</Label>
           <Input
-            id="sold-fee-percentage"
+            id="fee-percentage"
             type="number"
             min="0"
             max="100"
             step="0.1"
-            placeholder="0"
+            placeholder="13"
             value={soldFeePercentage}
             onChange={(e) => setSoldFeePercentage(e.target.value)}
-            className="border-[#333] bg-[#221F26]/50"
           />
+          <p className="text-xs text-muted-foreground">
+            Steam: 13%, BUFF: 2.5%, etc.
+          </p>
         </div>
-
-        {/* Cálculo de Lucro */}
-        {soldPrice && item.purchasePrice !== undefined && (
-          <div className="md:col-span-2 p-4 rounded-md bg-opacity-10 bg-green-900 border border-green-800">
-            <h4 className="font-medium mb-2 text-green-500 flex items-center">
-              <ArrowUp className="h-4 w-4 mr-1" /> Cálculo de Lucro
-            </h4>
-            
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>Preço de Venda:</div>
-              <div className="text-right">
-                {formatWithCurrency(parseFloat(soldPrice), soldCurrency)}
-                {soldCurrency !== currency.code && ` (${formatPrice(parseFloat(soldPrice) / (CURRENCIES.find(c => c.code === soldCurrency)?.rate || 1))})`}
-              </div>
-              
-              <div>Taxa do Marketplace ({parseFloat(soldFeePercentage) || 0}%):</div>
-              <div className="text-right text-red-400">
-                -{formatWithCurrency((parseFloat(soldPrice) * (parseFloat(soldFeePercentage) || 0) / 100), soldCurrency)}
-              </div>
-              
-              <div>Preço de Compra:</div>
-              <div className="text-right text-red-400">
-                -{formatPrice(item.purchasePrice)}
-              </div>
-              
-              <div className="font-bold border-t border-green-800 pt-1">Lucro Líquido:</div>
-              <div className="font-bold border-t border-green-800 pt-1 text-right" 
-                   style={{ color: calculateDisplayProfit() >= 0 ? "#10B981" : "#EF4444" }}>
-                {formatPrice(calculateDisplayProfit())}
-              </div>
+        
+        {profit !== 0 && (
+          <div className="space-y-2">
+            <Label>Lucro/Perda estimado</Label>
+            <div className={`p-2 border rounded ${profit > 0 ? 'bg-green-500/10 border-green-500/30' : profit < 0 ? 'bg-red-500/10 border-red-500/30' : 'bg-muted/20'}`}>
+              <p className={`font-medium ${profit > 0 ? 'text-green-500' : profit < 0 ? 'text-red-500' : ''}`}>
+                {formatPrice(profit)}
+                <span className="ml-2 text-xs">
+                  ({profitPercentage > 0 ? '+' : ''}{profitPercentage.toFixed(2)}%)
+                </span>
+              </p>
             </div>
           </div>
         )}
-        
-        {/* Observações */}
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="sold-notes">Observações</Label>
-          <Textarea
-            id="sold-notes"
-            placeholder="Adicione observações sobre esta venda..."
-            value={soldNotes}
-            onChange={(e) => setSoldNotes(e.target.value)}
-            className="min-h-[80px] border-[#333] bg-[#221F26]/50"
-          />
-        </div>
       </div>
 
-      {/* Ações do Formulário */}
-      <div className="flex justify-end gap-2 pt-4">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onCancel}
-          className="border-[#333] hover:bg-[#333]"
-          disabled={sellSkinMutation.isPending}
-        >
+      <div className="space-y-2">
+        <Label htmlFor="notes">Observações sobre a venda</Label>
+        <Textarea
+          id="notes"
+          placeholder="Adicione observações sobre esta venda..."
+          value={soldNotes}
+          onChange={(e) => setSoldNotes(e.target.value)}
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button 
-          type="button" 
-          onClick={handleSellSkin}
-          className="bg-green-600 hover:bg-green-700 text-white"
-          disabled={!soldPrice || sellSkinMutation.isPending}
-        >
-          <DollarSign className="h-4 w-4 mr-1" />
-          {sellSkinMutation.isPending ? "Processando..." : "Concluir Venda"}
+        <Button type="submit" variant="default">
+          Confirmar Venda
         </Button>
       </div>
-    </div>
+    </form>
   );
-};
+}

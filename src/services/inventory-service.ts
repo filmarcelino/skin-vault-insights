@@ -1,3 +1,4 @@
+
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,6 +25,7 @@ const mapSupabaseToInventoryItem = (item: any): InventoryItem => {
     feePercentage: item.fee_percentage,
     floatValue: item.float_value,
     notes: item.notes,
+    currency: item.currency_code || "USD", // Garantir que temos a moeda da compra
     collection: item.collection_name ? {
       id: item.collection_id,
       name: item.collection_name
@@ -124,6 +126,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
   marketplace: string;
   feePercentage?: number;
   notes?: string;
+  currency?: string; // Adicionado campo de moeda
 }): Promise<InventoryItem | null> => {
   try {
     // Get current user session
@@ -152,6 +155,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       name: skin.name,
       weapon: skin.weapon,
       price: skin.price || purchaseInfo.purchasePrice || 0,
+      currency_code: purchaseInfo.currency || "USD", // Armazenando a moeda usada
     });
     
     // Prepare data for insertion
@@ -176,7 +180,8 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       collection_id: skin.collection?.id,
       collection_name: skin.collection?.name,
       float_value: skin.floatValue || 0,
-      acquired_date: new Date().toISOString()
+      acquired_date: new Date().toISOString(),
+      currency_code: purchaseInfo.currency || "USD" // Armazenando a moeda usada na compra
     };
     
     // Inserir no Supabase
@@ -327,6 +332,7 @@ export const sellSkin = async (inventoryId: string, sellData: {
   soldMarketplace: string;
   soldFeePercentage: number;
   soldNotes?: string;
+  soldCurrency?: string; // Adicionado campo de moeda para venda
 }): Promise<boolean> => {
   try {
     // Get current user session
@@ -340,7 +346,7 @@ export const sellSkin = async (inventoryId: string, sellData: {
     // Obter informações da skin
     const { data: skin, error: skinError } = await supabase
       .from('inventory')
-      .select('weapon, name')
+      .select('weapon, name, currency_code')
       .eq('inventory_id', inventoryId)
       .eq('user_id', session.user.id)
       .single();
@@ -371,7 +377,7 @@ export const sellSkin = async (inventoryId: string, sellData: {
       skinName: skin?.name || "Unknown Skin",
       date: new Date().toLocaleDateString(),
       price: sellData.soldPrice,
-      notes: sellData.soldNotes
+      notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})` // Incluir moeda nas notas
     });
     
     if (!transactionSuccess) {

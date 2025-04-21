@@ -63,6 +63,9 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } catch (error) {
         console.error('Error fetching exchange rates:', error);
         toast.error('Erro ao buscar taxas de câmbio. Usando taxas offline.');
+        
+        // Usar taxas de câmbio offline como fallback
+        // Não fazer nada aqui, as taxas estáticas já estão definidas em CURRENCIES
       } finally {
         setIsLoading(false);
       }

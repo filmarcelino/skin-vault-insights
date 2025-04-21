@@ -1,9 +1,8 @@
-
 import { InventoryItem } from "@/types/skin";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Info, Tag, Calendar, DollarSign, TrendingUp } from "lucide-react";
 import { getRarityColor, getRarityColorClass, getTradeLockStatus, formatDate } from "@/utils/skin-utils";
-import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 
 interface SkinDetailsCardProps {
   item: InventoryItem;
@@ -12,9 +11,11 @@ interface SkinDetailsCardProps {
 export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
   const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(item.tradeLockUntil);
   const acquiredDate = formatDate(item.acquiredDate);
-  const { formatPrice } = useCurrency();
+  const { formatPrice, formatWithCurrency } = useCurrency();
   
-  // Get enhanced gradient background style based on rarity
+  const originalCurrency = item.currency || "USD";
+  const purchaseCurrency = CURRENCIES.find(c => c.code === originalCurrency) || CURRENCIES[0];
+  
   const getBackgroundStyle = () => {
     if (!item.rarity) return {};
     
@@ -124,7 +125,6 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
       className="flex flex-col md:flex-row gap-6 p-5 rounded-xl mb-2 transition-all"
       style={getBackgroundStyle()}
     >
-      {/* Overlay gradient for better text readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/50 opacity-80 pointer-events-none rounded-xl"></div>
       
       <div className="w-full md:w-1/3 flex items-center justify-center relative z-10">
@@ -161,7 +161,6 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
         </div>
         
         <div className="text-sm text-white/80 mb-4 space-y-3">
-          {/* Trade Lock Status */}
           {isLocked ? (
             <div className="flex items-center text-yellow-400 bg-black/30 p-2 rounded-md border border-yellow-400/30">
               <Lock className="h-4 w-4 mr-2" />
@@ -177,9 +176,7 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
             </div>
           )}
 
-          {/* Basic Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-white/90">
-            {/* Rarity */}
             {item.rarity && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <div className="w-3 h-3 rounded-full mr-2" 
@@ -188,7 +185,6 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
               </div>
             )}
             
-            {/* Wear */}
             {item.wear && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <Tag className="h-3 w-3 mr-2" />
@@ -196,28 +192,24 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
               </div>
             )}
             
-            {/* Float */}
             {item.floatValue !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <span className="font-medium">Float:</span> {item.floatValue.toFixed(8)}
               </div>
             )}
             
-            {/* Acquisition Date */}
             <div className="flex items-center bg-black/20 p-2 rounded-md">
               <Calendar className="h-3 w-3 mr-2" />
               <span className="font-medium">Acquired:</span> {acquiredDate}
             </div>
             
-            {/* Purchase Price */}
             {item.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <DollarSign className="h-3 w-3 mr-2" />
-                <span className="font-medium">Purchase:</span> {formatPrice(item.purchasePrice)}
+                <span className="font-medium">Purchase:</span> {purchaseCurrency.symbol}{item.purchasePrice.toFixed(2)} {purchaseCurrency.code}
               </div>
             )}
             
-            {/* Current Value */}
             {item.currentPrice !== undefined && item.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <TrendingUp className="h-3 w-3 mr-2" />
@@ -230,7 +222,6 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
               </div>
             )}
             
-            {/* Marketplace */}
             {item.marketplace && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <span className="font-medium">Source:</span> {item.marketplace}
