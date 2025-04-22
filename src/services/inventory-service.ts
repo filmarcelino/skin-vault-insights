@@ -1,4 +1,3 @@
-
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -387,17 +386,17 @@ export const sellSkin = async (inventoryId: string, sellData: {
           // Prosseguir mesmo sem os dados exatos da skin
         } else if (basicSkinData) {
           // Garantir que estamos lidando com um objeto de dados válido e não um erro
-          if (basicSkinData && typeof basicSkinData === 'object') {
-            weaponName = 'weapon' in basicSkinData ? basicSkinData.weapon || "Unknown" : "Unknown";
-            skinName = 'name' in basicSkinData ? basicSkinData.name || "Unknown Skin" : "Unknown Skin";
-          }
+          weaponName = basicSkinData && typeof basicSkinData === 'object' && 'weapon' in basicSkinData ? 
+            (basicSkinData.weapon || "Unknown") : "Unknown";
+          skinName = basicSkinData && typeof basicSkinData === 'object' && 'name' in basicSkinData ? 
+            (basicSkinData.name || "Unknown Skin") : "Unknown Skin";
         }
       }
-    } else if (skinData && typeof skinData === 'object') {
-      // Se conseguiu obter todos os dados, verificar se é um objeto válido
-      weaponName = 'weapon' in skinData ? skinData.weapon || "Unknown" : "Unknown";
-      skinName = 'name' in skinData ? skinData.name || "Unknown Skin" : "Unknown Skin";
-      originalCurrency = 'currency_code' in skinData ? skinData.currency_code || "USD" : "USD";
+    } else if (skinData) {
+      // Corrigindo aqui: verificar que skinData não é null antes de acessar suas propriedades
+      weaponName = skinData.weapon || "Unknown";
+      skinName = skinData.name || "Unknown Skin";
+      originalCurrency = skinData.currency_code || "USD";
     }
     
     // Remover do inventário
