@@ -59,13 +59,12 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           CURRENCIES.forEach(curr => {
             curr.rate = data.rates[curr.code] || curr.rate;
           });
+          
+          console.log("Exchange rates updated:", data.rates);
         }
       } catch (error) {
         console.error('Error fetching exchange rates:', error);
         toast.error('Erro ao buscar taxas de câmbio. Usando taxas offline.');
-        
-        // Usar taxas de câmbio offline como fallback
-        // Não fazer nada aqui, as taxas estáticas já estão definidas em CURRENCIES
       } finally {
         setIsLoading(false);
       }
@@ -97,29 +96,31 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const formatPrice = (amount: number | undefined): string => {
-    if (amount === undefined) return `${currency.symbol}0.00`;
+    if (amount === undefined) return `${currency.symbol}0.000`;
     
     const rate = getExchangeRate("USD", currency.code);
     const convertedAmount = amount * rate;
-    return `${currency.symbol}${convertedAmount.toFixed(2)}`;
+    
+    // Formatar com 3 casas decimais
+    return `${currency.symbol}${convertedAmount.toFixed(3)}`;
   };
 
   const convertPrice = (amount: number | undefined, fromCurrency: string = "USD"): number => {
     if (amount === undefined) return 0;
     
     const rate = getExchangeRate(fromCurrency, currency.code);
-    return parseFloat((amount * rate).toFixed(2));
+    return parseFloat((amount * rate).toFixed(3));
   };
 
   const getOriginalPrice = (amount: number | undefined, toCurrency: string = "USD"): number => {
     if (amount === undefined) return 0;
     
     const rate = getExchangeRate(currency.code, toCurrency);
-    return parseFloat((amount * rate).toFixed(2));
+    return parseFloat((amount * rate).toFixed(3));
   };
 
   const formatWithCurrency = (amount: number | undefined, currencyCode?: string): string => {
-    if (amount === undefined) return `$0.00`;
+    if (amount === undefined) return `$0.000`;
     
     if (!currencyCode) {
       return formatPrice(amount);
@@ -128,15 +129,17 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const specificCurrency = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
     const convertedAmount = getOriginalPrice(amount, currencyCode);
     
-    return `${specificCurrency.symbol}${convertedAmount.toFixed(2)}`;
+    return `${specificCurrency.symbol}${convertedAmount.toFixed(3)}`;
   };
 
   // Função unificada de setCurrency que atualiza o localStorage e o perfil do usuário
   const handleSetCurrency = (newCurrency: Currency) => {
+    console.log("Changing currency to:", newCurrency.code);
     setCurrencyState(newCurrency);
     
     // Se o usuário estiver logado, atualizar a preferência no perfil
     if (auth.user && auth.profile) {
+      console.log("Updating user profile currency preference to:", newCurrency.code);
       auth.updateProfile({
         preferred_currency: newCurrency.code
       }).catch(error => {

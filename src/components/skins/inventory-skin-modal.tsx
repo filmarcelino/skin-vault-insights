@@ -20,6 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface InventorySkinModalProps {
   item: InventoryItem | null;
@@ -38,6 +40,7 @@ export function InventorySkinModal({
 }: InventorySkinModalProps) {
   const [activeTab, setActiveTab] = useState("details");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [removalType, setRemovalType] = useState<'remove' | 'sell'>('remove');
   const { toast } = useToast();
   const addSkinMutation = useAddSkin();
   const removeSkinMutation = useRemoveSkin();
@@ -118,11 +121,16 @@ export function InventorySkinModal({
   const handleDeleteSkin = () => {
     if (!item || !item.inventoryId) return;
     
+    // Realizar operação com base no tipo de remoção selecionado
     removeSkinMutation.mutate(item.inventoryId, {
       onSuccess: () => {
+        const message = removalType === 'remove' ? 
+          "foi removida do seu inventário." : 
+          "foi marcada como vendida.";
+          
         toast({
-          title: "Skin Removida",
-          description: `${item.weapon || ""} | ${item.name} foi removida do seu inventário.`,
+          title: removalType === 'remove' ? "Skin Removida" : "Skin Vendida",
+          description: `${item.weapon || ""} | ${item.name} ${message}`,
         });
         onOpenChange(false);
       },
@@ -242,14 +250,40 @@ export function InventorySkinModal({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar remoção</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja remover {item?.weapon} | {item?.name} do seu inventário?
-              Esta ação não pode ser desfeita.
+              Como você deseja remover {item?.weapon} | {item?.name} do seu inventário?
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          <RadioGroup 
+            value={removalType} 
+            onValueChange={(value: 'remove' | 'sell') => setRemovalType(value)}
+            className="my-4 space-y-2"
+          >
+            <div className="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted/40">
+              <RadioGroupItem value="remove" id="r1" />
+              <Label htmlFor="r1" className="text-base cursor-pointer flex-1">
+                <div className="font-medium">Apenas Remover</div>
+                <div className="text-sm text-muted-foreground">
+                  A skin será removida sem registrar venda ou lucro
+                </div>
+              </Label>
+            </div>
+            
+            <div className="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted/40">
+              <RadioGroupItem value="sell" id="r2" />
+              <Label htmlFor="r2" className="text-base cursor-pointer flex-1">
+                <div className="font-medium">Marcar como Vendida</div>
+                <div className="text-sm text-muted-foreground">
+                  Registra uma transação de venda no histórico
+                </div>
+              </Label>
+            </div>
+          </RadioGroup>
+          
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteSkin} className="bg-destructive text-destructive-foreground">
-              Remover
+              {removalType === 'remove' ? 'Remover' : 'Remover e Registrar Venda'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

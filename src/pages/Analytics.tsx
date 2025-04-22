@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Interface for inventory statistics data
 interface InventoryStats {
   totalValue: number;
   profitLoss: number;
@@ -23,7 +21,11 @@ interface InventoryStats {
   recentTransactions: Array<{id: string, name: string, type: string, value: number, date: string}>;
 }
 
-// Component for displaying a statistic card
+const formatNumber = (value: number | undefined): string => {
+  if (value === undefined) return '0.000';
+  return value.toFixed(3);
+};
+
 const StatCard: React.FC<{
   title: string;
   value: number | undefined;
@@ -33,7 +35,7 @@ const StatCard: React.FC<{
   iconColor?: string;
   bgColorClass?: string;
 }> = ({ title, value, icon, isCurrency = true, loading, iconColor = "#8B5CF6", bgColorClass }) => {
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency } = useCurrency();
   
   return (
     <Card className={`${bgColorClass || ""}`}>
@@ -51,7 +53,10 @@ const StatCard: React.FC<{
           <Skeleton className="h-4 w-[100px]" />
         ) : (
           <div className="text-2xl font-bold">
-            {isCurrency ? formatPrice(value) : value?.toLocaleString()}
+            {isCurrency ? 
+              formatPrice(value) : 
+              (typeof value === 'number' ? formatNumber(value) : '0.000')
+            }
           </div>
         )}
       </CardContent>
@@ -59,7 +64,6 @@ const StatCard: React.FC<{
   );
 };
 
-// Component for displaying profit/loss summary
 const ProfitLossSummary: React.FC<{
   profitLoss: number | undefined;
   loading: boolean;
@@ -100,7 +104,6 @@ const ProfitLossSummary: React.FC<{
   );
 };
 
-// Component for showing rarity distribution
 const RarityDistribution: React.FC<{
   rarities: Array<{name: string, count: number}> | undefined;
   loading: boolean;
@@ -146,7 +149,6 @@ const RarityDistribution: React.FC<{
   );
 };
 
-// Component for recent transactions
 const RecentTransactions: React.FC<{
   transactions: Array<{id: string, name: string, type: string, value: number, date: string}> | undefined;
   loading: boolean;
@@ -206,7 +208,6 @@ const Analytics = () => {
   const { formatPrice, currency } = useCurrency();
   const { user } = useAuth();
   
-  // Fetch real inventory data from Supabase
   const { data: inventoryStats, isLoading } = useQuery({
     queryKey: ['inventoryStats', currency.code, user?.id],
     queryFn: async () => {
@@ -217,7 +218,6 @@ const Analytics = () => {
       try {
         console.log('Fetching inventory data for analytics...');
         
-        // 1. Get total items and values
         const { data: inventoryItems, error: inventoryError } = await supabase
           .from('inventory')
           .select('*')
@@ -231,7 +231,6 @@ const Analytics = () => {
         
         console.log(`Found ${inventoryItems.length} inventory items`);
         
-        // 2. Get recent transactions
         const { data: transactionItems, error: transactionError } = await supabase
           .from('transactions')
           .select('*')
@@ -246,25 +245,21 @@ const Analytics = () => {
         
         console.log(`Found ${transactionItems?.length || 0} transactions`);
         
-        // Calculate inventory statistics
         const totalValue = inventoryItems.reduce((sum, item) => {
           const value = item.current_price || item.price || 0;
-          return sum + value;
+          return sum + parseFloat(value);
         }, 0);
         
-        // Calculate profit/loss (difference between current values and purchase prices)
         const profitLoss = inventoryItems.reduce((sum, item) => {
-          const currentValue = item.current_price || item.price || 0;
-          const purchaseValue = item.purchase_price || currentValue;
+          const currentValue = parseFloat(item.current_price || item.price || 0);
+          const purchaseValue = parseFloat(item.purchase_price || currentValue);
           return sum + (currentValue - purchaseValue);
         }, 0);
         
-        // Calculate average item value
         const averageItemValue = inventoryItems.length > 0 
           ? totalValue / inventoryItems.length 
           : 0;
         
-        // Count rarities
         const rarityCounts: {[key: string]: number} = {};
         inventoryItems.forEach(item => {
           if (item.rarity) {
@@ -276,17 +271,14 @@ const Analytics = () => {
           .map(([name, count]) => ({ name, count }))
           .sort((a, b) => b.count - a.count);
         
-        // Format transactions for display
         const recentTransactions = transactionItems.map(tx => ({
           id: tx.id,
           name: `${tx.weapon_name || ''} | ${tx.skin_name || 'Unknown'}`,
           type: tx.type,
-          value: tx.price || 0,
+          value: parseFloat(tx.price) || 0,
           date: tx.date
         }));
         
-        // Simulate 30-day value change based on recent transactions
-        // This is a simple approximation - in a real app you'd have historical price data
         const valueChange30d = transactionItems
           .filter(tx => {
             const txDate = new Date(tx.date);
@@ -296,9 +288,9 @@ const Analytics = () => {
           })
           .reduce((sum, tx) => {
             if (tx.type === 'sell') {
-              return sum + (tx.price || 0);
+              return sum + parseFloat(tx.price || 0);
             } else if (tx.type === 'add') {
-              return sum - (tx.price || 0);
+              return sum - parseFloat(tx.price || 0);
             }
             return sum;
           }, 0);
@@ -308,12 +300,12 @@ const Analytics = () => {
           : 0;
         
         return {
-          totalValue,
-          profitLoss,
+          totalValue: parseFloat(totalValue.toFixed(3)),
+          profitLoss: parseFloat(profitLoss.toFixed(3)),
           itemCount: inventoryItems.length,
-          averageItemValue,
-          valueChange30d,
-          valueChangePercent,
+          averageItemValue: parseFloat(averageItemValue.toFixed(3)),
+          valueChange30d: parseFloat(valueChange30d.toFixed(3)),
+          valueChangePercent: parseFloat(valueChangePercent.toFixed(3)),
           topRarities,
           recentTransactions
         };
@@ -343,7 +335,7 @@ const Analytics = () => {
               value={inventoryStats?.totalValue}
               icon={<DollarSign />}
               loading={isLoading}
-              iconColor="#4B69FF" // Blue - Mil-Spec
+              iconColor="#4B69FF"
               bgColorClass="bg-[rgba(75,105,255,0.05)]"
             />
             
@@ -358,7 +350,7 @@ const Analytics = () => {
               icon={<Package />}
               isCurrency={false}
               loading={isLoading}
-              iconColor="#8847FF" // Purple - Restricted
+              iconColor="#8847FF"
               bgColorClass="bg-[rgba(136,71,255,0.05)]"
             />
             
@@ -367,7 +359,7 @@ const Analytics = () => {
               value={inventoryStats?.averageItemValue}
               icon={<BarChart3 />}
               loading={isLoading}
-              iconColor="#D32CE6" // Pink - Classified
+              iconColor="#D32CE6"
               bgColorClass="bg-[rgba(211,44,230,0.05)]"
             />
             
@@ -376,7 +368,7 @@ const Analytics = () => {
               value={inventoryStats?.valueChange30d}
               icon={<TrendingUp />}
               loading={isLoading}
-              iconColor="#EB4B4B" // Red - Covert
+              iconColor="#EB4B4B"
               bgColorClass="bg-[rgba(235,75,75,0.05)]"
             />
             
@@ -386,7 +378,7 @@ const Analytics = () => {
               icon={<Percent />}
               isCurrency={false}
               loading={isLoading}
-              iconColor="#FFD700" // Gold - Contraband
+              iconColor="#FFD700"
               bgColorClass="bg-[rgba(255,215,0,0.05)]"
             />
           </div>
