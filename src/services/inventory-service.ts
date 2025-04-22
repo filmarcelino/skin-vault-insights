@@ -385,9 +385,11 @@ export const sellSkin = async (inventoryId: string, sellData: {
           console.error("Error getting basic skin info:", basicSkinError);
           // Prosseguir mesmo sem os dados exatos da skin
         } else if (basicSkinData) {
-          // Se conseguiu obter os dados básicos
-          weaponName = basicSkinData.weapon || "Unknown";
-          skinName = basicSkinData.name || "Unknown Skin";
+          // Verificar se basicSkinData e suas propriedades existem antes de acessá-las
+          weaponName = basicSkinData && typeof basicSkinData === 'object' && 'weapon' in basicSkinData ? 
+            basicSkinData.weapon || "Unknown" : "Unknown";
+          skinName = basicSkinData && typeof basicSkinData === 'object' && 'name' in basicSkinData ? 
+            basicSkinData.name || "Unknown Skin" : "Unknown Skin";
         }
       }
     } else if (skinData) {

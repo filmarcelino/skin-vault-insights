@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -247,12 +248,12 @@ const Analytics = () => {
         
         const totalValue = inventoryItems.reduce((sum, item) => {
           const value = item.current_price || item.price || 0;
-          return sum + parseFloat(value);
+          return sum + parseFloat(String(value));
         }, 0);
         
         const profitLoss = inventoryItems.reduce((sum, item) => {
-          const currentValue = parseFloat(item.current_price || item.price || 0);
-          const purchaseValue = parseFloat(item.purchase_price || currentValue);
+          const currentValue = parseFloat(String(item.current_price || item.price || 0));
+          const purchaseValue = parseFloat(String(item.purchase_price || currentValue));
           return sum + (currentValue - purchaseValue);
         }, 0);
         
@@ -275,7 +276,7 @@ const Analytics = () => {
           id: tx.id,
           name: `${tx.weapon_name || ''} | ${tx.skin_name || 'Unknown'}`,
           type: tx.type,
-          value: parseFloat(tx.price) || 0,
+          value: parseFloat(String(tx.price) || '0'),
           date: tx.date
         }));
         
@@ -288,9 +289,9 @@ const Analytics = () => {
           })
           .reduce((sum, tx) => {
             if (tx.type === 'sell') {
-              return sum + parseFloat(tx.price || 0);
+              return sum + parseFloat(String(tx.price || 0));
             } else if (tx.type === 'add') {
-              return sum - parseFloat(tx.price || 0);
+              return sum - parseFloat(String(tx.price || 0));
             }
             return sum;
           }, 0);
