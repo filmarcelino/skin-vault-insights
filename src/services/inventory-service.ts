@@ -367,36 +367,58 @@ export const sellSkin = async (inventoryId: string, sellData: {
     let weaponName = "Unknown";
     let skinName = "Unknown Skin";
     let originalCurrency = "USD";
-    
+
     if (skinError) {
       console.error("Error getting skin info:", skinError);
-      
+
       // Verificar se o erro é relacionado à coluna currency_code
-      if (skinError.message && skinError.message.includes("column 'currency_code' does not exist")) {
+      if (
+        skinError.message &&
+        skinError.message.includes("column 'currency_code' does not exist")
+      ) {
         // Tentativa alternativa de obter informações apenas com campos essenciais
-        const { data: basicSkinData, error: basicSkinError } = await supabase
-          .from('inventory')
-          .select('weapon, name')
-          .eq('inventory_id', inventoryId)
-          .eq('user_id', session.user.id)
-          .single();
-          
+        const { data: basicSkinData, error: basicSkinError } =
+          await supabase
+            .from("inventory")
+            .select("weapon, name")
+            .eq("inventory_id", inventoryId)
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+
         if (basicSkinError) {
           console.error("Error getting basic skin info:", basicSkinError);
-          // Prosseguir mesmo sem os dados exatos da skin
         } else if (basicSkinData) {
-          // Garantir que estamos lidando com um objeto de dados válido e não um erro
-          weaponName = basicSkinData && typeof basicSkinData === 'object' && 'weapon' in basicSkinData ? 
-            (basicSkinData.weapon || "Unknown") : "Unknown";
-          skinName = basicSkinData && typeof basicSkinData === 'object' && 'name' in basicSkinData ? 
-            (basicSkinData.name || "Unknown Skin") : "Unknown Skin";
+          weaponName =
+            typeof basicSkinData === "object" &&
+            "weapon" in basicSkinData &&
+            basicSkinData.weapon
+              ? basicSkinData.weapon
+              : "Unknown";
+          skinName =
+            typeof basicSkinData === "object" &&
+            "name" in basicSkinData &&
+            basicSkinData.name
+              ? basicSkinData.name
+              : "Unknown Skin";
         }
       }
     } else if (skinData) {
-      // Corrigindo aqui: verificar que skinData não é null antes de acessar suas propriedades
-      weaponName = skinData.weapon || "Unknown";
-      skinName = skinData.name || "Unknown Skin";
-      originalCurrency = skinData.currency_code || "USD";
+      // checagem explícita para garantir que skinData não seja null
+      weaponName =
+        skinData && typeof skinData === "object" && "weapon" in skinData && skinData.weapon
+          ? skinData.weapon
+          : "Unknown";
+      skinName =
+        skinData && typeof skinData === "object" && "name" in skinData && skinData.name
+          ? skinData.name
+          : "Unknown Skin";
+      originalCurrency =
+        skinData &&
+        typeof skinData === "object" &&
+        "currency_code" in skinData &&
+        skinData.currency_code
+          ? skinData.currency_code
+          : "USD";
     }
     
     // Remover do inventário
