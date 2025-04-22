@@ -1,4 +1,3 @@
-
 import React from "react";
 import { JsonSettings } from "@/components/settings/json-settings";
 import { Separator } from "@/components/ui/separator";
@@ -7,6 +6,7 @@ import { Save, Shield, Wrench, Users, SlidersHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loading } from "@/components/ui/loading";
+import { CouponManagement } from "@/components/settings/coupon-management";
 
 const ADMIN_EMAIL = "luisfelipemarcelino33@gmail.com";
 
@@ -63,6 +63,11 @@ const Settings = () => {
       </div>
 
       <Separator />
+
+      {/* Gestão de Cupons */}
+      <CouponManagement />
+
+      {/* Outras áreas de gerenciamento */}
       <div className="space-y-6">
         {/* Gerenciamento do site: áreas que poderão ser expandidas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

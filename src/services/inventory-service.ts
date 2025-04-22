@@ -355,23 +355,21 @@ export const sellSkin = async (inventoryId: string, sellData: {
       console.error("No user session found");
       return false;
     }
-    
+
     // Obter informações da skin
     let { data: skinData, error: skinError } = await supabase
       .from('inventory')
       .select('weapon, name, currency_code')
       .eq('inventory_id', inventoryId)
       .eq('user_id', session.user.id)
-      .single();
-    
+      .maybeSingle();
+
     let weaponName = "Unknown";
     let skinName = "Unknown Skin";
     let originalCurrency = "USD";
 
     if (skinError) {
       console.error("Error getting skin info:", skinError);
-
-      // Verificar se o erro é relacionado à coluna currency_code
       if (
         skinError.message &&
         skinError.message.includes("column 'currency_code' does not exist")
@@ -387,16 +385,15 @@ export const sellSkin = async (inventoryId: string, sellData: {
 
         if (basicSkinError) {
           console.error("Error getting basic skin info:", basicSkinError);
-        } else if (basicSkinData) {
-          weaponName = basicSkinData?.weapon || "Unknown";
-          skinName = basicSkinData?.name || "Unknown Skin";
+        } else if (basicSkinData && typeof basicSkinData === "object" && basicSkinData !== null) {
+          weaponName = (basicSkinData as any).weapon ?? "Unknown";
+          skinName = (basicSkinData as any).name ?? "Unknown Skin";
         }
       }
-    } else if (skinData) {
-      // checagem explícita para garantir que skinData não seja null
-      weaponName = skinData?.weapon || "Unknown";
-      skinName = skinData?.name || "Unknown Skin";
-      originalCurrency = skinData?.currency_code || "USD";
+    } else if (skinData && typeof skinData === "object" && skinData !== null) {
+      weaponName = (skinData as any).weapon ?? "Unknown";
+      skinName = (skinData as any).name ?? "Unknown Skin";
+      originalCurrency = (skinData as any).currency_code ?? "USD";
     }
     
     // Remover do inventário
