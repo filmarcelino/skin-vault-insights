@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      coupons: {
+        Row: {
+          active: boolean | null
+          code: string
+          created_at: string | null
+          created_by: string | null
+          duration_months: number
+          id: string
+          max_redemptions: number | null
+          times_redeemed: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          duration_months?: number
+          id?: string
+          max_redemptions?: number | null
+          times_redeemed?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          duration_months?: number
+          id?: string
+          max_redemptions?: number | null
+          times_redeemed?: number | null
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           acquired_date: string
@@ -102,6 +135,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_admin: boolean | null
           preferred_currency: string
           updated_at: string
           username: string
@@ -114,6 +148,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_admin?: boolean | null
           preferred_currency?: string
           updated_at?: string
           username: string
@@ -126,6 +161,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_admin?: boolean | null
           preferred_currency?: string
           updated_at?: string
           username?: string
@@ -134,6 +170,7 @@ export type Database = {
       }
       subscribers: {
         Row: {
+          coupon_id: string | null
           created_at: string
           email: string
           id: string
@@ -145,6 +182,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          coupon_id?: string | null
           created_at?: string
           email: string
           id?: string
@@ -156,6 +194,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          coupon_id?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -166,7 +205,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "subscribers_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -209,6 +256,38 @@ export type Database = {
           weapon_name?: string | null
         }
         Relationships: []
+      }
+      user_coupons: {
+        Row: {
+          applied_at: string | null
+          coupon_id: string
+          expires_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          coupon_id: string
+          expires_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          coupon_id?: string
+          expires_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_coupons_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

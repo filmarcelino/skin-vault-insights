@@ -14,7 +14,6 @@ function logStep(step: string, details?: any) {
 }
 
 serve(async (req) => {
-  // Handle OPTIONS request for CORS
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,18 +21,17 @@ serve(async (req) => {
   try {
     logStep("Function started");
     
-    // Get request body for subscription plan selection
     let requestData;
     try {
       requestData = await req.json();
     } catch (e) {
-      requestData = { plan: 'monthly' }; // Default to monthly if no plan specified
+      requestData = { plan: 'monthly' }; // fallback
     }
-    
     const plan = requestData?.plan || 'monthly';
-    logStep("Request data", { plan });
+    const couponCode = (requestData?.coupon || "").trim().toUpperCase();
+
+    logStep("Request data", { plan, coupon: couponCode });
     
-    // Get Stripe key from environment
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       logStep("Missing Stripe key");
@@ -41,13 +39,12 @@ serve(async (req) => {
         error: "Payment configuration unavailable at the moment. STRIPE_SECRET_KEY not set." 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Return 200 even with error
+        status: 200,
       });
     }
     
     logStep("Stripe key found");
     
-    // Initialize Supabase client with service role key
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -61,7 +58,7 @@ serve(async (req) => {
         error: "Authentication required" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Return 200 even with error
+        status: 200,
       });
     }
     
@@ -75,7 +72,7 @@ serve(async (req) => {
         error: "Authentication error: " + userError.message
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Return 200 even with error
+        status: 200,
       });
     }
     
@@ -86,18 +83,16 @@ serve(async (req) => {
         error: "User email not available" 
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Return 200 even with error
+        status: 200,
       });
     }
-    
     logStep("User authenticated", { userId: user.id, email: user.email });
-    
+
     try {
-      // Initialize Stripe with timeout handling
       const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
       logStep("Stripe initialized");
       
-      // Check if user already exists as a customer with timeout
+      // Check if user already exists as a customer
       logStep("Checking if customer exists");
       const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
       const customers = await Promise.race([
@@ -106,67 +101,121 @@ serve(async (req) => {
       ]) as Stripe.ApiList<Stripe.Customer>;
       
       let customerId: string | undefined;
-      
       if (customers.data.length > 0) {
         customerId = customers.data[0].id;
         logStep("Found existing customer", { customerId });
-        
         // Check if customer already has an active subscription
-        logStep("Checking for active subscriptions");
         const subscriptionsPromise = stripe.subscriptions.list({
           customer: customerId,
           status: "active",
           limit: 1,
         });
-        
         const subscriptions = await Promise.race([
           subscriptionsPromise,
           new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while checking subscriptions")), 30000))
         ]) as Stripe.ApiList<Stripe.Subscription>;
-        
         if (subscriptions.data.length > 0) {
           logStep("Customer already has an active subscription");
-          // Return URL to manage subscription instead
+          // Return URL to manage subscription
           const session = await stripe.billingPortal.sessions.create({
             customer: customerId,
             return_url: `${req.headers.get("origin")}`,
           });
-          
           return new Response(JSON.stringify({ url: session.url, existingSubscription: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
           });
         }
       }
+
+      // Lógica do cupom
+      let trial_days = 3; // padrão
+      if (couponCode.length > 0) {
+        logStep("Checking coupon", { couponCode });
+        // procurar um cupom ativo
+        const { data: couponRow, error: couponError } = await supabaseClient
+          .from("coupons")
+          .select("*")
+          .eq("code", couponCode)
+          .eq("active", true)
+          .maybeSingle();
+
+        if (!couponRow) {
+          logStep("Invalid coupon", { code: couponCode });
+          return new Response(JSON.stringify({ error: "Cupom inválido." }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+        // já foi usado por esse usuário?
+        const { data: used, error: usedErr } = await supabaseClient
+          .from("user_coupons")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("coupon_id", couponRow.id)
+          .maybeSingle();
+
+        if (used) {
+          return new Response(JSON.stringify({ error: "Cupom já utilizado na sua conta." }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+        // validar se atingiu o máximo de usos
+        if (couponRow.max_redemptions &&
+            couponRow.times_redeemed &&
+            couponRow.times_redeemed >= couponRow.max_redemptions
+        ) {
+          return new Response(JSON.stringify({ error: "Esse cupom já atingiu o limite de usos." }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+
+        // Cupom válido: concede trial personalizado
+        trial_days = couponRow.duration_months * 30; // cada mês = 30 dias
+
+        // registrar cupom na tabela user_coupons (marcar como usado)
+        await supabaseClient.from("user_coupons").insert({
+          user_id: user.id,
+          coupon_id: couponRow.id,
+          applied_at: new Date().toISOString(),
+          expires_at: null, // pode ser gerenciado depois, após subscrição terminada
+        });
+
+        // incrementa times_redeemed
+        await supabaseClient.from("coupons")
+          .update({ times_redeemed: (couponRow.times_redeemed ?? 0) + 1 })
+          .eq("id", couponRow.id);
+
+        logStep("Valid coupon applied", { trial_days });
+      }
       
-      // Set up the plan details based on the selected plan
+      // Definição de planos
       let line_items;
-      
       if (plan === 'annual') {
-        // Annual plan with 10% discount ($3.99 * 12 months = $47.88, with 10% off = $43.09)
         line_items = [{
           price_data: {
             currency: "usd",
             recurring: {
               interval: "year",
-              trial_period_days: 3,
+              trial_period_days: trial_days,
             },
             product_data: {
               name: "CS Skin Vault Premium (Annual)",
               description: "Premium access to CS Skin Vault with 10% savings",
             },
-            unit_amount: 4309, // $43.09 in cents (equivalent to $3.99/month with 10% discount)
+            unit_amount: 4300, // $43.00 in cents
           },
           quantity: 1,
         }];
       } else {
-        // Default monthly plan
         line_items = [{
           price_data: {
             currency: "usd",
             recurring: {
               interval: "month",
-              trial_period_days: 3,
+              trial_period_days: trial_days,
             },
             product_data: {
               name: "CS Skin Vault Premium",
@@ -178,48 +227,43 @@ serve(async (req) => {
         }];
       }
       
-      logStep("Creating checkout session", { customerId: customerId || "new customer" });
-      
-      // Create a Stripe Checkout session for a new subscription
+      logStep("Creating checkout session", { customerId: customerId || "new customer", trial_days, plan, coupon: couponCode });
+
       const sessionPromise = stripe.checkout.sessions.create({
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
         mode: "subscription",
-        line_items: line_items,
+        line_items,
         success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get("origin")}`,
       });
-      
       const session = await Promise.race([
         sessionPromise,
         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while creating checkout")), 30000))
       ]) as Stripe.Checkout.Session;
-      
+
       logStep("Checkout session created", { sessionId: session.id, url: session.url });
-      
       return new Response(JSON.stringify({ url: session.url }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
+
     } catch (stripeError) {
-      // Handle Stripe API errors separately
       const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
       logStep("STRIPE API ERROR", { message: errorMessage });
-      
       return new Response(JSON.stringify({ 
         error: "Failed to create payment session: " + errorMessage
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // Still return 200 with error message inside
+        status: 200,
       });
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
-    
     return new Response(JSON.stringify({ error: "General error: " + errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200, // Still return 200 with error details inside
+      status: 200,
     });
   }
 });

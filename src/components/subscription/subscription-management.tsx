@@ -1,21 +1,45 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { CheckCircle, CreditCard } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const SubscriptionManagement = () => {
-  const handleSubscribeMonthly = () => {
-    window.location.href = "https://buy.stripe.com/28ocPQ8Ijbsz82A144";
-  };
+  const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
+  const [coupon, setCoupon] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubscribeAnnual = () => {
-    window.location.href = "https://buy.stripe.com/eVag22f6HfIP4Qo7su";
-  };
+  const { toast } = useToast();
 
-  const handleManageSubscription = () => {
-    window.location.href = "https://billing.stripe.com/p/login/test_dR6eW239Ze1L4ec9AA";
+  const handleSubscribe = async () => {
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { plan, coupon: coupon.trim() || undefined },
+      });
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        toast({
+          title: "Erro ao iniciar pagamento",
+          description: data?.error || error?.message || "Tente novamente.",
+          variant: "destructive"
+        });
+      }
+    } catch (err: any) {
+      toast({
+        title: "Erro inesperado",
+        description: err.message || "Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -30,7 +54,7 @@ export const SubscriptionManagement = () => {
       </CardHeader>
 
       <CardContent className="space-y-4 pt-6">
-        <Tabs defaultValue="monthly">
+        <Tabs defaultValue="monthly" onValueChange={val => setPlan(val as "monthly" | "annual")}>
           <TabsList className="w-full mb-4">
             <TabsTrigger value="monthly" className="w-1/2">Mensal</TabsTrigger>
             <TabsTrigger value="annual" className="w-1/2">Anual (10% OFF)</TabsTrigger>
@@ -68,11 +92,26 @@ export const SubscriptionManagement = () => {
                 </li>
               </ul>
 
+              <div>
+                <label htmlFor="coupon" className="block text-sm font-medium mb-1">Cupom (até 3 meses grátis)</label>
+                <Input
+                  id="coupon"
+                  value={coupon}
+                  onChange={e => setCoupon(e.target.value.toUpperCase())}
+                  placeholder="Digite seu cupom"
+                  className="mb-2"
+                  maxLength={32}
+                  autoComplete="off"
+                  disabled={submitting}
+                />
+              </div>
+
               <Button 
-                onClick={handleSubscribeMonthly}
+                onClick={handleSubscribe}
                 className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                disabled={submitting}
               >
-                Assinar Plano Mensal
+                {submitting ? "Processando..." : "Assinar Plano Mensal"}
               </Button>
             </div>
           </TabsContent>
@@ -112,11 +151,26 @@ export const SubscriptionManagement = () => {
                 </li>
               </ul>
 
+              <div>
+                <label htmlFor="coupon-a" className="block text-sm font-medium mb-1">Cupom (até 3 meses grátis)</label>
+                <Input
+                  id="coupon-a"
+                  value={coupon}
+                  onChange={e => setCoupon(e.target.value.toUpperCase())}
+                  placeholder="Digite seu cupom"
+                  className="mb-2"
+                  maxLength={32}
+                  autoComplete="off"
+                  disabled={submitting}
+                />
+              </div>
+
               <Button 
-                onClick={handleSubscribeAnnual}
+                onClick={handleSubscribe}
                 className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                disabled={submitting}
               >
-                Assinar Plano Anual
+                {submitting ? "Processando..." : "Assinar Plano Anual"}
               </Button>
             </div>
           </TabsContent>
@@ -125,3 +179,4 @@ export const SubscriptionManagement = () => {
     </Card>
   );
 };
+
