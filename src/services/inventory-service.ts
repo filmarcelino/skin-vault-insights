@@ -1,3 +1,4 @@
+
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -357,7 +358,7 @@ export const sellSkin = async (inventoryId: string, sellData: {
     }
     
     // Obter informações da skin
-    const { data: skinData, error: skinError } = await supabase
+    let { data: skinData, error: skinError } = await supabase
       .from('inventory')
       .select('weapon, name, currency_code')
       .eq('inventory_id', inventoryId)
@@ -385,18 +386,18 @@ export const sellSkin = async (inventoryId: string, sellData: {
           console.error("Error getting basic skin info:", basicSkinError);
           // Prosseguir mesmo sem os dados exatos da skin
         } else if (basicSkinData) {
-          // Verificar se basicSkinData e suas propriedades existem antes de acessá-las
-          weaponName = basicSkinData && typeof basicSkinData === 'object' && 'weapon' in basicSkinData ? 
-            basicSkinData.weapon || "Unknown" : "Unknown";
-          skinName = basicSkinData && typeof basicSkinData === 'object' && 'name' in basicSkinData ? 
-            basicSkinData.name || "Unknown Skin" : "Unknown Skin";
+          // Garantir que estamos lidando com um objeto de dados válido e não um erro
+          if (basicSkinData && typeof basicSkinData === 'object') {
+            weaponName = 'weapon' in basicSkinData ? basicSkinData.weapon || "Unknown" : "Unknown";
+            skinName = 'name' in basicSkinData ? basicSkinData.name || "Unknown Skin" : "Unknown Skin";
+          }
         }
       }
-    } else if (skinData) {
-      // Se conseguiu obter todos os dados
-      weaponName = skinData.weapon || "Unknown";
-      skinName = skinData.name || "Unknown Skin";
-      originalCurrency = skinData.currency_code || "USD";
+    } else if (skinData && typeof skinData === 'object') {
+      // Se conseguiu obter todos os dados, verificar se é um objeto válido
+      weaponName = 'weapon' in skinData ? skinData.weapon || "Unknown" : "Unknown";
+      skinName = 'name' in skinData ? skinData.name || "Unknown Skin" : "Unknown Skin";
+      originalCurrency = 'currency_code' in skinData ? skinData.currency_code || "USD" : "USD";
     }
     
     // Remover do inventário
