@@ -388,37 +388,15 @@ export const sellSkin = async (inventoryId: string, sellData: {
         if (basicSkinError) {
           console.error("Error getting basic skin info:", basicSkinError);
         } else if (basicSkinData) {
-          weaponName =
-            typeof basicSkinData === "object" &&
-            "weapon" in basicSkinData &&
-            basicSkinData.weapon
-              ? basicSkinData.weapon
-              : "Unknown";
-          skinName =
-            typeof basicSkinData === "object" &&
-            "name" in basicSkinData &&
-            basicSkinData.name
-              ? basicSkinData.name
-              : "Unknown Skin";
+          weaponName = basicSkinData?.weapon || "Unknown";
+          skinName = basicSkinData?.name || "Unknown Skin";
         }
       }
     } else if (skinData) {
       // checagem explícita para garantir que skinData não seja null
-      weaponName =
-        skinData && typeof skinData === "object" && "weapon" in skinData && skinData.weapon
-          ? skinData.weapon
-          : "Unknown";
-      skinName =
-        skinData && typeof skinData === "object" && "name" in skinData && skinData.name
-          ? skinData.name
-          : "Unknown Skin";
-      originalCurrency =
-        skinData &&
-        typeof skinData === "object" &&
-        "currency_code" in skinData &&
-        skinData.currency_code
-          ? skinData.currency_code
-          : "USD";
+      weaponName = skinData?.weapon || "Unknown";
+      skinName = skinData?.name || "Unknown Skin";
+      originalCurrency = skinData?.currency_code || "USD";
     }
     
     // Remover do inventário
