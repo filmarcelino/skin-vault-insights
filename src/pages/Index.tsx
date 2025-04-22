@@ -303,7 +303,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 animate-fade-in">
         <StatsCard 
           title="Total Skins" 
-          value={isLoading && currentTab === "inventory" ? "Loading..." : inventoryStats.totalSkins} 
+          value={isLoading && currentTab === "inventory" ? "Loading..." : Number(inventoryStats.totalSkins).toString()} 
           icon={<Boxes className="h-5 w-5" />}
           className="animate-fade-in" 
           style={{ animationDelay: "0.1s" }}
@@ -454,7 +454,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                       price={skin.price?.toString() || "N/A"}
                       image={skin.image}
                       rarity={skin.rarity}
-                      isStatTrak={Math.random() > 0.7}
+                      isStatTrak={skin.isStatTrak}
                       tradeLockDays={0}
                       className="animate-fade-in hover:scale-105 transition-transform duration-200"
                       style={{ animationDelay: `${0.5 + (index * 0.05)}s` }}
@@ -494,7 +494,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                       price={skin.price?.toString() || "N/A"}
                       image={skin.image}
                       rarity={skin.rarity}
-                      isStatTrak={Math.random() > 0.7}
+                      isStatTrak={skin.isStatTrak}
                       tradeLockDays={0}
                       className="animate-fade-in"
                       style={{ animationDelay: `${0.5 + (index * 0.05)}s` }}

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,11 +7,11 @@ import { CheckCircle, CreditCard } from "lucide-react";
 
 export const SubscriptionManagement = () => {
   const handleSubscribeMonthly = () => {
-    window.location.href = "https://buy.stripe.com/test_4gwaGB5RJagj70QbII";
+    window.location.href = "https://buy.stripe.com/28ocPQ8Ijbsz82A144";
   };
 
   const handleSubscribeAnnual = () => {
-    window.location.href = "https://buy.stripe.com/test_4gwaGB5RJagj70QbII";
+    window.location.href = "https://buy.stripe.com/eVag22f6HfIP4Qo7su";
   };
 
   const handleManageSubscription = () => {
@@ -88,10 +89,10 @@ export const SubscriptionManagement = () => {
                       Plano Anual <Badge variant="outline" className="ml-1 bg-green-500/10 text-green-500 border-green-500/30">ECONOMIZE 10%</Badge>
                     </h4>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-xl font-bold">$43.09</span>
+                      <span className="text-xl font-bold">$43.00</span>
                       <span className="text-sm text-muted-foreground">/ano</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">Equivalente a $3.59/mês</div>
+                    <div className="text-sm text-muted-foreground">Equivalente a $3.58/mês</div>
                   </div>
                 </div>
               </div>
