@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, CheckCircle } from "lucide-react";
 
 type Coupon = {
   id: string;
@@ -26,6 +28,7 @@ export const CouponManagement = () => {
   const [duration, setDuration] = useState(3);
   const [maxRedemptions, setMaxRedemptions] = useState<number | "">("");
   const [isCreating, setIsCreating] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   // Listar cupons
   const { data: coupons, isLoading, error } = useQuery({
@@ -40,14 +43,51 @@ export const CouponManagement = () => {
     },
   });
 
+  // Validar formulário
+  const validateForm = (): boolean => {
+    // Reset previous errors
+    setValidationError("");
+    
+    // Check if code is empty
+    if (!code.trim()) {
+      setValidationError("O código do cupom é obrigatório");
+      return false;
+    }
+
+    // Check if code has valid format
+    if (!/^[A-Z0-9_-]+$/.test(code)) {
+      setValidationError("O código deve conter apenas letras maiúsculas, números, _ e -");
+      return false;
+    }
+
+    // Check if duration is valid
+    if (duration < 1 || duration > 12) {
+      setValidationError("A duração do trial deve estar entre 1 e 12 meses");
+      return false;
+    }
+
+    // Check if maxRedemptions is valid when provided
+    if (maxRedemptions !== "" && (Number(maxRedemptions) < 1 || Number(maxRedemptions) > 10000)) {
+      setValidationError("O máximo de resgates deve estar entre 1 e 10000 (ou vazio para ilimitado)");
+      return false;
+    }
+
+    // Check if code already exists
+    if (coupons?.find((c) => c.code === code.toUpperCase())) {
+      setValidationError("Já existe um cupom com esse código");
+      return false;
+    }
+
+    return true;
+  };
+
   // Criar cupom
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!code.trim()) throw new Error("Código é obrigatório");
-      // Validar unicidade no frontend (melhor validar no backend/db)
-      if (coupons?.find((c) => c.code === code.toUpperCase())) {
-        throw new Error("Já existe um cupom com esse código.");
+      if (!validateForm()) {
+        throw new Error(validationError || "Formulário inválido");
       }
+      
       const { error } = await supabase.from("coupons").insert({
         code: code.toUpperCase(),
         duration_months: duration,
@@ -60,7 +100,9 @@ export const CouponManagement = () => {
       setCode("");
       setDuration(3);
       setMaxRedemptions("");
-      toast.success("Cupom criado!");
+      toast.success("Cupom criado com sucesso!", {
+        description: `Cupom ${code.toUpperCase()} adicionado com ${duration} meses de trial.`
+      });
       queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
     },
     onError: (err: any) => {
@@ -70,18 +112,31 @@ export const CouponManagement = () => {
 
   // Trocar status ativo/desativado de cupom
   const toggleActive = async (coupon: Coupon) => {
-    await supabase.from("coupons")
-      .update({ active: !coupon.active })
-      .eq("id", coupon.id);
-    toast.success(coupon.active ? "Cupom desativado" : "Cupom ativado");
-    queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
+    try {
+      const { error } = await supabase.from("coupons")
+        .update({ active: !coupon.active })
+        .eq("id", coupon.id);
+        
+      if (error) throw error;
+      
+      toast.success(
+        coupon.active 
+          ? `Cupom ${coupon.code} desativado` 
+          : `Cupom ${coupon.code} ativado`
+      );
+      queryClient.invalidateQueries({ queryKey: ["admin-coupons"] });
+    } catch (err: any) {
+      toast.error("Erro ao alterar status do cupom", {
+        description: err.message
+      });
+    }
   };
 
   return (
     <Card className="mb-8">
       <CardHeader>
         <CardTitle>Criar Cupom Promocional</CardTitle>
-        <CardDescription>Gere cupons para liberar trial de até 3 meses sem passar pela Stripe.</CardDescription>
+        <CardDescription>Gere cupons para liberar trial de até 12 meses sem passar pela Stripe.</CardDescription>
       </CardHeader>
       <form
         onSubmit={e => {
@@ -102,6 +157,7 @@ export const CouponManagement = () => {
               value={code}
               onChange={e => setCode(e.target.value.toUpperCase())}
               maxLength={24}
+              className={validationError && !code.trim() ? "border-red-500" : ""}
             />
           </div>
           <div>
@@ -110,10 +166,11 @@ export const CouponManagement = () => {
               id="duration"
               type="number"
               min={1}
-              max={3}
+              max={12}
               value={duration}
               onChange={e => setDuration(Number(e.target.value))}
               required
+              className={validationError && (duration < 1 || duration > 12) ? "border-red-500" : ""}
             />
           </div>
           <div>
@@ -136,24 +193,33 @@ export const CouponManagement = () => {
               {mutation.isPending || isCreating ? "Criando..." : "Criar"}
             </Button>
           </div>
+          {validationError && (
+            <div className="col-span-1 md:col-span-4 flex items-center gap-2 p-2 bg-red-50 text-red-600 rounded border border-red-200">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm">{validationError}</span>
+            </div>
+          )}
         </CardContent>
       </form>
       <CardFooter>
         <div className="w-full mt-2">
           <h3 className="font-semibold mb-2">Cupons cadastrados</h3>
           {isLoading ? (
-            <div>Carregando...</div>
+            <div className="p-4 text-center text-muted-foreground">Carregando...</div>
           ) : error ? (
-            <div className="text-destructive">Erro ao carregar cupons</div>
+            <div className="p-4 text-center text-destructive flex items-center justify-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              <span>Erro ao carregar cupons</span>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Código</TableHead>
-                    <TableHead>Trial(em meses)</TableHead>
+                    <TableHead>Trial(meses)</TableHead>
                     <TableHead>Usos</TableHead>
-                    <TableHead>Ativo</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -162,16 +228,41 @@ export const CouponManagement = () => {
                     <TableRow key={c.id}>
                       <TableCell>{c.code}</TableCell>
                       <TableCell>{c.duration_months}</TableCell>
-                      <TableCell>{c.times_redeemed ?? 0}/{c.max_redemptions ?? "∞"}</TableCell>
                       <TableCell>
-                        <Switch
-                          checked={c.active}
-                          onCheckedChange={() => toggleActive(c)}
-                        />
+                        {c.times_redeemed ?? 0}
+                        {c.max_redemptions ? 
+                          `/${c.max_redemptions}` : 
+                          <span className="text-muted-foreground text-sm ml-1">∞</span>
+                        }
                       </TableCell>
                       <TableCell>
-                        {/* Ações como deletar ou editar podem ser implementadas futuramente */}
-                        {/* <Button variant="ghost" size="sm">Editar</Button> */}
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={c.active}
+                            onCheckedChange={() => toggleActive(c)}
+                          />
+                          <Badge 
+                            variant={c.active ? "success" : "destructive"}
+                            className={`${c.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                          >
+                            {c.active ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {c.times_redeemed === 0 && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-destructive hover:text-destructive/80"
+                            onClick={() => {
+                              // Implementar exclusão de cupom (somente se não tiver sido usado)
+                              toast.error("Exclusão de cupoms será implementada em breve");
+                            }}
+                          >
+                            Excluir
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   )) : (

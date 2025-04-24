@@ -1,3 +1,4 @@
+
 import { InventoryItem, Skin, Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -291,7 +292,7 @@ export const getUserTransactions = async (): Promise<Transaction[]> => {
       return [];
     }
     
-    return Array.isArray(data) ? data.map(mapSupabaseToTransaction) : [];
+    return Array.isArray(data) ? data.map(mapSupabaseToTransaction).filter(Boolean) : [];
   } catch (error) {
     console.error("Error getting transactions:", error);
     return [];
@@ -370,30 +371,12 @@ export const sellSkin = async (inventoryId: string, sellData: {
 
     if (skinError) {
       console.error("Error getting skin info:", skinError);
-      if (
-        skinError.message &&
-        skinError.message.includes("column 'currency_code' does not exist")
-      ) {
-        // Tentativa alternativa de obter informações apenas com campos essenciais
-        const { data: basicSkinData, error: basicSkinError } =
-          await supabase
-            .from("inventory")
-            .select("weapon, name")
-            .eq("inventory_id", inventoryId)
-            .eq("user_id", session.user.id)
-            .maybeSingle();
-
-        if (basicSkinError) {
-          console.error("Error getting basic skin info:", basicSkinError);
-        } else if (basicSkinData && typeof basicSkinData === "object" && basicSkinData !== null) {
-          weaponName = (basicSkinData as any).weapon ?? "Unknown";
-          skinName = (basicSkinData as any).name ?? "Unknown Skin";
-        }
-      }
-    } else if (skinData && typeof skinData === "object" && skinData !== null) {
-      weaponName = (skinData as any).weapon ?? "Unknown";
-      skinName = (skinData as any).name ?? "Unknown Skin";
-      originalCurrency = (skinData as any).currency_code ?? "USD";
+      // Falha segura: continuamos mesmo com erro, apenas registramos
+    } else if (skinData) {
+      // Usando typeguard para verificar se os campos existem
+      weaponName = skinData?.weapon ?? "Unknown";
+      skinName = skinData?.name ?? "Unknown Skin";
+      originalCurrency = skinData?.currency_code ?? "USD";
     }
     
     // Remover do inventário
@@ -482,8 +465,13 @@ export const findMostValuableSkin = async (): Promise<InventoryItem | null> => {
       .order('current_price', { ascending: false })
       .limit(1);
     
-    if (error || !data.length) {
+    if (error) {
       console.error("Error finding most valuable skin:", error);
+      return null;
+    }
+    
+    if (!data || data.length === 0) {
+      console.error("No skins found in inventory");
       return null;
     }
     

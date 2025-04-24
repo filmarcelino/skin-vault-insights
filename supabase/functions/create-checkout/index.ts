@@ -43,7 +43,18 @@ serve(async (req) => {
       });
     }
     
-    logStep("Stripe key found");
+    logStep("Stripe key found", { keyLength: stripeKey.length });
+    
+    // Verify that the key begins with sk_ (indicating it's a secret key, not publishable)
+    if (!stripeKey.startsWith('sk_')) {
+      logStep("Invalid Stripe key format");
+      return new Response(JSON.stringify({ 
+        error: "Payment configuration is invalid. STRIPE_SECRET_KEY must start with 'sk_'." 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -140,13 +151,22 @@ serve(async (req) => {
           .eq("active", true)
           .maybeSingle();
 
-        if (!couponRow) {
-          logStep("Invalid coupon", { code: couponCode });
-          return new Response(JSON.stringify({ error: "Cupom inválido." }), {
+        if (couponError) {
+          logStep("Error fetching coupon", { error: couponError.message });
+          return new Response(JSON.stringify({ error: "Erro ao verificar cupom: " + couponError.message }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
           });
         }
+
+        if (!couponRow) {
+          logStep("Invalid coupon", { code: couponCode });
+          return new Response(JSON.stringify({ error: "Cupom inválido ou inativo." }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+        
         // já foi usado por esse usuário?
         const { data: used, error: usedErr } = await supabaseClient
           .from("user_coupons")
@@ -155,12 +175,17 @@ serve(async (req) => {
           .eq("coupon_id", couponRow.id)
           .maybeSingle();
 
+        if (usedErr) {
+          logStep("Error checking coupon usage", { error: usedErr.message });
+        }
+
         if (used) {
           return new Response(JSON.stringify({ error: "Cupom já utilizado na sua conta." }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 200,
           });
         }
+        
         // validar se atingiu o máximo de usos
         if (couponRow.max_redemptions &&
             couponRow.times_redeemed &&
@@ -176,17 +201,27 @@ serve(async (req) => {
         trial_days = couponRow.duration_months * 30; // cada mês = 30 dias
 
         // registrar cupom na tabela user_coupons (marcar como usado)
-        await supabaseClient.from("user_coupons").insert({
+        const { error: userCouponError } = await supabaseClient.from("user_coupons").insert({
           user_id: user.id,
           coupon_id: couponRow.id,
           applied_at: new Date().toISOString(),
           expires_at: null, // pode ser gerenciado depois, após subscrição terminada
         });
+        
+        if (userCouponError) {
+          logStep("Error recording coupon usage", { error: userCouponError.message });
+          // Continuamos o fluxo mesmo com erro para garantir uma boa experiência ao usuário
+        }
 
         // incrementa times_redeemed
-        await supabaseClient.from("coupons")
+        const { error: updateError } = await supabaseClient.from("coupons")
           .update({ times_redeemed: (couponRow.times_redeemed ?? 0) + 1 })
           .eq("id", couponRow.id);
+          
+        if (updateError) {
+          logStep("Error updating coupon usage count", { error: updateError.message });
+          // Continuamos o fluxo mesmo com erro
+        }
 
         logStep("Valid coupon applied", { trial_days });
       }
@@ -237,12 +272,31 @@ serve(async (req) => {
         success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get("origin")}`,
       });
+      
       const session = await Promise.race([
         sessionPromise,
         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while creating checkout")), 30000))
       ]) as Stripe.Checkout.Session;
 
       logStep("Checkout session created", { sessionId: session.id, url: session.url });
+      
+      // Registrar que foi aplicado um trial (se houver cupom)
+      if (couponCode.length > 0 && trial_days > 3) {
+        const { error: subError } = await supabaseClient.from("subscribers").upsert({
+          email: user.email,
+          user_id: user.id,
+          is_trial: true,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'email' });
+        
+        if (subError) {
+          logStep("Error registering trial status", { error: subError.message });
+          // Continuamos o fluxo mesmo com erro
+        } else {
+          logStep("Recorded trial status successfully");
+        }
+      }
+      
       return new Response(JSON.stringify({ url: session.url }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
