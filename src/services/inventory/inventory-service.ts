@@ -1,3 +1,4 @@
+
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -14,7 +15,7 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
     
     const { data: skinData, error: skinError } = await supabase
       .from('inventory')
-      .select('weapon, name')
+      .select('weapon, name, currency_code')
       .eq('inventory_id', inventoryId)
       .eq('user_id', session.user.id)
       .maybeSingle();
@@ -234,7 +235,7 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       itemId: inventoryId,
       weaponName: weaponName,
       skinName: skinName,
-      date: new Date().toLocaleDateString(),
+      date: sellData.soldDate || new Date().toLocaleDateString(),
       price: sellData.soldPrice,
       notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
       currency: sellData.soldCurrency || originalCurrency

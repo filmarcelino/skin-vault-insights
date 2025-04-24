@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -28,9 +29,8 @@ import {
   useInvalidateInventory,
 } from "@/hooks/use-skins";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
-import { SellData } from "@/types/skin";
+import { SellData, Skin } from "@/types/skin";
 import { CurrencySelector } from "@/components/ui/currency-selector";
-import { getUserInventory } from "@/services/inventory";
 
 const Inventory = () => {
   const [search, setSearch] = useState("");
@@ -109,6 +109,35 @@ const Inventory = () => {
     onSell(itemId, sellData);
     onClose();
     invalidateInventory();
+  };
+
+  const handleAddToInventory = async (skin: Skin) => {
+    try {
+      const purchaseInfo = {
+        purchasePrice: skin.price || 0,
+        marketplace: "Steam Market",
+        feePercentage: 0,
+        notes: "Added from inventory"
+      };
+      
+      await addSkin.mutateAsync({ skin, purchaseInfo });
+      
+      toast({
+        title: "Skin Adicionada",
+        description: `${skin.name} foi adicionada ao inventário.`,
+      });
+      
+      invalidateInventory();
+      return true;
+    } catch (error) {
+      console.error("Error adding skin:", error);
+      toast({
+        title: "Erro ao Adicionar",
+        description: "Falha ao adicionar skin ao inventário.",
+        variant: "destructive"
+      });
+      return false;
+    }
   };
 
   const onClose = () => {
@@ -214,7 +243,7 @@ const Inventory = () => {
         item={selectedItem}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        onSellSkin={handleUpdate}
+        onSellSkin={handleSell}
         onAddToInventory={handleAddToInventory}
       />
     </div>

@@ -1,3 +1,4 @@
+
 export interface Skin {
   id: string;
   name: string;
@@ -96,7 +97,7 @@ export interface SkinFilter {
 }
 
 export interface SellData {
-  soldDate: string;
+  soldDate?: string;
   soldPrice: number;
   soldMarketplace: string;
   soldFeePercentage: number;
