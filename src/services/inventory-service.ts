@@ -365,18 +365,22 @@ export const sellSkin = async (inventoryId: string, sellData: {
       .eq('user_id', session.user.id)
       .maybeSingle();
 
+    // Inicializar valores padrão
     let weaponName = "Unknown";
     let skinName = "Unknown Skin";
     let originalCurrency = "USD";
 
+    // Verificar se houve erro na consulta
     if (skinError) {
       console.error("Error getting skin info:", skinError);
       // Falha segura: continuamos mesmo com erro, apenas registramos
-    } else if (skinData) {
-      // O método maybeSingle não lança erro, e pode retornar null
-      weaponName = skinData?.weapon ?? "Unknown";
-      skinName = skinData?.name ?? "Unknown Skin";
-      originalCurrency = skinData?.currency_code ?? "USD";
+    } 
+    // Verificar se temos dados válidos
+    else if (skinData) {
+      // Extrair as informações com segurança
+      weaponName = skinData.weapon ?? "Unknown";
+      skinName = skinData.name ?? "Unknown Skin";
+      originalCurrency = skinData.currency_code ?? "USD";
     }
     
     // Remover do inventário
