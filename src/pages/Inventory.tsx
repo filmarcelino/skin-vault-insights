@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -29,7 +28,7 @@ import {
   useInvalidateInventory,
 } from "@/hooks/use-skins";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
-import { SellData, Skin } from "@/types/skin";
+import { SellData, Skin, InventoryItem } from "@/types/skin";
 import { CurrencySelector } from "@/components/ui/currency-selector";
 
 const Inventory = () => {
@@ -60,7 +59,6 @@ const Inventory = () => {
   };
 
   const onDuplicate = (item) => {
-    // Implementar lógica de duplicação
     toast({
       title: "Duplicar Skin",
       description: "Funcionalidade em desenvolvimento.",
@@ -111,16 +109,17 @@ const Inventory = () => {
     invalidateInventory();
   };
 
-  const handleAddToInventory = async (skin: Skin) => {
+  const handleAddToInventory = async (skin: Skin): Promise<InventoryItem | null> => {
     try {
       const purchaseInfo = {
         purchasePrice: skin.price || 0,
         marketplace: "Steam Market",
         feePercentage: 0,
-        notes: "Added from inventory"
+        notes: "Added from inventory",
+        currency: "USD"
       };
       
-      await addSkin.mutateAsync({ skin, purchaseInfo });
+      const newItem = await addSkin.mutateAsync({ skin, purchaseInfo });
       
       toast({
         title: "Skin Adicionada",
@@ -128,7 +127,7 @@ const Inventory = () => {
       });
       
       invalidateInventory();
-      return true;
+      return newItem;
     } catch (error) {
       console.error("Error adding skin:", error);
       toast({
@@ -136,7 +135,7 @@ const Inventory = () => {
         description: "Falha ao adicionar skin ao inventário.",
         variant: "destructive"
       });
-      return false;
+      return null;
     }
   };
 

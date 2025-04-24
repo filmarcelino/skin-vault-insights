@@ -1,4 +1,3 @@
-
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -19,6 +18,11 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       .eq('inventory_id', inventoryId)
       .eq('user_id', session.user.id)
       .maybeSingle();
+    
+    if (skinError) {
+      console.error("Error fetching skin data:", skinError);
+      return false;
+    }
     
     const weaponName = skinData?.weapon || "Unknown";
     const skinName = skinData?.name || "Unknown Skin";
@@ -206,18 +210,42 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       .eq('user_id', session.user.id)
       .maybeSingle();
 
-    let weaponName = "Unknown";
-    let skinName = "Unknown Skin";
-    let originalCurrency = "USD";
-
     if (skinError) {
       console.error("Error getting skin info:", skinError);
-    } else if (skinData) {
-      weaponName = skinData.weapon ?? "Unknown";
-      skinName = skinData.name ?? "Unknown Skin";
-      originalCurrency = skinData.currency_code ?? "USD";
+      let weaponName = "Unknown";
+      let skinName = "Unknown Skin";
+      let originalCurrency = "USD";
+      
+      const { error: removeError } = await supabase
+        .from('inventory')
+        .delete()
+        .eq('inventory_id', inventoryId)
+        .eq('user_id', session.user.id);
+      
+      if (removeError) {
+        console.error("Error removing skin:", removeError);
+        return false;
+      }
+      
+      const transactionSuccess = await addTransaction({
+        id: `trans-${Date.now()}`,
+        type: 'sell',
+        itemId: inventoryId,
+        weaponName: weaponName,
+        skinName: skinName,
+        date: sellData.soldDate || new Date().toISOString(),
+        price: sellData.soldPrice,
+        notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
+        currency: sellData.soldCurrency || originalCurrency
+      });
+      
+      return transactionSuccess;
     }
     
+    let weaponName = skinData?.weapon ?? "Unknown";
+    let skinName = skinData?.name ?? "Unknown Skin";
+    let originalCurrency = skinData?.currency_code ?? "USD";
+
     const { error: removeError } = await supabase
       .from('inventory')
       .delete()
@@ -235,7 +263,7 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       itemId: inventoryId,
       weaponName: weaponName,
       skinName: skinName,
-      date: sellData.soldDate || new Date().toLocaleDateString(),
+      date: sellData.soldDate || new Date().toISOString(),
       price: sellData.soldPrice,
       notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
       currency: sellData.soldCurrency || originalCurrency
