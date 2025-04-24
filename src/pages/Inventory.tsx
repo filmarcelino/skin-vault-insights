@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -30,11 +31,12 @@ import {
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { SellData, Skin, InventoryItem } from "@/types/skin";
 import { CurrencySelector } from "@/components/ui/currency-selector";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const Inventory = () => {
   const [search, setSearch] = useState("");
-  const [filteredInventory, setFilteredInventory] = useState([]);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
   const { data: inventory, isLoading } = useInventory();
@@ -43,6 +45,7 @@ const Inventory = () => {
   const updateSkin = useUpdateSkin();
   const sellSkin = useSellSkin();
   const invalidateInventory = useInvalidateInventory();
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     if (inventory) {
@@ -53,19 +56,19 @@ const Inventory = () => {
     }
   }, [inventory, search]);
 
-  const onEdit = (item) => {
+  const onEdit = (item: InventoryItem) => {
     setSelectedItem(item);
     setIsModalOpen(true);
   };
 
-  const onDuplicate = (item) => {
+  const onDuplicate = (item: InventoryItem) => {
     toast({
       title: "Duplicar Skin",
       description: "Funcionalidade em desenvolvimento.",
     });
   };
 
-  const onRemove = async (inventoryId) => {
+  const onRemove = async (inventoryId: string) => {
     try {
       await removeSkin.mutateAsync(inventoryId);
       toast({
@@ -86,7 +89,7 @@ const Inventory = () => {
     sellSkin.mutate({ itemId, sellData: sellData });
   };
 
-  const handleUpdate = async (item) => {
+  const handleUpdate = async (item: InventoryItem) => {
     try {
       await updateSkin.mutateAsync(item);
       toast({
@@ -203,7 +206,9 @@ const Inventory = () => {
                   <TableCell>
                     <Badge>{item.rarity}</Badge>
                   </TableCell>
-                  <TableCell>{item.price}</TableCell>
+                  <TableCell>
+                    {formatPrice(item.currentPrice || item.price || 0)}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
