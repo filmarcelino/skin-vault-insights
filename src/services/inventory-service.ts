@@ -373,7 +373,7 @@ export const sellSkin = async (inventoryId: string, sellData: {
       console.error("Error getting skin info:", skinError);
       // Falha segura: continuamos mesmo com erro, apenas registramos
     } else if (skinData) {
-      // Usando typeguard para verificar se os campos existem
+      // O método maybeSingle não lança erro, e pode retornar null
       weaponName = skinData?.weapon ?? "Unknown";
       skinName = skinData?.name ?? "Unknown Skin";
       originalCurrency = skinData?.currency_code ?? "USD";

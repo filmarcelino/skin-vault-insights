@@ -242,8 +242,8 @@ export const CouponManagement = () => {
                             onCheckedChange={() => toggleActive(c)}
                           />
                           <Badge 
-                            variant={c.active ? "success" : "destructive"}
-                            className={`${c.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                            variant={c.active ? "default" : "destructive"}
+                            className={c.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}
                           >
                             {c.active ? 'Ativo' : 'Inativo'}
                           </Badge>
