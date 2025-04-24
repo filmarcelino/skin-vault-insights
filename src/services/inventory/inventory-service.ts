@@ -1,3 +1,4 @@
+
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -24,8 +25,10 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       return false;
     }
     
+    // Since skinData could be null if no record is found
     const weaponName = skinData?.weapon || "Unknown";
     const skinName = skinData?.name || "Unknown Skin";
+    const currencyCode = skinData?.currency_code || "USD";
     
     const { error: deleteError } = await supabase
       .from('inventory')
@@ -210,42 +213,20 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       .eq('user_id', session.user.id)
       .maybeSingle();
 
-    if (skinError) {
+    // Default values in case we don't have skin data
+    let weaponName = "Unknown";
+    let skinName = "Unknown Skin";
+    let originalCurrency = "USD";
+
+    // If we have valid data, use it
+    if (skinData) {
+      weaponName = skinData.weapon || weaponName;
+      skinName = skinData.name || skinName;
+      originalCurrency = skinData.currency_code || originalCurrency;
+    } else if (skinError) {
       console.error("Error getting skin info:", skinError);
-      let weaponName = "Unknown";
-      let skinName = "Unknown Skin";
-      let originalCurrency = "USD";
-      
-      const { error: removeError } = await supabase
-        .from('inventory')
-        .delete()
-        .eq('inventory_id', inventoryId)
-        .eq('user_id', session.user.id);
-      
-      if (removeError) {
-        console.error("Error removing skin:", removeError);
-        return false;
-      }
-      
-      const transactionSuccess = await addTransaction({
-        id: `trans-${Date.now()}`,
-        type: 'sell',
-        itemId: inventoryId,
-        weaponName: weaponName,
-        skinName: skinName,
-        date: sellData.soldDate || new Date().toISOString(),
-        price: sellData.soldPrice,
-        notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
-        currency: sellData.soldCurrency || originalCurrency
-      });
-      
-      return transactionSuccess;
     }
     
-    let weaponName = skinData?.weapon ?? "Unknown";
-    let skinName = skinData?.name ?? "Unknown Skin";
-    let originalCurrency = skinData?.currency_code ?? "USD";
-
     const { error: removeError } = await supabase
       .from('inventory')
       .delete()
