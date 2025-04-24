@@ -211,11 +211,11 @@ const Inventory = () => {
       </ScrollArea>
 
       <InventorySkinModal
-        isOpen={isModalOpen}
-        onClose={onClose}
         item={selectedItem}
-        onUpdate={handleUpdate}
-        onSell={handleSell}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSellSkin={handleUpdate}
+        onAddToInventory={handleAddToInventory}
       />
     </div>
   );

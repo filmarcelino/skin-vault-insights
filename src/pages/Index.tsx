@@ -19,7 +19,7 @@ import {
   findMostValuableSkin,
   sellSkin,
   addSkinToInventory
-} from "@/services/inventory-service";
+} from "@/services/inventory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { Link } from "react-router-dom";

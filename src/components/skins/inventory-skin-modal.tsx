@@ -146,8 +146,10 @@ export function InventorySkinModal({
   };
 
   const handleSell = (itemId: string, sellData: SellData) => {
-    onSell(itemId, sellData);
-    onClose();
+    if (onSellSkin) {
+      onSellSkin(itemId, sellData);
+    }
+    onOpenChange(false);
   };
 
   return (

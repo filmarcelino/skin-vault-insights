@@ -198,7 +198,6 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       return false;
     }
 
-    // Query item details safely using maybeSingle instead
     const { data: skinData, error: skinError } = await supabase
       .from('inventory')
       .select('weapon, name, currency_code')
