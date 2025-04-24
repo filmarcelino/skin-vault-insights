@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { InventoryItem, SellData, Skin } from "@/types/skin";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -145,7 +144,12 @@ export function InventorySkinModal({
     });
     setIsDeleteDialogOpen(false);
   };
-  
+
+  const handleSell = (itemId: string, sellData: SellData) => {
+    onSell(itemId, sellData);
+    onClose();
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -199,7 +203,7 @@ export function InventorySkinModal({
                       </div>
                     </div>
 
-                    {/* Informações da coleção - Placeholder por enquanto */}
+                    {/* Informa��ões da coleção - Placeholder por enquanto */}
                     {item.collection && (
                       <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
                         <h3 className="font-medium mb-2 text-[#8B5CF6]">Coleção</h3>

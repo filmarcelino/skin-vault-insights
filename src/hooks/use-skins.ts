@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   fetchSkins, 
@@ -14,7 +13,7 @@ import {
   removeSkinFromInventory,
   updateInventoryItem,
   sellSkin as sellSkinService
-} from "@/services/inventory-service";
+} from "@/services/inventory";
 import { Skin, SkinFilter, InventoryItem, SellData } from "@/types/skin";
 
 // Custom key for inventory data

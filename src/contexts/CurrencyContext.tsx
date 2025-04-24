@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -55,7 +54,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (data && data.rates) {
           setExchangeRates(data.rates);
           
-          // Atualizar as taxas no array CURRENCIES
           CURRENCIES.forEach(curr => {
             curr.rate = data.rates[curr.code] || curr.rate;
           });
@@ -70,9 +68,8 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     };
 
-    // Buscar taxas ao iniciar e a cada hora
     fetchExchangeRates();
-    const interval = setInterval(fetchExchangeRates, 3600000); // 1 hora
+    const interval = setInterval(fetchExchangeRates, 3600000); // 1 hour
 
     return () => clearInterval(interval);
   }, []);
@@ -84,12 +81,10 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const getExchangeRate = (fromCurrency: string = "USD", toCurrency: string = currency.code): number => {
     if (fromCurrency === toCurrency) return 1;
     
-    // Se temos taxas da API, usar elas
     if (exchangeRates[fromCurrency] && exchangeRates[toCurrency]) {
       return exchangeRates[toCurrency] / exchangeRates[fromCurrency];
     }
     
-    // Fallback para as taxas estáticas
     const fromRate = CURRENCIES.find(c => c.code === fromCurrency)?.rate || 1;
     const toRate = CURRENCIES.find(c => c.code === toCurrency)?.rate || 1;
     return toRate / fromRate;
@@ -101,7 +96,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const rate = getExchangeRate("USD", currency.code);
     const convertedAmount = amount * rate;
     
-    // Formatar com 3 casas decimais
     return `${currency.symbol}${convertedAmount.toFixed(3)}`;
   };
 
@@ -132,12 +126,10 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return `${specificCurrency.symbol}${convertedAmount.toFixed(3)}`;
   };
 
-  // Função unificada de setCurrency que atualiza o localStorage e o perfil do usuário
   const handleSetCurrency = (newCurrency: Currency) => {
     console.log("Changing currency to:", newCurrency.code);
     setCurrencyState(newCurrency);
     
-    // Se o usuário estiver logado, atualizar a preferência no perfil
     if (auth.user && auth.profile) {
       console.log("Updating user profile currency preference to:", newCurrency.code);
       auth.updateProfile({

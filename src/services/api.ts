@@ -5,7 +5,7 @@ import {
   getLocalSkins, 
   getLocalSkinById 
 } from "./local-data";
-import { getUserInventory } from "./inventory-service";
+import { getUserInventory } from "@/services/inventory";
 
 // Base API URL for CS:GO API from GitHub
 const API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/";
