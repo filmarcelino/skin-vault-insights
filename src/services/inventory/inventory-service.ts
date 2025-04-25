@@ -26,9 +26,9 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
     }
     
     // Default values if no data is found
-    const weaponName = skinData ? skinData.weapon || "Unknown" : "Unknown";
-    const skinName = skinData ? skinData.name || "Unknown Skin" : "Unknown Skin";
-    const currencyCode = skinData ? skinData.currency_code || "USD" : "USD";
+    const weaponName = skinData?.weapon || "Unknown";
+    const skinName = skinData?.name || "Unknown Skin";
+    const currencyCode = skinData?.currency_code || "USD";
     
     const { error: deleteError } = await supabase
       .from('inventory')
