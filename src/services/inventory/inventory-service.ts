@@ -25,10 +25,10 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       return false;
     }
     
-    // Default values if no data is found
-    const weaponName = skinData?.weapon || "Unknown";
-    const skinName = skinData?.name || "Unknown Skin";
-    const currencyCode = skinData?.currency_code || "USD";
+    // Default values if no data is found or if skinData is an error object
+    const weaponName = skinData && typeof skinData === 'object' && 'weapon' in skinData ? skinData.weapon : "Unknown";
+    const skinName = skinData && typeof skinData === 'object' && 'name' in skinData ? skinData.name : "Unknown Skin";
+    const currencyCode = skinData && typeof skinData === 'object' && 'currency_code' in skinData ? skinData.currency_code : "USD";
     
     const { error: deleteError } = await supabase
       .from('inventory')
@@ -213,16 +213,16 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       .eq('user_id', session.user.id)
       .maybeSingle();
 
-    // Default values in case we don't have skin data
+    // Default values in case we don't have skin data or if skinData is an error object
     let weaponName = "Unknown";
     let skinName = "Unknown Skin";
     let originalCurrency = "USD";
 
     // If we have valid data, use it
-    if (skinData) {
-      weaponName = skinData.weapon || weaponName;
-      skinName = skinData.name || skinName;
-      originalCurrency = skinData.currency_code || originalCurrency;
+    if (skinData && typeof skinData === 'object') {
+      weaponName = 'weapon' in skinData && skinData.weapon ? skinData.weapon : weaponName;
+      skinName = 'name' in skinData && skinData.name ? skinData.name : skinName;
+      originalCurrency = 'currency_code' in skinData && skinData.currency_code ? skinData.currency_code : originalCurrency;
     } else if (skinError) {
       console.error("Error getting skin info:", skinError);
     }
