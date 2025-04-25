@@ -25,10 +25,10 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       return false;
     }
     
-    // Verificar se skinData é null antes de acessar suas propriedades
-    const weaponName = skinData && 'weapon' in skinData ? skinData.weapon : "Unknown";
-    const skinName = skinData && 'name' in skinData ? skinData.name : "Unknown Skin";
-    const currencyCode = skinData && 'currency_code' in skinData ? skinData.currency_code : "USD";
+    // Ensure we have proper type checking
+    const weaponName = skinData && typeof skinData.weapon === 'string' ? skinData.weapon : "Unknown";
+    const skinName = skinData && typeof skinData.name === 'string' ? skinData.name : "Unknown Skin";
+    const currencyCode = skinData && typeof skinData.currency_code === 'string' ? skinData.currency_code : "USD";
     
     const { error: deleteError } = await supabase
       .from('inventory')
@@ -224,11 +224,11 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
     let skinName = "Unknown Skin";
     let originalCurrency = "USD";
 
-    // If we have valid data, use it
-    if (skinData && typeof skinData === 'object') {
-      weaponName = 'weapon' in skinData && skinData.weapon ? skinData.weapon : weaponName;
-      skinName = 'name' in skinData && skinData.name ? skinData.name : skinName;
-      originalCurrency = 'currency_code' in skinData && skinData.currency_code ? skinData.currency_code : originalCurrency;
+    // If we have valid data, use it with proper type checking
+    if (skinData) {
+      weaponName = typeof skinData.weapon === 'string' ? skinData.weapon : weaponName;
+      skinName = typeof skinData.name === 'string' ? skinData.name : skinName;
+      originalCurrency = typeof skinData.currency_code === 'string' ? skinData.currency_code : originalCurrency;
     } else if (skinError) {
       console.error("Error getting skin info:", skinError);
     }
