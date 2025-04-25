@@ -25,10 +25,10 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       return false;
     }
     
-    // Default values if no data is found or if skinData is an error object
-    const weaponName = skinData && typeof skinData === 'object' && 'weapon' in skinData ? skinData.weapon : "Unknown";
-    const skinName = skinData && typeof skinData === 'object' && 'name' in skinData ? skinData.name : "Unknown Skin";
-    const currencyCode = skinData && typeof skinData === 'object' && 'currency_code' in skinData ? skinData.currency_code : "USD";
+    // Verificar se skinData é null antes de acessar suas propriedades
+    const weaponName = skinData && 'weapon' in skinData ? skinData.weapon : "Unknown";
+    const skinName = skinData && 'name' in skinData ? skinData.name : "Unknown Skin";
+    const currencyCode = skinData && 'currency_code' in skinData ? skinData.currency_code : "USD";
     
     const { error: deleteError } = await supabase
       .from('inventory')
@@ -68,6 +68,9 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
       return [];
     }
     
+    // Adicionando log para debug
+    console.log("Buscando inventário para o usuário:", session.user.id);
+    
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
@@ -78,6 +81,9 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
       console.error("Error getting inventory from Supabase:", error);
       return [];
     }
+    
+    // Adicionando log para verificar o resultado
+    console.log("Inventário recuperado:", data ? data.length : 0, "itens");
     
     return Array.isArray(data) ? data.map(mapSupabaseToInventoryItem).filter(Boolean) : [];
   } catch (error) {

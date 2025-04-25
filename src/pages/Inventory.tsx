@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -9,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MoreVertical, Edit, Copy, Trash2 } from "lucide-react";
+import { MoreVertical, Edit, Copy, Trash2, RefreshCw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,8 +38,9 @@ const Inventory = () => {
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
-  const { data: inventory, isLoading } = useInventory();
+  const { data: inventory, isLoading, refetch } = useInventory();
   const addSkin = useAddSkin();
   const removeSkin = useRemoveSkin();
   const updateSkin = useUpdateSkin();
@@ -141,6 +143,26 @@ const Inventory = () => {
     }
   };
 
+  const handleRefreshInventory = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Inventário Atualizado",
+        description: "Seu inventário foi atualizado com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar inventário:", error);
+      toast({
+        title: "Erro ao Atualizar",
+        description: "Não foi possível atualizar o inventário.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const onClose = () => {
     setIsModalOpen(false);
     setSelectedItem(null);
@@ -152,6 +174,16 @@ const Inventory = () => {
         <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
           Meu Inventário
         </h1>
+        <Button 
+          onClick={handleRefreshInventory}
+          disabled={isRefreshing}
+          size="sm"
+          variant="outline"
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Atualizando...' : 'Atualizar Inventário'}
+        </Button>
       </div>
 
       <div className="flex items-center justify-between py-4">
