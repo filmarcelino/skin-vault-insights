@@ -26,14 +26,14 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
     }
     
     // Ensure we're working with valid data and not an error object
-    // Using defensive type checking
-    const weaponName = skinData && typeof skinData === 'object' && 'weapon' in skinData ? 
+    // Using defensive type checking with non-null assertion after check
+    const weaponName = (skinData && typeof skinData === 'object' && 'weapon' in skinData) ? 
       String(skinData.weapon || "Unknown") : "Unknown";
     
-    const skinName = skinData && typeof skinData === 'object' && 'name' in skinData ? 
+    const skinName = (skinData && typeof skinData === 'object' && 'name' in skinData) ? 
       String(skinData.name || "Unknown Skin") : "Unknown Skin";
     
-    const currencyCode = skinData && typeof skinData === 'object' && 'currency_code' in skinData ? 
+    const currencyCode = (skinData && typeof skinData === 'object' && 'currency_code' in skinData) ? 
       String(skinData.currency_code || "USD") : "USD";
     
     const { error: deleteError } = await supabase
@@ -232,13 +232,13 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
 
     // If we have valid data, use it with proper type checking
     if (skinData && typeof skinData === 'object') {
-      weaponName = 'weapon' in skinData && skinData.weapon ? 
+      weaponName = ('weapon' in skinData && skinData.weapon) ? 
         String(skinData.weapon) : weaponName;
       
-      skinName = 'name' in skinData && skinData.name ? 
+      skinName = ('name' in skinData && skinData.name) ? 
         String(skinData.name) : skinName;
       
-      originalCurrency = 'currency_code' in skinData && skinData.currency_code ? 
+      originalCurrency = ('currency_code' in skinData && skinData.currency_code) ? 
         String(skinData.currency_code) : originalCurrency;
     } else if (skinError) {
       console.error("Error getting skin info:", skinError);
