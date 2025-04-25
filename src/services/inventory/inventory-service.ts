@@ -25,10 +25,16 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       return false;
     }
     
-    // Ensure we have proper type checking
-    const weaponName = skinData && typeof skinData.weapon === 'string' ? skinData.weapon : "Unknown";
-    const skinName = skinData && typeof skinData.name === 'string' ? skinData.name : "Unknown Skin";
-    const currencyCode = skinData && typeof skinData.currency_code === 'string' ? skinData.currency_code : "USD";
+    // Ensure we're working with valid data and not an error object
+    // Using defensive type checking
+    const weaponName = skinData && typeof skinData === 'object' && 'weapon' in skinData ? 
+      String(skinData.weapon || "Unknown") : "Unknown";
+    
+    const skinName = skinData && typeof skinData === 'object' && 'name' in skinData ? 
+      String(skinData.name || "Unknown Skin") : "Unknown Skin";
+    
+    const currencyCode = skinData && typeof skinData === 'object' && 'currency_code' in skinData ? 
+      String(skinData.currency_code || "USD") : "USD";
     
     const { error: deleteError } = await supabase
       .from('inventory')
@@ -219,16 +225,21 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       .eq('user_id', session.user.id)
       .maybeSingle();
 
-    // Default values in case we don't have skin data or if skinData is an error object
+    // Default values in case we don't have skin data or if there's an error
     let weaponName = "Unknown";
     let skinName = "Unknown Skin";
     let originalCurrency = "USD";
 
     // If we have valid data, use it with proper type checking
-    if (skinData) {
-      weaponName = typeof skinData.weapon === 'string' ? skinData.weapon : weaponName;
-      skinName = typeof skinData.name === 'string' ? skinData.name : skinName;
-      originalCurrency = typeof skinData.currency_code === 'string' ? skinData.currency_code : originalCurrency;
+    if (skinData && typeof skinData === 'object') {
+      weaponName = 'weapon' in skinData && skinData.weapon ? 
+        String(skinData.weapon) : weaponName;
+      
+      skinName = 'name' in skinData && skinData.name ? 
+        String(skinData.name) : skinName;
+      
+      originalCurrency = 'currency_code' in skinData && skinData.currency_code ? 
+        String(skinData.currency_code) : originalCurrency;
     } else if (skinError) {
       console.error("Error getting skin info:", skinError);
     }
