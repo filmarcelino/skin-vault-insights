@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -224,7 +223,7 @@ const Inventory = () => {
               </TableRow>
             ) : (
               filteredInventory.map((item) => (
-                <TableRow key={item.inventoryId}>
+                <TableRow key={item.inventoryId} className="cursor-pointer" onClick={() => onEdit(item)}>
                   <TableCell className="font-medium">
                     <img
                       src={item.image}
@@ -249,16 +248,25 @@ const Inventory = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onEdit(item)}>
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(item);
+                        }}>
                           <Edit className="mr-2 h-4 w-4" />
                           <span>Editar</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDuplicate(item)}>
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation();
+                          onDuplicate(item);
+                        }}>
                           <Copy className="mr-2 h-4 w-4" />
                           <span>Duplicar</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => onRemove(item.inventoryId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove(item.inventoryId);
+                          }}
                           className="text-destructive"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
