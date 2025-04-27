@@ -161,7 +161,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       return null;
     }
     
-    await addTransaction({
+    const transactionSuccess = await addTransaction({
       id: `trans-${Date.now()}`,
       type: 'add',
       itemId: inventoryId,
@@ -172,6 +172,10 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       notes: purchaseInfo.notes || "",
       currency: purchaseInfo.currency || "USD"
     });
+    
+    if (!transactionSuccess) {
+      console.warn("Failed to record transaction for added skin");
+    }
     
     return mapSupabaseToInventoryItem(data);
   } catch (error) {
@@ -228,20 +232,9 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       .eq('user_id', session.user.id)
       .maybeSingle();
 
-    // Default values in case we don't have skin data or if there's an error
-    // Create safe getters for skinData properties
-    const getSkinProperty = <T>(property: string, defaultValue: T): T => {
-      if (!skinData) return defaultValue;
-      if (typeof skinData !== 'object') return defaultValue;
-      if (!(property in skinData)) return defaultValue;
-      
-      const value = skinData[property as keyof typeof skinData];
-      return (value === null || value === undefined) ? defaultValue : value as T;
-    };
-    
-    const weaponName = getSkinProperty<string>('weapon', "Unknown");
-    const skinName = getSkinProperty<string>('name', "Unknown Skin");
-    const originalCurrency = getSkinProperty<string>('currency_code', "USD");
+    const weaponName = getSkinProperty(skinData, 'weapon', "Unknown");
+    const skinName = getSkinProperty(skinData, 'name', "Unknown Skin");
+    const originalCurrency = getSkinProperty(skinData, 'currency_code', "USD");
     
     if (skinError) {
       console.error("Error getting skin info:", skinError);
