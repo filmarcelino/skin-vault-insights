@@ -1,8 +1,16 @@
-
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
 import { addTransaction } from "./transactions-service";
+
+// Helper function to safely get properties from potentially null objects
+const getSkinProperty = <T>(data: any | null, property: string, defaultValue: T): T => {
+  if (!data || typeof data !== 'object' || !(property in data)) {
+    return defaultValue;
+  }
+  const value = data[property as keyof typeof data];
+  return (value === null || value === undefined) ? defaultValue : value as T;
+};
 
 export const removeSkinFromInventory = async (inventoryId: string): Promise<boolean> => {
   try {
@@ -25,20 +33,9 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       return false;
     }
     
-    // Ensure we're working with valid data and not an error object
-    // Create safe getters to handle null safely
-    const getSkinProperty = <T>(property: string, defaultValue: T): T => {
-      if (!skinData) return defaultValue;
-      if (typeof skinData !== 'object') return defaultValue;
-      if (!(property in skinData)) return defaultValue;
-      
-      const value = skinData[property as keyof typeof skinData];
-      return (value === null || value === undefined) ? defaultValue : value as T;
-    };
-    
-    const weaponName = getSkinProperty<string>('weapon', "Unknown");
-    const skinName = getSkinProperty<string>('name', "Unknown Skin");
-    const currencyCode = getSkinProperty<string>('currency_code', "USD");
+    const weaponName = getSkinProperty(skinData, 'weapon', "Unknown");
+    const skinName = getSkinProperty(skinData, 'name', "Unknown Skin");
+    const currencyCode = getSkinProperty(skinData, 'currency_code', "USD");
     
     const { error: deleteError } = await supabase
       .from('inventory')
@@ -59,7 +56,8 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       skinName: skinName,
       date: new Date().toISOString(),
       price: 0,
-      notes: "Skin removed from inventory"
+      notes: "Skin removed from inventory",
+      currency: currencyCode
     });
     
     return true;
@@ -78,8 +76,7 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
       return [];
     }
     
-    // Adicionando log para debug
-    console.log("Buscando inventário para o usuário:", session.user.id);
+    console.log("Fetching inventory for user:", session.user.id);
     
     const { data, error } = await supabase
       .from('inventory')
@@ -92,8 +89,7 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
       return [];
     }
     
-    // Adicionando log para verificar o resultado
-    console.log("Inventário recuperado:", data ? data.length : 0, "itens");
+    console.log("Retrieved inventory:", data ? data.length : 0, "items");
     
     return Array.isArray(data) ? data.map(mapSupabaseToInventoryItem).filter(Boolean) : [];
   } catch (error) {
@@ -110,6 +106,8 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
   currency?: string;
 }): Promise<InventoryItem | null> => {
   try {
+    console.log("Adding skin to inventory:", { skin, purchaseInfo });
+    
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
@@ -171,7 +169,8 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       skinName: skin.name,
       date: new Date().toISOString(),
       price: purchaseInfo.purchasePrice || 0,
-      notes: purchaseInfo.notes || ""
+      notes: purchaseInfo.notes || "",
+      currency: purchaseInfo.currency || "USD"
     });
     
     return mapSupabaseToInventoryItem(data);
