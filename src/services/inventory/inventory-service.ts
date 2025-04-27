@@ -22,6 +22,7 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
       return false;
     }
     
+    // Fetch skin data before removal to include in transaction
     const { data: skinData, error: skinError } = await supabase
       .from('inventory')
       .select('weapon, name, currency_code')
