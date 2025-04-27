@@ -1,3 +1,4 @@
+
 import React from "react";
 import { JsonSettings } from "@/components/settings/json-settings";
 import { Separator } from "@/components/ui/separator";
@@ -7,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loading } from "@/components/ui/loading";
 import { CouponManagement } from "@/components/settings/coupon-management";
+import SystemTests from "@/components/settings/system-tests";
 
 const ADMIN_EMAIL = "luisfelipemarcelino33@gmail.com";
 
@@ -60,6 +62,14 @@ const Settings = () => {
           <Save className="h-4 w-4 mr-2" />
           Save Settings
         </Button>
+      </div>
+
+      <Separator />
+
+      {/* Testes do Sistema */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Testes do Sistema</h2>
+        <SystemTests />
       </div>
 
       <Separator />
