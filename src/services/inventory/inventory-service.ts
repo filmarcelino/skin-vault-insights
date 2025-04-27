@@ -26,15 +26,19 @@ export const removeSkinFromInventory = async (inventoryId: string): Promise<bool
     }
     
     // Ensure we're working with valid data and not an error object
-    // Using defensive type checking with non-null assertion after check
-    const weaponName = (skinData && typeof skinData === 'object' && 'weapon' in skinData) ? 
-      String(skinData.weapon || "Unknown") : "Unknown";
+    // Create safe getters to handle null safely
+    const getSkinProperty = <T>(property: string, defaultValue: T): T => {
+      if (!skinData) return defaultValue;
+      if (typeof skinData !== 'object') return defaultValue;
+      if (!(property in skinData)) return defaultValue;
+      
+      const value = skinData[property as keyof typeof skinData];
+      return (value === null || value === undefined) ? defaultValue : value as T;
+    };
     
-    const skinName = (skinData && typeof skinData === 'object' && 'name' in skinData) ? 
-      String(skinData.name || "Unknown Skin") : "Unknown Skin";
-    
-    const currencyCode = (skinData && typeof skinData === 'object' && 'currency_code' in skinData) ? 
-      String(skinData.currency_code || "USD") : "USD";
+    const weaponName = getSkinProperty<string>('weapon', "Unknown");
+    const skinName = getSkinProperty<string>('name', "Unknown Skin");
+    const currencyCode = getSkinProperty<string>('currency_code', "USD");
     
     const { error: deleteError } = await supabase
       .from('inventory')
@@ -226,21 +230,21 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       .maybeSingle();
 
     // Default values in case we don't have skin data or if there's an error
-    let weaponName = "Unknown";
-    let skinName = "Unknown Skin";
-    let originalCurrency = "USD";
-
-    // If we have valid data, use it with proper type checking
-    if (skinData && typeof skinData === 'object') {
-      weaponName = ('weapon' in skinData && skinData.weapon) ? 
-        String(skinData.weapon) : weaponName;
+    // Create safe getters for skinData properties
+    const getSkinProperty = <T>(property: string, defaultValue: T): T => {
+      if (!skinData) return defaultValue;
+      if (typeof skinData !== 'object') return defaultValue;
+      if (!(property in skinData)) return defaultValue;
       
-      skinName = ('name' in skinData && skinData.name) ? 
-        String(skinData.name) : skinName;
-      
-      originalCurrency = ('currency_code' in skinData && skinData.currency_code) ? 
-        String(skinData.currency_code) : originalCurrency;
-    } else if (skinError) {
+      const value = skinData[property as keyof typeof skinData];
+      return (value === null || value === undefined) ? defaultValue : value as T;
+    };
+    
+    const weaponName = getSkinProperty<string>('weapon', "Unknown");
+    const skinName = getSkinProperty<string>('name', "Unknown Skin");
+    const originalCurrency = getSkinProperty<string>('currency_code', "USD");
+    
+    if (skinError) {
       console.error("Error getting skin info:", skinError);
     }
     
