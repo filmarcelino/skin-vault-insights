@@ -48,6 +48,7 @@ export type Database = {
           collection_id: string | null
           collection_name: string | null
           created_at: string
+          currency_code: string
           current_price: number | null
           fee_percentage: number | null
           float_value: number | null
@@ -75,6 +76,7 @@ export type Database = {
           collection_id?: string | null
           collection_name?: string | null
           created_at?: string
+          currency_code?: string
           current_price?: number | null
           fee_percentage?: number | null
           float_value?: number | null
@@ -102,6 +104,7 @@ export type Database = {
           collection_id?: string | null
           collection_name?: string | null
           created_at?: string
+          currency_code?: string
           current_price?: number | null
           fee_percentage?: number | null
           float_value?: number | null
@@ -218,6 +221,7 @@ export type Database = {
       transactions: {
         Row: {
           created_at: string
+          currency_code: string
           date: string
           id: string
           item_id: string
@@ -231,6 +235,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          currency_code?: string
           date?: string
           id?: string
           item_id: string
@@ -244,6 +249,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          currency_code?: string
           date?: string
           id?: string
           item_id?: string

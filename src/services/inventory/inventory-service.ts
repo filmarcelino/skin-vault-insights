@@ -1,3 +1,4 @@
+
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -231,7 +232,7 @@ export const sellSkin = async (inventoryId: string, sellData: SellData): Promise
       .eq('inventory_id', inventoryId)
       .eq('user_id', session.user.id)
       .maybeSingle();
-
+    
     const weaponName = getSkinProperty(skinData, 'weapon', "Unknown");
     const skinName = getSkinProperty(skinData, 'name', "Unknown Skin");
     const originalCurrency = getSkinProperty(skinData, 'currency_code', "USD");
