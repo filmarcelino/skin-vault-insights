@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -31,7 +32,8 @@ import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { SellData, Skin, InventoryItem } from "@/types/skin";
 import { CurrencySelector } from "@/components/ui/currency-selector";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, Label } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const Inventory = () => {
   const [search, setSearch] = useState("");
