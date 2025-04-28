@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
 import { InventoryItem } from "@/types/skin";
-import { Heart } from "lucide-react";
+import { Edit, Heart, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface InventoryGridProps {
@@ -22,7 +22,7 @@ export const InventoryGrid = ({
   onRemove,
   onSell,
 }: InventoryGridProps) => {
-  // Estado para controlar itens favoritos (exemplo, pode ser expandido depois)
+  // Estado para controlar itens favoritos
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const toggleFavorite = (e: React.MouseEvent, itemId: string) => {
@@ -65,6 +65,32 @@ export const InventoryGrid = ({
               className={`h-4 w-4 ${favorites.includes(item.inventoryId) ? "fill-white text-white" : ""}`} 
             />
           </Button>
+
+          {/* Botões de ação na parte inferior que aparecem no hover */}
+          <div className="absolute bottom-0 left-0 right-0 p-2 flex justify-center gap-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-all">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="bg-white/10 hover:bg-white/20 text-white text-xs py-1 px-2 h-auto"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(item);
+              }}
+            >
+              <Edit className="h-3 w-3 mr-1" /> Editar
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="bg-white/10 hover:bg-white/20 text-white text-xs py-1 px-2 h-auto"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate(item);
+              }}
+            >
+              <Copy className="h-3 w-3 mr-1" /> Duplicar
+            </Button>
+          </div>
 
           <InventoryCard
             weaponName={item.weapon || ""}
