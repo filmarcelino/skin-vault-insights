@@ -9,11 +9,14 @@ import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { InventoryItem } from "@/types/skin";
 import { CurrencySelector } from "@/components/ui/currency-selector";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
+import { InventoryGrid } from "@/components/inventory/InventoryGrid";
 import { DuplicateSkinModal } from "@/components/inventory/DuplicateSkinModal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
+import { ViewToggle } from "@/components/ui/view-toggle";
 
 const Inventory = () => {
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"grid" | "list">("grid");
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
@@ -85,24 +88,38 @@ const Inventory = () => {
       </div>
 
       <div className="flex items-center justify-between py-4">
-        <Input
-          type="search"
-          placeholder="Buscar skin..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
+        <div className="flex items-center gap-4">
+          <Input
+            type="search"
+            placeholder="Buscar skin..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+          <ViewToggle view={view} onChange={setView} />
+        </div>
         <CurrencySelector />
       </div>
 
-      <InventoryTable
-        isLoading={isLoading}
-        inventory={filteredInventory}
-        onEdit={onEdit}
-        onDuplicate={onDuplicate}
-        onRemove={onRemove}
-        onSell={onSell}
-      />
+      {view === "list" ? (
+        <InventoryTable
+          isLoading={isLoading}
+          inventory={filteredInventory}
+          onEdit={onEdit}
+          onDuplicate={onDuplicate}
+          onRemove={onRemove}
+          onSell={onSell}
+        />
+      ) : (
+        <InventoryGrid
+          isLoading={isLoading}
+          inventory={filteredInventory}
+          onEdit={onEdit}
+          onDuplicate={onDuplicate}
+          onRemove={onRemove}
+          onSell={onSell}
+        />
+      )}
 
       <DuplicateSkinModal
         open={duplicateModalOpen}
