@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MoreVertical, Edit, Copy, Trash2, RefreshCw } from "lucide-react";
+import { MoreVertical, Edit, Copy, Trash2, RefreshCw, DollarSign } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +31,7 @@ import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { SellData, Skin, InventoryItem } from "@/types/skin";
 import { CurrencySelector } from "@/components/ui/currency-selector";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, Label } from "@/components/ui/dialog";
 
 const Inventory = () => {
   const [search, setSearch] = useState("");
@@ -38,6 +39,9 @@ const Inventory = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
+  const [selectedItemForDuplicate, setSelectedItemForDuplicate] = useState<InventoryItem | null>(null);
+  const [duplicateCount, setDuplicateCount] = useState(1);
   const { toast } = useToast();
   const { data: inventory, isLoading, refetch } = useInventory();
   const addSkin = useAddSkin();
@@ -62,10 +66,8 @@ const Inventory = () => {
   };
 
   const onDuplicate = (item: InventoryItem) => {
-    toast({
-      title: "Duplicar Skin",
-      description: "Funcionalidade em desenvolvimento.",
-    });
+    setSelectedItemForDuplicate(item);
+    setDuplicateModalOpen(true);
   };
 
   const onRemove = async (inventoryId: string) => {
@@ -167,6 +169,32 @@ const Inventory = () => {
     setSelectedItem(null);
   };
 
+  const handleDuplicate = async () => {
+    if (!selectedItemForDuplicate) return;
+    
+    try {
+      for (let i = 0; i < duplicateCount; i++) {
+        await handleAddToInventory(selectedItemForDuplicate);
+      }
+      
+      toast({
+        title: "Skins Duplicadas",
+        description: `${duplicateCount} cópias foram adicionadas ao inventário.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao Duplicar",
+        description: "Falha ao duplicar as skins.",
+        variant: "destructive",
+      });
+    } finally {
+      setDuplicateModalOpen(false);
+      setDuplicateCount(1);
+      setSelectedItemForDuplicate(null);
+      invalidateInventory();
+    }
+  };
+
   return (
     <div className="container py-8 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -265,6 +293,23 @@ const Inventory = () => {
                         <DropdownMenuItem
                           onClick={(e) => {
                             e.stopPropagation();
+                            onSell(item.inventoryId, {
+                              soldPrice: item.currentPrice || item.price || 0,
+                              soldDate: new Date().toISOString(),
+                              soldMarketplace: "steam",
+                              soldFeePercentage: 13,
+                              soldNotes: "",
+                              profit: 0,
+                              soldCurrency: "USD"
+                            });
+                          }}
+                        >
+                          <DollarSign className="mr-2 h-4 w-4" />
+                          <span>Vender</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
                             onRemove(item.inventoryId);
                           }}
                           className="text-destructive"
@@ -281,6 +326,34 @@ const Inventory = () => {
           </TableBody>
         </Table>
       </ScrollArea>
+
+      <Dialog open={duplicateModalOpen} onOpenChange={setDuplicateModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicar Skin</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="duplicate-count">Quantidade de cópias</Label>
+            <Input
+              id="duplicate-count"
+              type="number"
+              min="1"
+              max="10"
+              value={duplicateCount}
+              onChange={(e) => setDuplicateCount(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleDuplicate}>
+              Duplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <InventorySkinModal
         item={selectedItem}
