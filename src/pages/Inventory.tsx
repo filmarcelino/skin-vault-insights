@@ -43,7 +43,9 @@ const Inventory = () => {
   useEffect(() => {
     if (inventory) {
       const filtered = inventory.filter((item) =>
-        item.name.toLowerCase().includes(search.toLowerCase())
+        item.name.toLowerCase().includes(search.toLowerCase()) || 
+        item.weapon?.toLowerCase().includes(search.toLowerCase()) ||
+        (item.rarity && item.rarity.toLowerCase().includes(search.toLowerCase()))
       );
       setFilteredInventory(filtered);
     }
