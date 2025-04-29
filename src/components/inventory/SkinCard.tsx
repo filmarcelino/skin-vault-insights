@@ -1,10 +1,11 @@
 
 import React, { useState } from "react";
 import { InventoryItem } from "@/types/skin";
-import { Edit, Heart, Lock, Info, DollarSign, Copy } from "lucide-react";
+import { Edit, Heart, Lock, Info, DollarSign, Copy, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface SkinCardProps {
   item: InventoryItem;
@@ -157,69 +158,85 @@ export const SkinCard = ({
             )}
           </div>
 
-          {/* Área de botões de ação */}
-          <div className={`
-            mt-3 bg-black/40 -mx-4 -mb-4 p-3 pt-2 transition-all duration-300
-            ${showDetails ? "max-h-40" : "max-h-14 overflow-hidden"}
-          `}>
-            <div className="flex justify-between items-center">
-              <div className="flex-1">
-                {item.purchasePrice && (
-                  <div className="text-sm text-white/90 flex items-center">
-                    <DollarSign className="h-3 w-3 mr-1" />
-                    Bought for {formatPrice(item.purchasePrice)}
-                  </div>
-                )}
-              </div>
+          {/* Área colapsável com informações e botões */}
+          <Collapsible 
+            open={showDetails} 
+            onOpenChange={setShowDetails}
+            className="mt-3"
+          >
+            <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 rounded-full bg-black/20"
-                onClick={() => setShowDetails(!showDetails)}
+                className="w-full flex justify-between items-center bg-black/40 text-white/90 hover:bg-black/60 hover:text-white py-2 px-3 -mx-4 rounded-none"
               >
-                <Info className="h-3.5 w-3.5 text-white/80" />
+                <div className="flex items-center">
+                  <Info className="h-4 w-4 mr-2" />
+                  <span>Detalhes</span>
+                </div>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showDetails ? 'rotate-180' : ''}`} />
               </Button>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              {onSell && (
-                <Button
-                  variant="outline"
-                  className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSell(item.inventoryId, {});
-                  }}
-                >
-                  SELL
-                </Button>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent className="bg-black/40 -mx-4 px-4 py-3">
+              {item.purchasePrice && (
+                <div className="text-sm text-white/90 flex items-center mb-2">
+                  <DollarSign className="h-3 w-3 mr-1" />
+                  Comprado por {formatPrice(item.purchasePrice)}
+                </div>
               )}
-              {onDuplicate && (
-                <Button
-                  variant="outline"
-                  className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDuplicate(item);
-                  }}
-                >
-                  COPY
-                </Button>
-              )}
-              {onEdit && (
-                <Button
-                  variant="outline"
-                  className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(item);
-                  }}
-                >
-                  EDIT
-                </Button>
-              )}
-            </div>
-          </div>
+              
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                {onSell && (
+                  <Button
+                    variant="outline"
+                    className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSell(item.inventoryId, {});
+                    }}
+                  >
+                    SELL
+                  </Button>
+                )}
+                {onDuplicate && (
+                  <Button
+                    variant="outline"
+                    className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDuplicate(item);
+                    }}
+                  >
+                    COPY
+                  </Button>
+                )}
+                {onEdit && (
+                  <Button
+                    variant="outline"
+                    className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(item);
+                    }}
+                  >
+                    EDIT
+                  </Button>
+                )}
+                {onRemove && (
+                  <Button
+                    variant="outline"
+                    className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white col-span-3 mt-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(item.inventoryId);
+                    }}
+                  >
+                    REMOVE
+                  </Button>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </div>
     </div>
