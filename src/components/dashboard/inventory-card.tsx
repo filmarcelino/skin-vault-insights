@@ -143,7 +143,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     };
     
     return {
-      background: `linear-gradient(135deg, ${colorSet.dark} 0%, ${colorSet.main} 100%)`,
+      background: `linear-gradient(135deg, ${colorSet.main} 0%, ${colorSet.dark} 100%)`,
       boxShadow: `0 8px 20px rgba(0,0,0,0.2), inset 0 0 20px rgba(255,255,255,0.1)`,
       border: 'none',
       borderRadius: '12px',
@@ -184,30 +184,24 @@ export const InventoryCard: FC<InventoryCardProps> = ({
           )}
           
           {tradeLockDays && tradeLockDays > 0 && (
-            <div className="absolute top-1 left-1 bg-black/50 rounded-full p-1">
+            <div className="absolute top-1 right-1 bg-black/50 rounded-full p-1">
               <Lock className="h-3 w-3 text-yellow-500" />
-            </div>
-          )}
-
-          {isStatTrak && (
-            <div className="absolute top-1 right-1 bg-[#CF6A32]/80 text-white text-[10px] px-1 py-0.5 rounded">
-              StatTrak™
             </div>
           )}
         </div>
 
         {/* Weapon Name and Info at the bottom */}
         <div className="mt-auto">
-          <p className="text-sm text-white/80 truncate mb-0.5">
-            {weaponName}
-          </p>
-          <h3 className="font-bold text-base text-white truncate mb-0.5">
+          <h3 className="font-bold text-xl text-white truncate mb-0.5">
             {skinName}
           </h3>
+          <p className="text-sm text-white/80 truncate mb-1">
+            {weaponName}
+          </p>
           
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-white/90">
-              {wear || rarity}
+              {rarity || wear}
             </span>
             
             {price && (
