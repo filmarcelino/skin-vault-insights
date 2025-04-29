@@ -1,7 +1,7 @@
 
 import React from "react";
 import { InventoryItem } from "@/types/skin";
-import { Edit, Heart, Lock, Trash2, DollarSign } from "lucide-react";
+import { Edit, Heart, Lock, Trash2, DollarSign, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
@@ -160,6 +160,20 @@ export const SkinListItem = ({
                 }}
               >
                 <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            
+            {onDuplicate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 p-0 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate(item);
+                }}
+              >
+                <Copy className="h-4 w-4" />
               </Button>
             )}
             

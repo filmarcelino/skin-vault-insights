@@ -54,9 +54,9 @@ export const InventoryTable = ({
           key={item.inventoryId} 
           item={item}
           onEdit={onEdit}
-          onSell={onSell}
-          onRemove={onRemove}
           onDuplicate={onDuplicate}
+          onRemove={onRemove}
+          onSell={onSell}
           onToggleFavorite={toggleFavorite}
           isFavorite={favorites.includes(item.inventoryId)}
         />

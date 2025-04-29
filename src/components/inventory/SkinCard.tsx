@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { InventoryItem } from "@/types/skin";
-import { Edit, Heart, Lock, Info, DollarSign } from "lucide-react";
+import { Edit, Heart, Lock, Info, DollarSign, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
@@ -194,12 +194,18 @@ export const SkinCard = ({
                   SELL
                 </Button>
               )}
-              <Button
-                variant="outline"
-                className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
-              >
-                TRADE
-              </Button>
+              {onDuplicate && (
+                <Button
+                  variant="outline"
+                  className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate(item);
+                  }}
+                >
+                  COPY
+                </Button>
+              )}
               {onEdit && (
                 <Button
                   variant="outline"
@@ -209,7 +215,7 @@ export const SkinCard = ({
                     onEdit(item);
                   }}
                 >
-                  DETAILS
+                  EDIT
                 </Button>
               )}
             </div>
