@@ -1,106 +1,102 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Layout } from "@/components/layout/layout";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import AddSkin from "./pages/AddSkin";
+import { Toaster } from "./components/ui/toaster";
+import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Inventory from "./pages/Inventory";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import RequireAuth from "./components/auth/require-auth";
 import Analytics from "./pages/Analytics";
-import Profile from "./pages/Profile";
+import AddSkin from "./pages/AddSkin";
+import ResetPassword from "./pages/ResetPassword";
 import Subscription from "./pages/Subscription";
+import Learn from "./pages/Learn";
+import { AuthProvider } from "./contexts/AuthContext";
+import { CurrencyProvider } from "./contexts/CurrencyContext";
+import RequireAuth from "./components/auth/require-auth";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { Toaster as SonnerToaster } from "./components/ui/sonner";
 
-// Configuração do React Query para 15 minutos de staleTime em vez de 5 minutos
+import "./App.css";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 15, // 15 minutos
-      retry: 1,
+      refetchOnWindowFocus: false,
+      retry: false,
     },
   },
 });
 
-const App = () => {
-  console.log("App component rendering");
-  
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <CurrencyProvider>
-            <div className="min-h-screen bg-background text-foreground antialiased">
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  
-                  {/* Protected routes */}
-                  <Route path="/" element={
-                    <RequireAuth>
-                      <Layout><Index /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/inventory" element={
-                    <RequireAuth>
-                      <Layout><Inventory /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/more" element={
-                    <RequireAuth>
-                      <Layout><Index activeTab="inventory" /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/add" element={
-                    <RequireAuth>
-                      <Layout><AddSkin /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/search" element={
-                    <RequireAuth>
-                      <Layout><Index activeTab="search" /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/analytics" element={
-                    <RequireAuth>
-                      <Layout><Analytics /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/profile" element={
-                    <RequireAuth>
-                      <Layout><Profile /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/settings" element={
-                    <RequireAuth>
-                      <Layout><Settings /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/subscription" element={
-                    <RequireAuth>
-                      <Layout><Subscription /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="*" element={<Layout><NotFound /></Layout>} />
-                </Routes>
-              </BrowserRouter>
-            </div>
-          </CurrencyProvider>
-        </AuthProvider>
-      </TooltipProvider>
+      <AuthProvider>
+        <CurrencyProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/learn" element={<Learn />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route
+                path="/profile"
+                element={
+                  <RequireAuth>
+                    <Profile />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <RequireAuth>
+                    <Settings />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/inventory"
+                element={
+                  <RequireAuth>
+                    <Inventory />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <RequireAuth>
+                    <Analytics />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/add-skin"
+                element={
+                  <RequireAuth>
+                    <AddSkin />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/subscription"
+                element={
+                  <RequireAuth>
+                    <Subscription />
+                  </RequireAuth>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Router>
+          <Toaster />
+          <SonnerToaster />
+        </CurrencyProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
