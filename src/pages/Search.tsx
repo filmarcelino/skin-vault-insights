@@ -45,15 +45,15 @@ export default function SearchPage() {
 
   // Extract unique weapon types and rarities from categories
   const weaponTypes = categories?.filter(cat => 
-    cat && typeof cat === 'object' && 'type' in cat && cat.type === 'weapon'
+    cat != null && typeof cat === 'object' && 'type' in cat && cat.type === 'weapon'
   ).map(cat => 
-    cat && typeof cat === 'object' && 'name' in cat ? cat.name as string : ''
+    cat != null && typeof cat === 'object' && 'name' in cat ? cat.name as string : ''
   ).filter(name => name !== '') || [];
   
   const rarityTypes = categories?.filter(cat => 
-    cat && typeof cat === 'object' && 'type' in cat && cat.type === 'rarity'
+    cat != null && typeof cat === 'object' && 'type' in cat && cat.type === 'rarity'
   ).map(cat => 
-    cat && typeof cat === 'object' && 'name' in cat ? cat.name as string : ''
+    cat != null && typeof cat === 'object' && 'name' in cat ? cat.name as string : ''
   ).filter(name => name !== '') || [];
   
   // Calculate pagination
