@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,16 +7,17 @@ import { Layout } from "@/components/layout/layout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import AddSkin from "./pages/AddSkin";
-import Settings from "./pages/Settings";
 import Inventory from "./pages/Inventory";
+import SearchPage from "./pages/Search";
+import Analytics from "./pages/Analytics";
+import AddSkin from "./pages/AddSkin";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import Subscription from "./pages/Subscription";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/auth/require-auth";
-import Analytics from "./pages/Analytics";
-import Profile from "./pages/Profile";
-import Subscription from "./pages/Subscription";
 
 // Configuração do React Query para 15 minutos de staleTime em vez de 5 minutos
 const queryClient = new QueryClient({
@@ -69,7 +69,7 @@ const App = () => {
                   } />
                   <Route path="/search" element={
                     <RequireAuth>
-                      <Layout><Index activeTab="search" /></Layout>
+                      <Layout><SearchPage /></Layout>
                     </RequireAuth>
                   } />
                   <Route path="/analytics" element={

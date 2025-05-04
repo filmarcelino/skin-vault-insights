@@ -1,118 +1,87 @@
-
-import { FC } from "react";
-import { NavLink } from "react-router-dom";
-import { Logo } from "@/components/ui/logo";
-import { useIsMobile } from "@/hooks/use-mobile"; // Corrigido o nome do import
 import {
-  Home,
-  Plus,
-  LayoutGrid,
-  Settings,
-  MoreHorizontal,
-  LineChart,
+  BarChart3,
+  Briefcase,
+  LayoutDashboard,
+  List,
   Search,
+  Settings,
+  User,
+  Plus,
 } from "lucide-react";
+import { NavLink } from "react-router-dom";
+
+import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  collapsed: boolean;
+  className?: string;
 }
 
-export const Sidebar: FC<SidebarProps> = ({ collapsed }) => {
-  const isMobile = useIsMobile();
-  
-  const getLinkClass = (isActive: boolean) => {
-    return `flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
-      isActive
-        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-    }`;
-  };
-  
-  const getNameClass = () => {
-    return `transition-all duration-300 ${
-      collapsed ? "opacity-0 max-w-0 hidden" : "opacity-100 max-w-full"
-    }`;
-  };
-
-  // Se for mobile não mostrar a sidebar
-  if (isMobile) return null;
+export function Sidebar({ className }: SidebarProps) {
+  const sidebarItems = [
+    {
+      title: "Overview",
+      icon: LayoutDashboard,
+      href: "/",
+      variant: "default",
+    },
+    {
+      title: "Inventory",
+      icon: Briefcase,
+      href: "/inventory",
+      variant: "ghost",
+    },
+    {
+      title: "Search",
+      icon: Search,
+      href: "/search",
+      variant: "ghost",
+    },
+    {
+      title: "Analytics",
+      icon: BarChart3,
+      href: "/analytics",
+      variant: "ghost",
+    },
+    {
+      title: "Add Skin",
+      icon: Plus,
+      href: "/add-skin",
+      variant: "ghost",
+    },
+    {
+      title: "Profile",
+      icon: User,
+      href: "/profile",
+      variant: "ghost",
+    },
+    {
+      title: "Settings",
+      icon: Settings,
+      href: "/settings",
+      variant: "ghost",
+    },
+  ];
 
   return (
-    <div className="h-screen w-[var(--sidebar-width)] border-r border-sidebar-border bg-sidebar transition-all fixed left-0 top-0 z-30">
-      <div className="flex h-16 items-center px-4">
-        <Logo size="sm" variant="default" /> {/* Atualizado para usar variant="default" */}
-      </div>
-      
-      <div className="px-2 py-2">
-        <nav className="space-y-1">
-          <NavLink
-            to="/"
-            className={({ isActive }) => getLinkClass(isActive)}
-            title="Dashboard"
-          >
-            <Home className="h-5 w-5" />
-            <span className={getNameClass()}>Dashboard</span>
-          </NavLink>
-          
-          <NavLink
-            to="/inventory"
-            className={({ isActive }) => getLinkClass(isActive)}
-            title="Inventário"
-          >
-            <LayoutGrid className="h-5 w-5" />
-            <span className={getNameClass()}>Inventário</span>
-          </NavLink>
-          
-          <NavLink
-            to="/add"
-            className={({ isActive }) => getLinkClass(isActive)}
-            title="Adicionar Skin"
-          >
-            <Plus className="h-5 w-5" />
-            <span className={getNameClass()}>Adicionar Skin</span>
-          </NavLink>
-          
-          <NavLink
-            to="/analytics"
-            className={({ isActive }) => getLinkClass(isActive)}
-            title="Analytics"
-          >
-            <LineChart className="h-5 w-5" />
-            <span className={getNameClass()}>Analytics</span>
-          </NavLink>
-          
-          <NavLink
-            to="/search"
-            className={({ isActive }) => getLinkClass(isActive)}
-            title="Buscar"
-          >
-            <Search className="h-5 w-5" />
-            <span className={getNameClass()}>Buscar</span>
-          </NavLink>
-          
-          <div className="pt-3">
-            <div className="border-t border-sidebar-border/50 my-2" />
-          </div>
-          
-          <NavLink
-            to="/settings"
-            className={({ isActive }) => getLinkClass(isActive)}
-            title="Configurações"
-          >
-            <Settings className="h-5 w-5" />
-            <span className={getNameClass()}>Configurações</span>
-          </NavLink>
-          
-          <NavLink
-            to="/more"
-            className={({ isActive }) => getLinkClass(isActive)}
-            title="Mais"
-          >
-            <MoreHorizontal className="h-5 w-5" />
-            <span className={getNameClass()}>Mais</span>
-          </NavLink>
-        </nav>
-      </div>
+    <div className={cn("flex flex-col gap-2", className)}>
+      {sidebarItems.map((item) => (
+        <NavLink
+          key={item.href}
+          to={item.href}
+          className={({ isActive }) =>
+            cn(
+              "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary/50",
+              isActive
+                ? "bg-secondary/50 text-foreground"
+                : "text-muted-foreground",
+              item.variant === "default" && "bg-secondary/50 text-foreground"
+            )
+          }
+        >
+          <item.icon className="h-4 w-4" />
+          <span>{item.title}</span>
+        </NavLink>
+      ))}
     </div>
   );
-};
+}
