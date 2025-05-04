@@ -45,27 +45,19 @@ export default function SearchPage() {
 
   // Extract unique weapon types and rarities from categories
   const weaponTypes = categories?.filter(cat => {
-    if (typeof cat === 'object' && cat !== null && 'type' in cat) {
-      return cat.type === 'weapon';
-    }
-    return false;
+    // Add null check for cat
+    return cat && typeof cat === 'object' && 'type' in cat && cat.type === 'weapon';
   }).map(cat => {
-    if (typeof cat === 'object' && cat !== null && 'name' in cat) {
-      return cat.name as string;
-    }
-    return '';
+    // Add null check for cat
+    return cat && typeof cat === 'object' && 'name' in cat ? cat.name as string : '';
   }).filter(name => name !== '') || [];
   
   const rarityTypes = categories?.filter(cat => {
-    if (typeof cat === 'object' && cat !== null && 'type' in cat) {
-      return cat.type === 'rarity';
-    }
-    return false;
+    // Add null check for cat
+    return cat && typeof cat === 'object' && 'type' in cat && cat.type === 'rarity';
   }).map(cat => {
-    if (typeof cat === 'object' && cat !== null && 'name' in cat) {
-      return cat.name as string;
-    }
-    return '';
+    // Add null check for cat
+    return cat && typeof cat === 'object' && 'name' in cat ? cat.name as string : '';
   }).filter(name => name !== '') || [];
   
   // Calculate pagination
