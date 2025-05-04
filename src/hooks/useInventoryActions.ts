@@ -139,6 +139,11 @@ export const useInventoryActions = () => {
     setSelectedItem(null);
   };
 
+  const onViewDetails = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+
   return {
     selectedItem,
     isModalOpen,
@@ -157,5 +162,6 @@ export const useInventoryActions = () => {
     handleAddToInventory,
     handleDuplicate,
     onClose,
+    onViewDetails,
   };
 };

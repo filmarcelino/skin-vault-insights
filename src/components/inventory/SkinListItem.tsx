@@ -104,14 +104,19 @@ export const SkinListItem = ({
     return value.toFixed(4);
   };
 
+  const handleItemClick = () => {
+    if (onClick) onClick();
+    else if (onEdit) onEdit(item);
+  };
+
   return (
     <div 
       className={cn(
-        "relative overflow-hidden rounded-lg w-full transition-all duration-300 hover:brightness-110 hover:scale-[1.01]",
+        "relative overflow-hidden rounded-lg w-full transition-all duration-300 hover:brightness-110 hover:scale-[1.01] cursor-pointer",
         className
       )}
       style={getBackgroundGradient()}
-      onClick={onClick}
+      onClick={handleItemClick}
     >
       {/* Conteúdo do item */}
       <div className="relative flex items-center p-3 gap-3">
@@ -181,7 +186,7 @@ export const SkinListItem = ({
             </div>
             {showMetadata && item.purchasePrice && (
               <div className="text-xs text-white/80">
-                Bought: {formatPrice(item.purchasePrice)}
+                Comprou: {formatPrice(item.purchasePrice)}
               </div>
             )}
           </div>

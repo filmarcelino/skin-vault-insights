@@ -69,14 +69,19 @@ export const SkinCard = ({
     return value.toFixed(4);
   };
 
+  const handleCardClick = () => {
+    if (onClick) onClick();
+    else if (onEdit) onEdit(item);
+  };
+
   return (
     <div 
       className={cn(
-        "relative overflow-hidden rounded-xl w-full aspect-square max-w-[340px] transition-transform duration-300 hover:scale-[1.02]",
+        "relative overflow-hidden rounded-xl w-full aspect-square max-w-[340px] transition-transform duration-300 hover:scale-[1.02] cursor-pointer",
         className
       )}
       style={getBackgroundStyle()}
-      onClick={onClick}
+      onClick={handleCardClick}
     >
       {/* Borda brilhante baseada na raridade */}
       {item.rarity && (
@@ -213,6 +218,7 @@ export const SkinCard = ({
                   backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}30` : 'rgba(0,0,0,0.4)',
                   borderTop: item.rarity ? `1px solid ${getRarityColor(item.rarity)}40` : '1px solid rgba(255,255,255,0.1)'
                 }}
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center">
                   <Info className="h-4 w-4 mr-2" />
@@ -228,6 +234,7 @@ export const SkinCard = ({
                 backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}20` : 'rgba(0,0,0,0.3)',
                 backdropFilter: 'blur(4px)'
               }}
+              onClick={(e) => e.stopPropagation()}
             >
               {item.purchasePrice && (
                 <div className="text-sm text-white/90 flex items-center mb-2">
@@ -246,7 +253,7 @@ export const SkinCard = ({
                       onSell(item.inventoryId, {});
                     }}
                   >
-                    SELL
+                    VENDER
                   </Button>
                 )}
                 {onDuplicate && (
@@ -258,7 +265,7 @@ export const SkinCard = ({
                       onDuplicate(item);
                     }}
                   >
-                    COPY
+                    COPIAR
                   </Button>
                 )}
                 {onEdit && (
@@ -270,7 +277,7 @@ export const SkinCard = ({
                       onEdit(item);
                     }}
                   >
-                    EDIT
+                    EDITAR
                   </Button>
                 )}
                 {onRemove && (
@@ -282,7 +289,7 @@ export const SkinCard = ({
                       onRemove(item.inventoryId);
                     }}
                   >
-                    REMOVE
+                    REMOVER
                   </Button>
                 )}
               </div>

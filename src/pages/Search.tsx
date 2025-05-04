@@ -13,6 +13,7 @@ import { PremiumCTA } from "@/components/search/PremiumCTA";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SearchPagination } from "@/components/search/SearchPagination";
 import { useFilteredCategories } from "@/hooks/useCategories";
+import { useInventoryActions } from "@/hooks/useInventoryActions";
 
 const itemsPerPageOptions = [10, 25, 50, 100];
 
@@ -26,6 +27,9 @@ export default function SearchPage() {
   const [weaponFilter, setWeaponFilter] = useState("");
   const [rarityFilter, setRarityFilter] = useState("");
   const { toast } = useToast();
+
+  // Hooks para gerenciar ações de inventário
+  const inventoryActions = useInventoryActions();
 
   // Custom hook for filtered categories
   const { weaponTypes, rarityTypes } = useFilteredCategories();
@@ -56,8 +60,15 @@ export default function SearchPage() {
   };
 
   const handleSkinClick = (skin: Skin | InventoryItem) => {
-    setSelectedSkin(skin);
-    setDetailModalOpen(true);
+    // Verificar se é um item de inventário ou uma skin normal
+    if ('inventoryId' in skin) {
+      // É um item de inventário, abrir com as funcionalidades de edição
+      inventoryActions.onEdit(skin as InventoryItem);
+    } else {
+      // É uma skin normal, abrir para adicionar ao inventário
+      setSelectedSkin(skin);
+      setDetailModalOpen(true);
+    }
   };
 
   const handleTabChange = (value: string) => {
@@ -74,16 +85,16 @@ export default function SearchPage() {
       });
       
       toast({
-        title: "Skin Added",
-        description: `${skin.weapon} | ${skin.name} was added to your inventory.`,
+        title: "Skin Adicionada",
+        description: `${skin.weapon || ""} | ${skin.name} foi adicionada ao inventário.`,
       });
       
       return newItem;
     } catch (err) {
       console.error("Error adding skin:", err);
       toast({
-        title: "Error",
-        description: "Failed to add skin to inventory",
+        title: "Erro",
+        description: "Falha ao adicionar skin ao inventário",
         variant: "destructive"
       });
       return null;
@@ -139,11 +150,20 @@ export default function SearchPage() {
         show={currentTab === "allSkins"}
       />
 
+      {/* Modal para adicionar nova skin */}
       <InventorySkinModal
         item={selectedSkin as InventoryItem}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
         onAddToInventory={handleAddToInventory}
+      />
+
+      {/* Modal para editar item existente */}
+      <InventorySkinModal
+        item={inventoryActions.selectedItem}
+        open={inventoryActions.isModalOpen}
+        onOpenChange={inventoryActions.setIsModalOpen}
+        onSellSkin={inventoryActions.handleSell}
       />
     </>
   );

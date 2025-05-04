@@ -25,22 +25,26 @@ const Inventory = () => {
     isModalOpen,
     duplicateModalOpen,
     selectedItemForDuplicate,
+    duplicateCount,
     setIsModalOpen,
     setDuplicateModalOpen,
+    setDuplicateCount,
     onEdit,
     onDuplicate,
     onRemove,
     onSell,
+    handleUpdate,
     handleSell,
     handleAddToInventory,
     handleDuplicate,
     onClose,
+    onViewDetails,
   } = useInventoryActions();
 
   useEffect(() => {
     if (inventory) {
       const filtered = inventory.filter((item) =>
-        item.name.toLowerCase().includes(search.toLowerCase()) || 
+        item.name?.toLowerCase().includes(search.toLowerCase()) || 
         item.weapon?.toLowerCase().includes(search.toLowerCase()) ||
         (item.rarity && item.rarity.toLowerCase().includes(search.toLowerCase()))
       );
@@ -66,6 +70,11 @@ const Inventory = () => {
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  // Lidar com clique no item da lista ou card para abrir modal de edição
+  const handleItemClick = (item: InventoryItem) => {
+    onEdit(item);
   };
 
   return (
@@ -106,6 +115,7 @@ const Inventory = () => {
         onDuplicate={onDuplicate}
         onRemove={onRemove}
         onSell={onSell}
+        onItemClick={handleItemClick}
       />
 
       <DuplicateSkinModal
@@ -113,6 +123,8 @@ const Inventory = () => {
         onOpenChange={setDuplicateModalOpen}
         onDuplicate={handleDuplicate}
         selectedItem={selectedItemForDuplicate}
+        duplicateCount={duplicateCount}
+        setDuplicateCount={setDuplicateCount}
       />
 
       <InventorySkinModal
@@ -120,6 +132,7 @@ const Inventory = () => {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onSellSkin={handleSell}
+        onUpdateSkin={handleUpdate}
         onAddToInventory={handleAddToInventory}
       />
     </div>

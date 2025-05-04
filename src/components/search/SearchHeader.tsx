@@ -18,7 +18,7 @@ export const SearchHeader = ({
   return (
     <div className="mb-6 flex flex-col sm:flex-row gap-4">
       <Search 
-        placeholder="Search for weapon, skin or rarity..." 
+        placeholder="Buscar por arma, skin ou raridade..." 
         onChange={onSearchChange}
         value={searchQuery}
         className="flex-1"
@@ -26,8 +26,8 @@ export const SearchHeader = ({
       <div className="flex items-center gap-2">
         <Tabs value={currentTab} onValueChange={onTabChange} className="w-full sm:w-auto">
           <TabsList>
-            <TabsTrigger value="inventory">My Inventory</TabsTrigger>
-            <TabsTrigger value="allSkins">All Skins</TabsTrigger>
+            <TabsTrigger value="inventory">Meu Inventário</TabsTrigger>
+            <TabsTrigger value="allSkins">Todas as Skins</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
