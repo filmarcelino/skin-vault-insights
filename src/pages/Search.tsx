@@ -25,7 +25,7 @@ export default function SearchPage() {
   const [selectedSkin, setSelectedSkin] = useState<Skin | InventoryItem | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<"inventory" | "allSkins">("inventory");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'list'>('list'); // Modificado para usar apenas visualização em lista
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [weaponFilter, setWeaponFilter] = useState("");
@@ -44,27 +44,31 @@ export default function SearchPage() {
   // Fetch categories for filtering options
   const { data: categories } = useCategories();
 
-  // Extract unique weapon types and rarities from categories - with proper null checking
+  // Extrair tipos de armas e raridades com verificações de nulidade adequadas
   const weaponTypes = categories?.filter(cat => {
-    if (cat === null || typeof cat !== 'object') return false;
-    return 'type' in cat && cat.type === 'weapon';
+    if (!cat) return false;
+    if (typeof cat !== 'object') return false;
+    if ('type' in cat && cat.type === 'weapon') return true;
+    return false;
   }).map(cat => {
-    // We've already checked that cat is not null above
-    if (typeof cat === 'object' && cat !== null && 'name' in cat && typeof cat.name === 'string') {
-      return cat.name;
-    }
-    return '';
+    if (!cat) return '';
+    if (typeof cat !== 'object') return '';
+    if (!('name' in cat)) return '';
+    if (typeof cat.name !== 'string') return '';
+    return cat.name;
   }).filter(name => name !== '') || [];
   
   const rarityTypes = categories?.filter(cat => {
-    if (cat === null || typeof cat !== 'object') return false;
-    return 'type' in cat && cat.type === 'rarity';
+    if (!cat) return false;
+    if (typeof cat !== 'object') return false;
+    if ('type' in cat && cat.type === 'rarity') return true;
+    return false;
   }).map(cat => {
-    // We've already checked that cat is not null above
-    if (typeof cat === 'object' && cat !== null && 'name' in cat && typeof cat.name === 'string') {
-      return cat.name;
-    }
-    return '';
+    if (!cat) return '';
+    if (typeof cat !== 'object') return '';
+    if (!('name' in cat)) return '';
+    if (typeof cat.name !== 'string') return '';
+    return cat.name;
   }).filter(name => name !== '') || [];
   
   // Calculate pagination
@@ -117,11 +121,11 @@ export default function SearchPage() {
 
   const PremiumCTA = () => {
     return (
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 backdrop-blur-sm my-4 animate-fade-in">
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10 backdrop-blur-sm my-4 animate-fade-in">
         <CardContent className="flex flex-col md:flex-row items-center justify-between p-6">
           <div className="space-y-2 mb-4 md:mb-0">
             <h3 className="flex items-center text-lg font-bold">
-              <Crown className="h-5 w-5 mr-2 text-primary" />
+              <Crown className="h-5 w-5 mr-2 text-[#FFD700]" />
               Upgrade to CS Skin Vault Premium
             </h3>
             <p className="text-sm text-muted-foreground max-w-md">
@@ -130,7 +134,7 @@ export default function SearchPage() {
           </div>
           <Button 
             onClick={() => navigate('/subscription')}
-            className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
+            className="bg-gradient-to-r from-[#8B5CF6] to-[#D946EF] hover:opacity-90"
           >
             Get Premium
           </Button>
@@ -215,10 +219,6 @@ export default function SearchPage() {
           className="flex-1"
         />
         <div className="flex items-center gap-2">
-          <ViewToggle 
-            view={viewMode}
-            onChange={setViewMode}
-          />
           <Tabs value={currentTab} onValueChange={(value) => setCurrentTab(value as "inventory" | "allSkins")} className="w-full sm:w-auto">
             <TabsList>
               <TabsTrigger value="inventory">My Inventory</TabsTrigger>
@@ -299,109 +299,56 @@ export default function SearchPage() {
           </div>
         )}
 
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {isSkinsLoading ? (
-              Array.from({ length: itemsPerPage }).map((_, idx) => (
-                <div key={`skeleton-${idx}`} className="cs-card p-2">
-                  <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-1"></div>
-                  <div className="w-full h-16 bg-gray-200 dark:bg-gray-700 rounded mb-1"></div>
-                  <div className="flex justify-between mt-1">
-                    <div className="h-2.5 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                    <div className="h-2.5 w-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                  </div>
+        <div className="flex flex-col gap-1.5 rounded-md">
+          {isSkinsLoading ? (
+            Array.from({ length: itemsPerPage }).map((_, idx) => (
+              <div key={`skeleton-list-${idx}`} className="p-3 flex items-center gap-3">
+                <Skeleton className="h-12 w-12 shrink-0" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-48 mb-1" />
+                  <Skeleton className="h-3 w-24" />
                 </div>
-              ))
-            ) : paginatedSkins.length === 0 ? (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
-                {searchQuery.length > 0 || weaponFilter || rarityFilter ? (
-                  <>No skins found matching your criteria. Try adjusting your filters.</>
-                ) : currentTab === "inventory" ? (
-                  <>Your inventory is empty.</>
-                ) : (
-                  <>No skins available.</>
-                )}
+                <Skeleton className="h-4 w-12 shrink-0" />
               </div>
-            ) : (
-              paginatedSkins.map((skin) => {
-                // Convert Skin to InventoryItem if needed
-                const itemToUse: InventoryItem = 'inventoryId' in skin 
-                  ? skin as InventoryItem 
-                  : {
-                      ...skin,
-                      inventoryId: `demo-${skin.id}`,
-                      acquiredDate: new Date().toISOString(),
-                      purchasePrice: skin.price || 0,
-                      currentPrice: skin.price,
-                      tradeLockDays: 0,
-                      isStatTrak: false,
-                      isInUserInventory: false
-                    };
-                    
-                return (
-                  <SkinCard 
-                    key={itemToUse.inventoryId}
-                    item={itemToUse}
-                    showMetadata={true}
-                    onClick={() => handleSkinClick(skin)}
-                    className="animate-fade-in hover:scale-105 transition-transform duration-200"
-                  />
-                );
-              })
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1.5 rounded-md">
-            {isSkinsLoading ? (
-              Array.from({ length: itemsPerPage }).map((_, idx) => (
-                <div key={`skeleton-list-${idx}`} className="p-3 flex items-center gap-3">
-                  <Skeleton className="h-12 w-12 shrink-0" />
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-48 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-4 w-12 shrink-0" />
-                </div>
-              ))
-            ) : paginatedSkins.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {searchQuery.length > 0 || weaponFilter || rarityFilter ? (
-                  <>No skins found matching your criteria. Try adjusting your filters.</>
-                ) : currentTab === "inventory" ? (
-                  <>Your inventory is empty.</>
-                ) : (
-                  <>No skins available.</>
-                )}
-              </div>
-            ) : (
-              paginatedSkins.map((skin) => {
-                // Convert Skin to InventoryItem if needed
-                const itemToUse: InventoryItem = 'inventoryId' in skin 
-                  ? skin as InventoryItem 
-                  : {
-                      ...skin,
-                      inventoryId: `demo-${skin.id}`,
-                      acquiredDate: new Date().toISOString(),
-                      purchasePrice: skin.price || 0,
-                      currentPrice: skin.price,
-                      tradeLockDays: 0,
-                      isStatTrak: false,
-                      isInUserInventory: false
-                    };
-                
-                return (
-                  <SkinListItem 
-                    key={itemToUse.inventoryId}
-                    item={itemToUse}
-                    showMetadata={true}
-                    onClick={() => handleSkinClick(skin)}
-                    className="animate-fade-in"
-                  />
-                );
-              })
-            )}
-          </div>
-        )}
+            ))
+          ) : paginatedSkins.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchQuery.length > 0 || weaponFilter || rarityFilter ? (
+                <>No skins found matching your criteria. Try adjusting your filters.</>
+              ) : currentTab === "inventory" ? (
+                <>Your inventory is empty.</>
+              ) : (
+                <>No skins available.</>
+              )}
+            </div>
+          ) : (
+            paginatedSkins.map((skin) => {
+              // Convert Skin to InventoryItem if needed
+              const itemToUse: InventoryItem = 'inventoryId' in skin 
+                ? skin as InventoryItem 
+                : {
+                    ...skin,
+                    inventoryId: `demo-${skin.id}`,
+                    acquiredDate: new Date().toISOString(),
+                    purchasePrice: skin.price || 0,
+                    currentPrice: skin.price,
+                    tradeLockDays: 0,
+                    isStatTrak: false,
+                    isInUserInventory: false
+                  };
+              
+              return (
+                <SkinListItem 
+                  key={itemToUse.inventoryId}
+                  item={itemToUse}
+                  showMetadata={true}
+                  onClick={() => handleSkinClick(skin)}
+                  className="animate-fade-in"
+                />
+              );
+            })
+          )}
+        </div>
         
         {currentTab === "allSkins" && renderPagination()}
       </div>
@@ -415,4 +362,3 @@ export default function SearchPage() {
     </>
   );
 }
-

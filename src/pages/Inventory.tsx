@@ -9,14 +9,11 @@ import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { InventoryItem } from "@/types/skin";
 import { CurrencySelector } from "@/components/ui/currency-selector";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
-import { InventoryGrid } from "@/components/inventory/InventoryGrid";
 import { DuplicateSkinModal } from "@/components/inventory/DuplicateSkinModal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
-import { ViewToggle } from "@/components/ui/view-toggle";
 
 const Inventory = () => {
   const [search, setSearch] = useState("");
-  const [view, setView] = useState<"grid" | "list">("grid");
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
@@ -74,7 +71,7 @@ const Inventory = () => {
   return (
     <div className="container py-8 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-[#8B5CF6] to-[#D946EF] bg-clip-text text-transparent">
           Meu Inventário
         </h1>
         <Button 
@@ -98,30 +95,18 @@ const Inventory = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
-          <ViewToggle view={view} onChange={setView} />
         </div>
         <CurrencySelector />
       </div>
 
-      {view === "list" ? (
-        <InventoryTable
-          isLoading={isLoading}
-          inventory={filteredInventory}
-          onEdit={onEdit}
-          onDuplicate={onDuplicate}
-          onRemove={onRemove}
-          onSell={onSell}
-        />
-      ) : (
-        <InventoryGrid
-          isLoading={isLoading}
-          inventory={filteredInventory}
-          onEdit={onEdit}
-          onDuplicate={onDuplicate}
-          onRemove={onRemove}
-          onSell={onSell}
-        />
-      )}
+      <InventoryTable
+        isLoading={isLoading}
+        inventory={filteredInventory}
+        onEdit={onEdit}
+        onDuplicate={onDuplicate}
+        onRemove={onRemove}
+        onSell={onSell}
+      />
 
       <DuplicateSkinModal
         open={duplicateModalOpen}

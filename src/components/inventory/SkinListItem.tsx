@@ -34,7 +34,7 @@ export const SkinListItem = ({
 }: SkinListItemProps) => {
   const { formatPrice } = useCurrency();
 
-  // Função para gerar o gradiente de cor baseado na raridade
+  // Função para gerar o gradiente de cor baseado na raridade com cores mais vivas
   const getBackgroundGradient = () => {
     const rarityColor = getRarityColor(item.rarity || '');
     
@@ -46,10 +46,49 @@ export const SkinListItem = ({
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
     
+    // Cores mais vibrantes para cada raridade
+    const getEnhancedColor = () => {
+      switch ((item.rarity || '').toLowerCase()) {
+        case "consumer grade":
+        case "white":
+        case "comum":
+          return '#B8C3D9'; // Ligeiramente mais brilhante
+        case "industrial grade":
+        case "light blue": 
+        case "pouco comum":
+          return '#5EA8F9'; // Azul mais vibrante
+        case "mil-spec grade":
+        case "blue":
+        case "militar":
+          return '#4B75FF'; // Azul mais vibrante
+        case "restricted":
+        case "purple":
+        case "restrita":
+          return '#9A5CFE'; // Roxo mais vibrante
+        case "classified":
+        case "pink":
+        case "classificada":
+          return '#F546EF'; // Rosa mais vibrante
+        case "covert":
+        case "red":
+        case "secreta":
+        case "rara":
+          return '#FF4B4B'; // Vermelho mais vibrante
+        case "contraband":
+        case "gold":
+        case "contrabando":
+          return '#FFDD00'; // Dourado mais vibrante
+        default:
+          return rarityColor;
+      }
+    };
+    
+    const enhancedColor = getEnhancedColor();
+    
     return {
-      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.25)} 0%, transparent 100%)`,
-      borderLeft: `3px solid ${hexToRgba(rarityColor, 0.8)}`,
-      boxShadow: `0 2px 10px ${hexToRgba(rarityColor, 0.2)}`,
+      background: `linear-gradient(135deg, ${hexToRgba(enhancedColor, 0.35)} 0%, transparent 100%)`,
+      borderLeft: `3px solid ${hexToRgba(enhancedColor, 0.85)}`,
+      boxShadow: `0 3px 12px ${hexToRgba(enhancedColor, 0.3)}`,
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
     };
@@ -68,7 +107,7 @@ export const SkinListItem = ({
   return (
     <div 
       className={cn(
-        "relative overflow-hidden rounded-lg w-full transition-all duration-300 hover:brightness-110",
+        "relative overflow-hidden rounded-lg w-full transition-all duration-300 hover:brightness-110 hover:scale-[1.01]",
         className
       )}
       style={getBackgroundGradient()}
@@ -76,19 +115,29 @@ export const SkinListItem = ({
     >
       {/* Conteúdo do item */}
       <div className="relative flex items-center p-3 gap-3">
-        {/* Imagem */}
-        <div className="h-16 w-16 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden backdrop-blur-sm">
+        {/* Imagem com halo luminoso */}
+        <div className="h-16 w-16 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden backdrop-blur-sm relative">
           {item.image ? (
-            <img
-              src={item.image}
-              alt={`${item.weapon} | ${item.name}`}
-              className="max-h-full max-w-full object-contain"
-              onError={handleImageError}
-              loading="lazy"
-              style={{
-                filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.5))",
-              }}
-            />
+            <>
+              {/* Efeito de halo baseado na raridade */}
+              <div 
+                className="absolute inset-0 z-0 opacity-40" 
+                style={{
+                  background: `radial-gradient(circle at center, ${getRarityColor(item.rarity || '')} 0%, transparent 70%)`,
+                  filter: 'blur(5px)'
+                }}
+              />
+              <img
+                src={item.image}
+                alt={`${item.weapon} | ${item.name}`}
+                className="max-h-full max-w-full object-contain relative z-10"
+                onError={handleImageError}
+                loading="lazy"
+                style={{
+                  filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.5))",
+                }}
+              />
+            </>
           ) : (
             <span className="text-xs text-white/50">No image</span>
           )}
@@ -99,17 +148,17 @@ export const SkinListItem = ({
           <div className="flex items-center gap-2">
             <h2 className="font-medium text-white truncate">{item.name}</h2>
             {item.isStatTrak && (
-              <span className="bg-[#CF6A32]/50 text-white text-[10px] px-1 py-0.5 rounded">
+              <span className="bg-[#CF6A32]/60 text-white text-[10px] px-1.5 py-0.5 rounded">
                 StatTrak™
               </span>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-            <span className="text-white/80">{item.weapon}</span>
-            <span className="text-white/80">{item.wear || "Factory New"}</span>
+            <span className="text-white/90">{item.weapon}</span>
+            <span className="text-white/90">{item.wear || "Factory New"}</span>
             {/* Float value exibido com formatação específica */}
             {item.floatValue !== undefined && (
-              <span className="text-white/90 text-xs bg-black/30 px-1.5 py-0.5 rounded">
+              <span className="text-white/90 text-xs bg-black/30 px-1.5 py-0.5 rounded-full">
                 {formatFloat(item.floatValue)}
               </span>
             )}
@@ -131,7 +180,7 @@ export const SkinListItem = ({
               )}
             </div>
             {showMetadata && item.purchasePrice && (
-              <div className="text-xs text-white/70">
+              <div className="text-xs text-white/80">
                 Bought: {formatPrice(item.purchasePrice)}
               </div>
             )}
@@ -142,7 +191,7 @@ export const SkinListItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white"
+                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleFavorite(item.inventoryId);
@@ -158,7 +207,7 @@ export const SkinListItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white"
+                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(item);
@@ -172,7 +221,7 @@ export const SkinListItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white"
+                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDuplicate(item);
@@ -186,7 +235,7 @@ export const SkinListItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white"
+                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onRemove(item.inventoryId);
