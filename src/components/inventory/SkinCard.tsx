@@ -16,6 +16,7 @@ interface SkinCardProps {
   isFavorite?: boolean;
   onToggleFavorite?: (itemId: string) => void;
   className?: string;
+  showMetadata?: boolean;
 }
 
 export const SkinCard = ({
@@ -27,6 +28,7 @@ export const SkinCard = ({
   isFavorite = false,
   onToggleFavorite,
   className,
+  showMetadata = false,
 }: SkinCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const { formatPrice } = useCurrency();
@@ -157,6 +159,13 @@ export const SkinCard = ({
               item.price ? formatPrice(item.price) : ""
             )}
           </div>
+
+          {/* Mostrar metadados adicionais quando showMetadata é true */}
+          {showMetadata && item.purchasePrice && (
+            <div className="mt-1 text-sm text-white/80">
+              Comprado: {formatPrice(item.purchasePrice)}
+            </div>
+          )}
 
           {/* Área colapsável com informações e botões */}
           <Collapsible 

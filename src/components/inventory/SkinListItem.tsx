@@ -15,6 +15,7 @@ interface SkinListItemProps {
   isFavorite?: boolean;
   onToggleFavorite?: (itemId: string) => void;
   className?: string;
+  showMetadata?: boolean;
 }
 
 export const SkinListItem = ({
@@ -26,6 +27,7 @@ export const SkinListItem = ({
   isFavorite = false,
   onToggleFavorite,
   className,
+  showMetadata = false,
 }: SkinListItemProps) => {
   const { formatPrice } = useCurrency();
 
@@ -125,7 +127,7 @@ export const SkinListItem = ({
                 item.price ? formatPrice(item.price) : ""
               )}
             </div>
-            {item.purchasePrice && (
+            {showMetadata && item.purchasePrice && (
               <div className="text-xs text-white/70">
                 Bought: {formatPrice(item.purchasePrice)}
               </div>
