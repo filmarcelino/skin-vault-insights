@@ -22,7 +22,7 @@ const itemsPerPageOptions = [10, 25, 50, 100];
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSkin, setSelectedSkin] = useState<any>(null);
+  const [selectedSkin, setSelectedSkin] = useState<Skin | InventoryItem | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<"inventory" | "allSkins">("inventory");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -45,8 +45,8 @@ export default function SearchPage() {
   const { data: categories } = useCategories();
 
   // Extract unique weapon types and rarities from categories
-  const weaponTypes = categories?.filter(cat => cat.type === 'weapon').map(cat => cat.name) || [];
-  const rarityTypes = categories?.filter(cat => cat.type === 'rarity').map(cat => cat.name) || [];
+  const weaponTypes = categories?.filter(cat => typeof cat === 'object' && cat.type === 'weapon').map(cat => typeof cat === 'object' ? cat.name : '') || [];
+  const rarityTypes = categories?.filter(cat => typeof cat === 'object' && cat.type === 'rarity').map(cat => typeof cat === 'object' ? cat.name : '') || [];
   
   // Calculate pagination
   const totalItems = skins?.length || 0;
@@ -66,16 +66,19 @@ export default function SearchPage() {
   };
 
   const handleSkinClick = (skin: Skin | InventoryItem) => {
-    const inventorySkin: InventoryItem = {
-      ...skin,
-      inventoryId: `demo-${skin.id}`,
-      acquiredDate: new Date().toISOString(),
-      purchasePrice: skin.price || 0,
-      currentPrice: skin.price,
-      tradeLockDays: 0,
-      isStatTrak: false,
-      isInUserInventory: false
-    };
+    // Create a full InventoryItem from Skin if needed
+    const inventorySkin: InventoryItem = 'inventoryId' in skin 
+      ? skin as InventoryItem 
+      : {
+          ...skin,
+          inventoryId: `demo-${skin.id}`,
+          acquiredDate: new Date().toISOString(),
+          purchasePrice: skin.price || 0,
+          currentPrice: skin.price,
+          tradeLockDays: 0,
+          isStatTrak: false,
+          isInUserInventory: false
+        };
     
     setSelectedSkin(inventorySkin);
     setDetailModalOpen(true);
@@ -315,15 +318,31 @@ export default function SearchPage() {
                 )}
               </div>
             ) : (
-              paginatedSkins.map((skin) => (
-                <SkinCard 
-                  key={skin.id || skin.inventoryId}
-                  item={skin as InventoryItem}
-                  showMetadata={true}
-                  className="animate-fade-in hover:scale-105 transition-transform duration-200"
-                  onClick={() => handleSkinClick(skin)}
-                />
-              ))
+              paginatedSkins.map((skin) => {
+                // Convert Skin to InventoryItem if needed
+                const itemToUse: InventoryItem = 'inventoryId' in skin 
+                  ? skin as InventoryItem 
+                  : {
+                      ...skin,
+                      inventoryId: `demo-${skin.id}`,
+                      acquiredDate: new Date().toISOString(),
+                      purchasePrice: skin.price || 0,
+                      currentPrice: skin.price,
+                      tradeLockDays: 0,
+                      isStatTrak: false,
+                      isInUserInventory: false
+                    };
+                    
+                return (
+                  <SkinCard 
+                    key={itemToUse.inventoryId}
+                    item={itemToUse}
+                    showMetadata={true}
+                    className="animate-fade-in hover:scale-105 transition-transform duration-200"
+                    onClick={() => handleSkinClick(skin)}
+                  />
+                );
+              })
             )}
           </div>
         ) : (
@@ -350,15 +369,31 @@ export default function SearchPage() {
                 )}
               </div>
             ) : (
-              paginatedSkins.map((skin) => (
-                <SkinListItem 
-                  key={skin.id || skin.inventoryId}
-                  item={skin as InventoryItem}
-                  showMetadata={true}
-                  className="animate-fade-in"
-                  onClick={() => handleSkinClick(skin)}
-                />
-              ))
+              paginatedSkins.map((skin) => {
+                // Convert Skin to InventoryItem if needed
+                const itemToUse: InventoryItem = 'inventoryId' in skin 
+                  ? skin as InventoryItem 
+                  : {
+                      ...skin,
+                      inventoryId: `demo-${skin.id}`,
+                      acquiredDate: new Date().toISOString(),
+                      purchasePrice: skin.price || 0,
+                      currentPrice: skin.price,
+                      tradeLockDays: 0,
+                      isStatTrak: false,
+                      isInUserInventory: false
+                    };
+                
+                return (
+                  <SkinListItem 
+                    key={itemToUse.inventoryId}
+                    item={itemToUse}
+                    showMetadata={true}
+                    className="animate-fade-in"
+                    onClick={() => handleSkinClick(skin)}
+                  />
+                );
+              })
             )}
           </div>
         )}

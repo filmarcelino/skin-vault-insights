@@ -16,6 +16,7 @@ interface SkinListItemProps {
   onToggleFavorite?: (itemId: string) => void;
   className?: string;
   showMetadata?: boolean;
+  onClick?: () => void;
 }
 
 export const SkinListItem = ({
@@ -28,6 +29,7 @@ export const SkinListItem = ({
   onToggleFavorite,
   className,
   showMetadata = false,
+  onClick,
 }: SkinListItemProps) => {
   const { formatPrice } = useCurrency();
 
@@ -65,6 +67,7 @@ export const SkinListItem = ({
         "relative overflow-hidden rounded-lg w-full transition-all duration-300 hover:brightness-110",
         className
       )}
+      onClick={onClick}
     >
       {/* Gradiente de fundo baseado na raridade */}
       <div 

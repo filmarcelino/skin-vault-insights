@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { InventoryItem } from "@/types/skin";
 import { Edit, Heart, Lock, Info, DollarSign, Copy, ChevronDown } from "lucide-react";
@@ -17,6 +16,7 @@ interface SkinCardProps {
   onToggleFavorite?: (itemId: string) => void;
   className?: string;
   showMetadata?: boolean;
+  onClick?: () => void;
 }
 
 export const SkinCard = ({
@@ -29,6 +29,7 @@ export const SkinCard = ({
   onToggleFavorite,
   className,
   showMetadata = false,
+  onClick,
 }: SkinCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const { formatPrice } = useCurrency();
@@ -67,6 +68,7 @@ export const SkinCard = ({
         "relative overflow-hidden rounded-xl w-full aspect-square max-w-[340px] transition-transform duration-300 hover:scale-[1.02]",
         className
       )}
+      onClick={onClick}
     >
       {/* Gradiente de fundo baseado na raridade */}
       <div 
