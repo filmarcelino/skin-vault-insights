@@ -1,14 +1,18 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "@/components/ui/search";
-import { useSearchSkins, useWeapons, useAddSkin } from "@/hooks/use-skins";
-import { Skin } from "@/types/skin";
+import { useSearchSkins, useInventory, useWeapons, useAddSkin } from "@/hooks/use-skins";
+import { Skin, InventoryItem } from "@/types/skin";
 import { useToast } from "@/hooks/use-toast";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { InventoryCard } from "@/components/dashboard/inventory-card";
 import { SkinImageAnalyzer } from "@/components/SkinImageAnalyzer";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useInventoryActions } from "@/hooks/useInventoryActions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { SkinListItem } from "@/components/inventory/SkinListItem";
 import { 
   Pagination, 
   PaginationContent, 
@@ -26,13 +30,29 @@ const AddSkin = () => {
   const [selectedSkin, setSelectedSkin] = useState<Skin | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [shouldRecordTransaction, setShouldRecordTransaction] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   
   const { data: searchResults = [], isLoading: isSearching } = useSearchSkins(searchQuery);
   const { data: weapons = [] } = useWeapons();
+  const { data: inventoryItems = [] } = useInventory();
   const addSkinMutation = useAddSkin();
+  
+  const {
+    onEdit,
+    onDuplicate,
+    onRemove,
+    onSell,
+    selectedItem,
+    isModalOpen,
+    setIsModalOpen,
+    handleSell,
+    handleUpdate
+  } = useInventoryActions();
   
   // Cálculo da paginação
   const totalPages = Math.max(1, Math.ceil(searchResults.length / ITEMS_PER_PAGE));
@@ -77,7 +97,8 @@ const AddSkin = () => {
         purchasePrice: skinData.purchasePrice || 0,
         marketplace: skinData.marketplace || "Steam Market",
         feePercentage: skinData.feePercentage || 0,
-        notes: skinData.notes || ""
+        notes: skinData.notes || "",
+        currency: skinData.currency || "USD"
       };
       
       console.log("Cleaned skin data:", cleanSkin);
@@ -97,7 +118,6 @@ const AddSkin = () => {
           
           // Resetar formulário e navegar de volta para o inventário
           setSelectedSkin(null);
-          navigate("/inventory");
         },
         onError: (error) => {
           console.error("Error adding skin:", error);
@@ -116,6 +136,37 @@ const AddSkin = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!itemToDelete) return;
+    
+    try {
+      // Se não deve registrar como transação, passa false como segundo argumento
+      onRemove(itemToDelete);
+      toast({
+        title: "Skin removida",
+        description: "A skin foi removida do seu inventário",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao remover",
+        description: "Não foi possível remover a skin",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleDeleteClick = (inventoryId: string) => {
+    setItemToDelete(inventoryId);
+    setDeleteDialogOpen(true);
+  };
+  
+  const handleItemClick = (item: InventoryItem) => {
+    onEdit(item);
   };
 
   return (
@@ -222,12 +273,98 @@ const AddSkin = () => {
         </>
       )}
       
+      {/* Seção do Inventário Atual */}
+      <div className="mt-10">
+        <h2 className="text-xl font-semibold mb-4">Seu Inventário Atual</h2>
+        <div className="space-y-3">
+          {inventoryItems.map((item) => (
+            <SkinListItem
+              key={item.inventoryId}
+              item={item}
+              onEdit={() => onEdit(item)}
+              onDuplicate={() => onDuplicate(item)}
+              onRemove={(id) => handleDeleteClick(id)}
+              isFavorite={false}
+              showMetadata={true}
+              onClick={() => handleItemClick(item)}
+            />
+          ))}
+        </div>
+        
+        {inventoryItems.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Seu inventário está vazio</p>
+          </div>
+        )}
+      </div>
+      
       <SkinDetailModal 
         skin={selectedSkin}
         open={modalOpen}
         onOpenChange={setModalOpen}
         onAddSkin={handleAddSkin}
       />
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          {selectedItem && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedItem.weapon} | {selectedItem.name}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center p-4 bg-black/10 rounded-lg">
+                  <img 
+                    src={selectedItem.image} 
+                    alt={selectedItem.name} 
+                    className="max-h-36 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/placeholder.svg';
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => handleSell(selectedItem.inventoryId, {
+                      soldPrice: selectedItem.currentPrice || 0,
+                      soldMarketplace: "Steam Market",
+                      soldFeePercentage: 0,
+                      soldCurrency: "USD"
+                    })}
+                  >
+                    Vender
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    className="flex-1"
+                    onClick={() => handleDeleteClick(selectedItem.inventoryId)}
+                  >
+                    Excluir
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de confirmação para exclusão */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta skin do seu inventário?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>Excluir</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

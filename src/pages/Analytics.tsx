@@ -2,14 +2,15 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { DollarSign, ArrowUpRight, ArrowDownRight, BarChart3, Package, Percent, TrendingUp } from "lucide-react";
+import { DollarSign, ArrowUpRight, ArrowDownRight, BarChart3, Package, Percent, TrendingUp, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { getRarityColor, getRarityColorClass } from "@/utils/skin-utils";
+import { getRarityColor } from "@/utils/skin-utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 interface InventoryStats {
   totalValue: number;
@@ -23,6 +24,11 @@ interface InventoryStats {
 }
 
 const formatNumber = (value: number | undefined): string => {
+  if (value === undefined) return '0';
+  return value.toFixed(0);
+};
+
+const formatDecimal = (value: number | undefined): string => {
   if (value === undefined) return '0.000';
   return value.toFixed(3);
 };
@@ -32,10 +38,11 @@ const StatCard: React.FC<{
   value: number | undefined;
   icon: React.ReactNode;
   isCurrency?: boolean;
+  isInteger?: boolean;
   loading: boolean;
   iconColor?: string;
   bgColorClass?: string;
-}> = ({ title, value, icon, isCurrency = true, loading, iconColor = "#8B5CF6", bgColorClass }) => {
+}> = ({ title, value, icon, isCurrency = true, isInteger = false, loading, iconColor = "#8B5CF6", bgColorClass }) => {
   const { formatPrice, currency } = useCurrency();
   
   return (
@@ -56,7 +63,7 @@ const StatCard: React.FC<{
           <div className="text-2xl font-bold">
             {isCurrency ? 
               formatPrice(value) : 
-              (typeof value === 'number' ? formatNumber(value) : '0.000')
+              (isInteger ? formatNumber(value) : formatDecimal(value))
             }
           </div>
         )}
@@ -199,6 +206,34 @@ const RecentTransactions: React.FC<{
           ) : (
             <p className="text-center text-muted-foreground py-4">No recent transactions</p>
           )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const PremiumFeatureCard = () => {
+  return (
+    <Card className="col-span-full relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-purple-500/20 z-0"></div>
+      <CardHeader className="relative z-10">
+        <CardTitle className="text-lg flex items-center gap-2">
+          Price History
+          <Lock className="h-4 w-4 text-amber-500" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="h-[300px] flex flex-col items-center justify-center relative z-10">
+        <div className="text-center space-y-4">
+          <div className="rounded-full bg-amber-500/20 p-3 w-16 h-16 mx-auto flex items-center justify-center">
+            <Lock className="h-8 w-8 text-amber-500" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold">Premium Feature</h3>
+            <p className="text-muted-foreground">Upgrade to Premium to view detailed price history charts</p>
+          </div>
+          <Button variant="outline" className="bg-gradient-to-r from-amber-500/80 to-amber-600/80 text-white border-amber-500 hover:from-amber-600/80 hover:to-amber-700/80">
+            Upgrade to Premium
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -350,6 +385,7 @@ const Analytics = () => {
               value={inventoryStats?.itemCount}
               icon={<Package />}
               isCurrency={false}
+              isInteger={true}
               loading={isLoading}
               iconColor="#8847FF"
               bgColorClass="bg-[rgba(136,71,255,0.05)]"
@@ -396,16 +432,7 @@ const Analytics = () => {
         </TabsContent>
         
         <TabsContent value="trends" className="space-y-4">
-          <Card className="col-span-4">
-            <CardHeader>
-              <CardTitle className="text-lg">Price History</CardTitle>
-            </CardHeader>
-            <CardContent className="h-[300px] flex items-center justify-center">
-              <div className="text-muted-foreground">
-                Trend charts will be available soon
-              </div>
-            </CardContent>
-          </Card>
+          <PremiumFeatureCard />
         </TabsContent>
       </Tabs>
     </div>
