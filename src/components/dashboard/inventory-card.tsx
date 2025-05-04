@@ -17,9 +17,11 @@ interface InventoryCardProps {
   isStatTrak?: boolean;
   tradeLockDays?: number;
   tradeLockUntil?: string;
+  floatValue?: number;
   onClick?: () => void;
   onDelete?: () => void;
   showDeleteButton?: boolean;
+  purchasePrice?: number | string;
 }
 
 export const InventoryCard: FC<InventoryCardProps> = ({
@@ -34,9 +36,11 @@ export const InventoryCard: FC<InventoryCardProps> = ({
   isStatTrak,
   tradeLockDays,
   tradeLockUntil,
+  floatValue,
   onClick,
   onDelete,
   showDeleteButton = false,
+  purchasePrice,
 }) => {
   const { formatPrice } = useCurrency();
 
@@ -145,7 +149,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     return {
       background: `linear-gradient(135deg, ${colorSet.dark} 0%, ${colorSet.main} 100%)`,
       boxShadow: `0 8px 20px rgba(0,0,0,0.2), inset 0 0 20px rgba(255,255,255,0.1)`,
-      border: 'none',
+      border: `1px solid ${colorSet.light}30`,
       borderRadius: '12px',
       overflow: 'hidden',
       ...style
@@ -186,6 +190,9 @@ export const InventoryCard: FC<InventoryCardProps> = ({
           {tradeLockDays && tradeLockDays > 0 && (
             <div className="absolute top-1 left-1 bg-black/50 rounded-full p-1">
               <Lock className="h-3 w-3 text-yellow-500" />
+              <span className="text-[9px] absolute -bottom-4 left-0 bg-black/70 rounded-sm px-1 text-yellow-500">
+                {tradeLockDays}d
+              </span>
             </div>
           )}
 
@@ -216,6 +223,21 @@ export const InventoryCard: FC<InventoryCardProps> = ({
               </span>
             )}
           </div>
+
+          {(floatValue !== undefined || purchasePrice) && (
+            <div className="mt-1 grid grid-cols-2 gap-1 text-[10px] text-white/70">
+              {floatValue !== undefined && (
+                <div className="bg-black/30 px-1 py-0.5 rounded">
+                  Float: {floatValue.toFixed(4)}
+                </div>
+              )}
+              {purchasePrice && (
+                <div className="bg-black/30 px-1 py-0.5 rounded text-right">
+                  Compra: {typeof purchasePrice === 'number' ? formatPrice(purchasePrice) : purchasePrice}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

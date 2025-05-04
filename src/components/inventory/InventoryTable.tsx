@@ -59,6 +59,7 @@ export const InventoryTable = ({
           onSell={onSell}
           onToggleFavorite={toggleFavorite}
           isFavorite={favorites.includes(item.inventoryId)}
+          showMetadata={true}
         />
       ))}
     </div>
