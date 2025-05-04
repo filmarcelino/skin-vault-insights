@@ -44,43 +44,22 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
   const getBackgroundStyle = () => {
     if (!rarity) return {};
     
-    // Create a mapping of rarity to premium metallic color gradients
-    const metallicColors: Record<string, { light: string, main: string, dark: string, accent: string }> = {
-      'Consumer Grade': { light: '#a1a5ad', main: '#8E9196', dark: '#6a6d71', accent: '#ffffff30' },
-      'Industrial Grade': { light: '#7a9cc9', main: '#5E7D9A', dark: '#455d72', accent: '#c0e6ff30' },
-      'Mil-Spec Grade': { light: '#6a9dab', main: '#4A6D7C', dark: '#37515c', accent: '#add8e630' },
-      'Restricted': { light: '#9280d6', main: '#6E5AB0', dark: '#524283', accent: '#e2d7ff30' },
-      'Classified': { light: '#ba74d9', main: '#8A4E9E', dark: '#673976', accent: '#f5d0ff30' },
-      'Covert': { light: '#c66a6a', main: '#9A4A4A', dark: '#733737', accent: '#ffd0d030' },
-      'Contraband': { light: '#e0c457', main: '#B8A246', dark: '#8a7934', accent: '#ffe8a830' },
-      '★ Rare Special Item': { light: '#d6ca9d', main: '#A69D7E', dark: '#7d765e', accent: '#ffffb330' },
-      'Comum': { light: '#a1a5ad', main: '#8E9196', dark: '#6a6d71', accent: '#ffffff30' },
-      'Pouco Comum': { light: '#7a9cc9', main: '#5E7D9A', dark: '#455d72', accent: '#c0e6ff30' },
-      'Militar': { light: '#6a9dab', main: '#4A6D7C', dark: '#37515c', accent: '#add8e630' },
-      'Restrita': { light: '#9280d6', main: '#6E5AB0', dark: '#524283', accent: '#e2d7ff30' },
-      'Classificada': { light: '#ba74d9', main: '#8A4E9E', dark: '#673976', accent: '#f5d0ff30' },
-      'Secreta': { light: '#c66a6a', main: '#9A4A4A', dark: '#733737', accent: '#ffd0d030' },
-      'Contrabando': { light: '#e0c457', main: '#B8A246', dark: '#8a7934', accent: '#ffe8a830' },
-      'Especial Rara': { light: '#d6ca9d', main: '#A69D7E', dark: '#7d765e', accent: '#ffffb330' },
-      'Extraordinary': { light: '#d6ca9d', main: '#A69D7E', dark: '#7d765e', accent: '#ffffb330' },
-    };
+    const rarityColor = getRarityColor(rarity);
     
-    // Default fallback colors
-    const defaultColors = { 
-      light: '#a1a5ad',
-      main: getRarityColor(rarity), 
-      dark: '#6a6d71',
-      accent: '#ffffff30'
+    // Convert hex to rgba
+    const hexToRgba = (hex: string, alpha: number) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
 
-    const colorSet = metallicColors[rarity] || defaultColors;
-    
     return {
-      background: `linear-gradient(135deg, ${colorSet.main} 0%, ${colorSet.dark} 100%)`,
-      boxShadow: `inset 0 0 15px ${colorSet.accent}, 0 2px 8px rgba(0,0,0,0.25)`,
-      borderLeft: 'none',
-      position: 'relative',
-      overflow: 'hidden',
+      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.15)} 0%, transparent 100%)`,
+      borderLeft: `3px solid ${hexToRgba(rarityColor, 0.7)}`,
+      boxShadow: `0 2px 10px ${hexToRgba(rarityColor, 0.1)}`,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
       ...style
     };
   };
@@ -96,9 +75,6 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       style={getBackgroundStyle()}
       onClick={onClick}
     >
-      {/* Background shine effect */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-white/10 opacity-80 pointer-events-none"></div>
-      
       {/* Thumbnail */}
       <div className="h-12 w-12 bg-black/30 rounded flex items-center justify-center shrink-0 relative z-10 border border-white/10">
         {image ? (

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Search } from "@/components/ui/search";
 import { ViewToggle } from "@/components/ui/view-toggle";
@@ -45,8 +44,29 @@ export default function SearchPage() {
   const { data: categories } = useCategories();
 
   // Extract unique weapon types and rarities from categories
-  const weaponTypes = categories?.filter(cat => typeof cat === 'object' && cat.type === 'weapon').map(cat => typeof cat === 'object' ? cat.name : '') || [];
-  const rarityTypes = categories?.filter(cat => typeof cat === 'object' && cat.type === 'rarity').map(cat => typeof cat === 'object' ? cat.name : '') || [];
+  const weaponTypes = categories?.filter(cat => {
+    if (typeof cat === 'object' && cat !== null && 'type' in cat) {
+      return cat.type === 'weapon';
+    }
+    return false;
+  }).map(cat => {
+    if (typeof cat === 'object' && cat !== null && 'name' in cat) {
+      return cat.name as string;
+    }
+    return '';
+  }).filter(name => name !== '') || [];
+  
+  const rarityTypes = categories?.filter(cat => {
+    if (typeof cat === 'object' && cat !== null && 'type' in cat) {
+      return cat.type === 'rarity';
+    }
+    return false;
+  }).map(cat => {
+    if (typeof cat === 'object' && cat !== null && 'name' in cat) {
+      return cat.name as string;
+    }
+    return '';
+  }).filter(name => name !== '') || [];
   
   // Calculate pagination
   const totalItems = skins?.length || 0;
@@ -66,21 +86,7 @@ export default function SearchPage() {
   };
 
   const handleSkinClick = (skin: Skin | InventoryItem) => {
-    // Create a full InventoryItem from Skin if needed
-    const inventorySkin: InventoryItem = 'inventoryId' in skin 
-      ? skin as InventoryItem 
-      : {
-          ...skin,
-          inventoryId: `demo-${skin.id}`,
-          acquiredDate: new Date().toISOString(),
-          purchasePrice: skin.price || 0,
-          currentPrice: skin.price,
-          tradeLockDays: 0,
-          isStatTrak: false,
-          isInUserInventory: false
-        };
-    
-    setSelectedSkin(inventorySkin);
+    setSelectedSkin(skin);
     setDetailModalOpen(true);
   };
 
@@ -338,15 +344,15 @@ export default function SearchPage() {
                     key={itemToUse.inventoryId}
                     item={itemToUse}
                     showMetadata={true}
-                    className="animate-fade-in hover:scale-105 transition-transform duration-200"
                     onClick={() => handleSkinClick(skin)}
+                    className="animate-fade-in hover:scale-105 transition-transform duration-200"
                   />
                 );
               })
             )}
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5 border rounded-md divide-y divide-border/50">
+          <div className="flex flex-col gap-1.5 rounded-md">
             {isSkinsLoading ? (
               Array.from({ length: itemsPerPage }).map((_, idx) => (
                 <div key={`skeleton-list-${idx}`} className="p-3 flex items-center gap-3">
@@ -389,8 +395,8 @@ export default function SearchPage() {
                     key={itemToUse.inventoryId}
                     item={itemToUse}
                     showMetadata={true}
-                    className="animate-fade-in"
                     onClick={() => handleSkinClick(skin)}
+                    className="animate-fade-in"
                   />
                 );
               })
@@ -402,7 +408,7 @@ export default function SearchPage() {
       </div>
 
       <InventorySkinModal
-        item={selectedSkin}
+        item={selectedSkin as InventoryItem}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
         onAddToInventory={handleAddToInventory}

@@ -5,6 +5,7 @@ import { Edit, Heart, Lock, Trash2, DollarSign, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
+import { getRarityColor } from "@/utils/skin-utils";
 
 interface SkinListItemProps {
   item: InventoryItem;
@@ -35,26 +36,23 @@ export const SkinListItem = ({
 
   // Função para gerar o gradiente de cor baseado na raridade
   const getBackgroundGradient = () => {
-    const rarityGradients: Record<string, string> = {
-      'Consumer Grade': 'from-[#8E9196]/80 to-[#6a6d71]/80',
-      'Industrial Grade': 'from-[#5E7D9A]/80 to-[#455d72]/80',
-      'Mil-Spec Grade': 'from-[#4A6D7C]/80 to-[#37515c]/80',
-      'Restricted': 'from-[#6E5AB0]/80 to-[#524283]/80',
-      'Classified': 'from-[#8A4E9E]/80 to-[#673976]/80',
-      'Covert': 'from-[#9A4A4A]/80 to-[#733737]/80',
-      'Contraband': 'from-[#B8A246]/80 to-[#8a7934]/80',
-      '★ Rare Special Item': 'from-[#A69D7E]/80 to-[#7d765e]/80',
-      'Comum': 'from-[#8E9196]/80 to-[#6a6d71]/80',
-      'Pouco Comum': 'from-[#5E7D9A]/80 to-[#455d72]/80',
-      'Militar': 'from-[#4A6D7C]/80 to-[#37515c]/80',
-      'Restrita': 'from-[#6E5AB0]/80 to-[#524283]/80',
-      'Classificada': 'from-[#8A4E9E]/80 to-[#673976]/80',
-      'Secreta': 'from-[#9A4A4A]/80 to-[#733737]/80',
-      'Contrabando': 'from-[#B8A246]/80 to-[#8a7934]/80',
-      'Especial Rara': 'from-[#A69D7E]/80 to-[#7d765e]/80',
+    const rarityColor = getRarityColor(item.rarity || '');
+    
+    // Convertemos a cor hex para rgba para poder aplicar transparência
+    const hexToRgba = (hex: string, alpha: number) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
-
-    return rarityGradients[item.rarity || ''] || 'from-[#8E9196]/80 to-[#6a6d71]/80';
+    
+    return {
+      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.1)} 0%, transparent 100%)`,
+      borderLeft: `3px solid ${hexToRgba(rarityColor, 0.7)}`,
+      boxShadow: `0 2px 10px ${hexToRgba(rarityColor, 0.1)}`,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+    };
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -67,20 +65,13 @@ export const SkinListItem = ({
         "relative overflow-hidden rounded-lg w-full transition-all duration-300 hover:brightness-110",
         className
       )}
+      style={getBackgroundGradient()}
       onClick={onClick}
     >
-      {/* Gradiente de fundo baseado na raridade */}
-      <div 
-        className={cn(
-          "absolute inset-0 bg-gradient-to-r",
-          getBackgroundGradient()
-        )}
-      />
-      
       {/* Conteúdo do item */}
       <div className="relative flex items-center p-3 gap-3">
         {/* Imagem */}
-        <div className="h-16 w-16 bg-black/20 rounded flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="h-16 w-16 bg-black/20 rounded flex items-center justify-center shrink-0 overflow-hidden backdrop-blur-sm">
           {item.image ? (
             <img
               src={item.image}

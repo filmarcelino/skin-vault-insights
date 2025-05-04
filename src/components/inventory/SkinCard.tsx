@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { InventoryItem } from "@/types/skin";
 import { Edit, Heart, Lock, Info, DollarSign, Copy, ChevronDown } from "lucide-react";
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { getRarityColor } from "@/utils/skin-utils";
 
 interface SkinCardProps {
   item: InventoryItem;
@@ -34,28 +36,27 @@ export const SkinCard = ({
   const [showDetails, setShowDetails] = useState(false);
   const { formatPrice } = useCurrency();
 
-  // Função para gerar o gradiente de cor baseado na raridade
-  const getBackgroundGradient = () => {
-    const rarityGradients: Record<string, string> = {
-      'Consumer Grade': 'from-[#8E9196] to-[#6a6d71]',
-      'Industrial Grade': 'from-[#5E7D9A] to-[#455d72]',
-      'Mil-Spec Grade': 'from-[#4A6D7C] to-[#37515c]',
-      'Restricted': 'from-[#6E5AB0] to-[#524283]',
-      'Classified': 'from-[#8A4E9E] to-[#673976]',
-      'Covert': 'from-[#9A4A4A] to-[#733737]',
-      'Contraband': 'from-[#B8A246] to-[#8a7934]',
-      '★ Rare Special Item': 'from-[#A69D7E] to-[#7d765e]',
-      'Comum': 'from-[#8E9196] to-[#6a6d71]',
-      'Pouco Comum': 'from-[#5E7D9A] to-[#455d72]',
-      'Militar': 'from-[#4A6D7C] to-[#37515c]',
-      'Restrita': 'from-[#6E5AB0] to-[#524283]',
-      'Classificada': 'from-[#8A4E9E] to-[#673976]',
-      'Secreta': 'from-[#9A4A4A] to-[#733737]',
-      'Contrabando': 'from-[#B8A246] to-[#8a7934]',
-      'Especial Rara': 'from-[#A69D7E] to-[#7d765e]',
+  // Função para gerar o estilo baseado na raridade
+  const getBackgroundStyle = () => {
+    if (!item.rarity) return {};
+    
+    const rarityColor = getRarityColor(item.rarity);
+    
+    // Convertemos a cor hex para rgba para poder aplicar transparência
+    const hexToRgba = (hex: string, alpha: number) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
-
-    return rarityGradients[item.rarity || ''] || 'from-[#8E9196] to-[#6a6d71]';
+    
+    return {
+      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.15)} 0%, transparent 100%)`,
+      border: `1px solid ${hexToRgba(rarityColor, 0.5)}`,
+      boxShadow: `0 4px 20px ${hexToRgba(rarityColor, 0.2)}, inset 0 0 30px ${hexToRgba(rarityColor, 0.05)}`,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+    };
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -68,15 +69,19 @@ export const SkinCard = ({
         "relative overflow-hidden rounded-xl w-full aspect-square max-w-[340px] transition-transform duration-300 hover:scale-[1.02]",
         className
       )}
+      style={getBackgroundStyle()}
       onClick={onClick}
     >
-      {/* Gradiente de fundo baseado na raridade */}
-      <div 
-        className={cn(
-          "absolute inset-0 bg-gradient-to-br",
-          getBackgroundGradient()
-        )}
-      />
+      {/* Borda brilhante baseada na raridade */}
+      {item.rarity && (
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            boxShadow: `inset 0 0 0 1px ${getRarityColor(item.rarity)}50`,
+            borderRadius: 'inherit'
+          }}
+        ></div>
+      )}
       
       {/* Conteúdo do card */}
       <div className="relative h-full flex flex-col p-4">
@@ -131,6 +136,16 @@ export const SkinCard = ({
                   filter: "drop-shadow(0px 4px 8px rgba(0,0,0,0.5))",
                 }}
               />
+              
+              {/* Brilho atrás da imagem */}
+              <div 
+                className="absolute inset-0 -z-10 opacity-20"
+                style={{
+                  background: item.rarity ? 
+                    `radial-gradient(circle at center, ${getRarityColor(item.rarity)} 0%, transparent 70%)` : 
+                    'none'
+                }}
+              ></div>
             </div>
           ) : (
             <div className="h-28 w-28 bg-black/20 rounded-md flex items-center justify-center">
@@ -149,7 +164,12 @@ export const SkinCard = ({
               )}
             </div>
             {item.rarity && (
-              <span className="px-3 py-1 bg-black/40 rounded-full text-white text-xs">
+              <span 
+                className="px-3 py-1 rounded-full text-white text-xs"
+                style={{
+                  backgroundColor: `${getRarityColor(item.rarity)}40`
+                }}
+              >
                 {item.rarity}
               </span>
             )}
@@ -178,7 +198,11 @@ export const SkinCard = ({
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="w-full flex justify-between items-center bg-black/40 text-white/90 hover:bg-black/60 hover:text-white py-2 px-3 -mx-4 rounded-none"
+                className="w-full flex justify-between items-center text-white/90 hover:text-white py-2 px-3 -mx-4 rounded-none"
+                style={{
+                  backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}20` : 'rgba(0,0,0,0.4)',
+                  borderTop: item.rarity ? `1px solid ${getRarityColor(item.rarity)}30` : '1px solid rgba(255,255,255,0.1)'
+                }}
               >
                 <div className="flex items-center">
                   <Info className="h-4 w-4 mr-2" />
@@ -188,7 +212,13 @@ export const SkinCard = ({
               </Button>
             </CollapsibleTrigger>
 
-            <CollapsibleContent className="bg-black/40 -mx-4 px-4 py-3">
+            <CollapsibleContent 
+              className="py-3 px-4"
+              style={{
+                backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}10` : 'rgba(0,0,0,0.3)',
+                backdropFilter: 'blur(4px)'
+              }}
+            >
               {item.purchasePrice && (
                 <div className="text-sm text-white/90 flex items-center mb-2">
                   <DollarSign className="h-3 w-3 mr-1" />
@@ -200,7 +230,7 @@ export const SkinCard = ({
                 {onSell && (
                   <Button
                     variant="outline"
-                    className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
+                    className="text-white border-white/20 hover:bg-white/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       onSell(item.inventoryId, {});
@@ -212,7 +242,7 @@ export const SkinCard = ({
                 {onDuplicate && (
                   <Button
                     variant="outline"
-                    className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
+                    className="text-white border-white/20 hover:bg-white/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDuplicate(item);
@@ -224,7 +254,7 @@ export const SkinCard = ({
                 {onEdit && (
                   <Button
                     variant="outline"
-                    className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white"
+                    className="text-white border-white/20 hover:bg-white/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       onEdit(item);
@@ -236,7 +266,7 @@ export const SkinCard = ({
                 {onRemove && (
                   <Button
                     variant="outline"
-                    className="bg-amber-900/50 border-amber-800/50 text-white hover:bg-amber-800/70 hover:text-white col-span-3 mt-1"
+                    className="text-white border-white/20 hover:bg-white/10 col-span-3 mt-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRemove(item.inventoryId);
