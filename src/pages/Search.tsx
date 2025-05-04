@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Search } from "@/components/ui/search";
 import { ViewToggle } from "@/components/ui/view-toggle";
@@ -43,21 +44,25 @@ export default function SearchPage() {
   // Fetch categories for filtering options
   const { data: categories } = useCategories();
 
-  // Extract unique weapon types and rarities from categories
-  const weaponTypes = categories?.filter(cat => 
-    cat != null && typeof cat === 'object' && 'type' in cat && cat.type === 'weapon'
-  ).map(cat => {
-    if (cat != null && typeof cat === 'object' && 'name' in cat) {
-      return cat.name as string;
+  // Extract unique weapon types and rarities from categories - with proper null checking
+  const weaponTypes = categories?.filter(cat => {
+    if (cat === null || typeof cat !== 'object') return false;
+    return 'type' in cat && cat.type === 'weapon';
+  }).map(cat => {
+    // We've already checked that cat is not null above
+    if (typeof cat === 'object' && cat !== null && 'name' in cat && typeof cat.name === 'string') {
+      return cat.name;
     }
     return '';
   }).filter(name => name !== '') || [];
   
-  const rarityTypes = categories?.filter(cat => 
-    cat != null && typeof cat === 'object' && 'type' in cat && cat.type === 'rarity'
-  ).map(cat => {
-    if (cat != null && typeof cat === 'object' && 'name' in cat) {
-      return cat.name as string;
+  const rarityTypes = categories?.filter(cat => {
+    if (cat === null || typeof cat !== 'object') return false;
+    return 'type' in cat && cat.type === 'rarity';
+  }).map(cat => {
+    // We've already checked that cat is not null above
+    if (typeof cat === 'object' && cat !== null && 'name' in cat && typeof cat.name === 'string') {
+      return cat.name;
     }
     return '';
   }).filter(name => name !== '') || [];
@@ -410,3 +415,4 @@ export default function SearchPage() {
     </>
   );
 }
+
