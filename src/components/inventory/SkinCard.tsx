@@ -51,9 +51,9 @@ export const SkinCard = ({
     };
     
     return {
-      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.15)} 0%, transparent 100%)`,
-      border: `1px solid ${hexToRgba(rarityColor, 0.5)}`,
-      boxShadow: `0 4px 20px ${hexToRgba(rarityColor, 0.2)}, inset 0 0 30px ${hexToRgba(rarityColor, 0.05)}`,
+      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.25)} 0%, transparent 100%)`,
+      border: `1px solid ${hexToRgba(rarityColor, 0.6)}`,
+      boxShadow: `0 4px 20px ${hexToRgba(rarityColor, 0.3)}, inset 0 0 30px ${hexToRgba(rarityColor, 0.1)}`,
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
     };
@@ -61,6 +61,12 @@ export const SkinCard = ({
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = '/placeholder.svg';
+  };
+
+  // Formatação do float para o estilo X.XXX
+  const formatFloat = (value?: number) => {
+    if (value === undefined) return '';
+    return value.toFixed(4);
   };
 
   return (
@@ -77,7 +83,7 @@ export const SkinCard = ({
         <div 
           className="absolute inset-0 pointer-events-none"
           style={{
-            boxShadow: `inset 0 0 0 1px ${getRarityColor(item.rarity)}50`,
+            boxShadow: `inset 0 0 0 1px ${getRarityColor(item.rarity)}60`,
             borderRadius: 'inherit'
           }}
         ></div>
@@ -86,7 +92,7 @@ export const SkinCard = ({
       {/* Conteúdo do card */}
       <div className="relative h-full flex flex-col p-4">
         {/* Cabeçalho do card */}
-        <div className="flex justify-between items-start mb-2">
+        <div className="flex justify-between items-start mb-2 z-10">
           <div>
             <h2 className="text-xl font-bold text-white">{item.name}</h2>
             <p className="text-sm text-white/80">{item.weapon}</p>
@@ -104,6 +110,13 @@ export const SkinCard = ({
             )}
           </div>
         </div>
+
+        {/* Float value no canto superior direito */}
+        {item.floatValue !== undefined && (
+          <div className="absolute top-4 right-4 bg-black/40 rounded px-2 py-1 z-10">
+            <span className="text-xs font-mono text-white">{formatFloat(item.floatValue)}</span>
+          </div>
+        )}
 
         {/* Botão de favorito */}
         {onToggleFavorite && (
@@ -123,9 +136,9 @@ export const SkinCard = ({
         )}
 
         {/* Área central com imagem */}
-        <div className="flex-1 flex items-center justify-center py-2">
+        <div className="flex-1 flex items-center justify-center py-2 mt-6">
           {item.image ? (
-            <div className="relative h-full w-full max-h-36 flex items-center justify-center">
+            <div className="relative h-full w-full max-h-28 flex items-center justify-center">
               <img
                 src={item.image}
                 alt={`${item.weapon} | ${item.name}`}
@@ -139,7 +152,7 @@ export const SkinCard = ({
               
               {/* Brilho atrás da imagem */}
               <div 
-                className="absolute inset-0 -z-10 opacity-20"
+                className="absolute inset-0 -z-10 opacity-30"
                 style={{
                   background: item.rarity ? 
                     `radial-gradient(circle at center, ${getRarityColor(item.rarity)} 0%, transparent 70%)` : 
@@ -159,9 +172,6 @@ export const SkinCard = ({
           <div className="flex justify-between items-center mt-2">
             <div className="flex items-center">
               <span className="text-white font-medium">{item.wear || "Factory New"}</span>
-              {item.floatValue !== undefined && (
-                <span className="ml-2 text-white/70 text-sm">{item.floatValue.toFixed(2)}</span>
-              )}
             </div>
             {item.rarity && (
               <span 
@@ -200,8 +210,8 @@ export const SkinCard = ({
                 variant="ghost"
                 className="w-full flex justify-between items-center text-white/90 hover:text-white py-2 px-3 -mx-4 rounded-none"
                 style={{
-                  backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}20` : 'rgba(0,0,0,0.4)',
-                  borderTop: item.rarity ? `1px solid ${getRarityColor(item.rarity)}30` : '1px solid rgba(255,255,255,0.1)'
+                  backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}30` : 'rgba(0,0,0,0.4)',
+                  borderTop: item.rarity ? `1px solid ${getRarityColor(item.rarity)}40` : '1px solid rgba(255,255,255,0.1)'
                 }}
               >
                 <div className="flex items-center">
@@ -215,7 +225,7 @@ export const SkinCard = ({
             <CollapsibleContent 
               className="py-3 px-4"
               style={{
-                backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}10` : 'rgba(0,0,0,0.3)',
+                backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}20` : 'rgba(0,0,0,0.3)',
                 backdropFilter: 'blur(4px)'
               }}
             >

@@ -47,9 +47,9 @@ export const SkinListItem = ({
     };
     
     return {
-      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.1)} 0%, transparent 100%)`,
-      borderLeft: `3px solid ${hexToRgba(rarityColor, 0.7)}`,
-      boxShadow: `0 2px 10px ${hexToRgba(rarityColor, 0.1)}`,
+      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.25)} 0%, transparent 100%)`,
+      borderLeft: `3px solid ${hexToRgba(rarityColor, 0.8)}`,
+      boxShadow: `0 2px 10px ${hexToRgba(rarityColor, 0.2)}`,
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
     };
@@ -57,6 +57,12 @@ export const SkinListItem = ({
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = '/placeholder.svg';
+  };
+
+  // Formatação do float para o estilo X.XXX
+  const formatFloat = (value?: number) => {
+    if (value === undefined) return '';
+    return value.toFixed(4);
   };
 
   return (
@@ -71,7 +77,7 @@ export const SkinListItem = ({
       {/* Conteúdo do item */}
       <div className="relative flex items-center p-3 gap-3">
         {/* Imagem */}
-        <div className="h-16 w-16 bg-black/20 rounded flex items-center justify-center shrink-0 overflow-hidden backdrop-blur-sm">
+        <div className="h-16 w-16 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden backdrop-blur-sm">
           {item.image ? (
             <img
               src={item.image}
@@ -101,8 +107,11 @@ export const SkinListItem = ({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className="text-white/80">{item.weapon}</span>
             <span className="text-white/80">{item.wear || "Factory New"}</span>
+            {/* Float value exibido com formatação específica */}
             {item.floatValue !== undefined && (
-              <span className="text-white/70 text-xs">{item.floatValue.toFixed(2)}</span>
+              <span className="text-white/90 text-xs bg-black/30 px-1.5 py-0.5 rounded">
+                {formatFloat(item.floatValue)}
+              </span>
             )}
             {item.tradeLockDays && item.tradeLockDays > 0 && (
               <div className="flex items-center gap-1 text-yellow-300">
@@ -133,7 +142,7 @@ export const SkinListItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white"
+                className="h-8 w-8 p-0 rounded-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onToggleFavorite(item.inventoryId);
@@ -149,7 +158,7 @@ export const SkinListItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white"
+                className="h-8 w-8 p-0 rounded-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(item);
@@ -163,7 +172,7 @@ export const SkinListItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white"
+                className="h-8 w-8 p-0 rounded-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDuplicate(item);
@@ -177,7 +186,7 @@ export const SkinListItem = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/20 hover:bg-black/40 text-white/70 hover:text-white"
+                className="h-8 w-8 p-0 rounded-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onRemove(item.inventoryId);
