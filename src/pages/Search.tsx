@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Search } from "@/components/ui/search";
 import { ViewToggle } from "@/components/ui/view-toggle";
@@ -45,19 +46,31 @@ export default function SearchPage() {
 
   // Extrair tipos de armas e raridades com verificações de nulidade adequadas
   const weaponTypes = categories
-    ?.filter(category => category !== null && typeof category === 'object' && 'type' in category && category.type === 'weapon')
+    ?.filter(category => {
+      if (!category) return false;
+      if (typeof category !== 'object') return false;
+      return 'type' in category && category.type === 'weapon';
+    })
     .map(category => {
-      if (category === null || typeof category !== 'object') return '';
-      if (!('name' in category) || typeof category.name !== 'string') return '';
+      if (!category) return '';
+      if (typeof category !== 'object') return '';
+      if (!('name' in category)) return '';
+      if (typeof category.name !== 'string') return '';
       return category.name;
     })
     .filter(name => name !== '') || [];
   
   const rarityTypes = categories
-    ?.filter(category => category !== null && typeof category === 'object' && 'type' in category && category.type === 'rarity')
+    ?.filter(category => {
+      if (!category) return false;
+      if (typeof category !== 'object') return false;
+      return 'type' in category && category.type === 'rarity';
+    })
     .map(category => {
-      if (category === null || typeof category !== 'object') return '';
-      if (!('name' in category) || typeof category.name !== 'string') return '';
+      if (!category) return '';
+      if (typeof category !== 'object') return '';
+      if (!('name' in category)) return '';
+      if (typeof category.name !== 'string') return '';
       return category.name;
     })
     .filter(name => name !== '') || [];
