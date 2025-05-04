@@ -44,21 +44,17 @@ export default function SearchPage() {
   const { data: categories } = useCategories();
 
   // Extract unique weapon types and rarities from categories
-  const weaponTypes = categories?.filter(cat => {
-    // Add null check for cat
-    return cat && typeof cat === 'object' && 'type' in cat && cat.type === 'weapon';
-  }).map(cat => {
-    // Add null check for cat
-    return cat && typeof cat === 'object' && 'name' in cat ? cat.name as string : '';
-  }).filter(name => name !== '') || [];
+  const weaponTypes = categories?.filter(cat => 
+    cat && typeof cat === 'object' && 'type' in cat && cat.type === 'weapon'
+  ).map(cat => 
+    cat && typeof cat === 'object' && 'name' in cat ? cat.name as string : ''
+  ).filter(name => name !== '') || [];
   
-  const rarityTypes = categories?.filter(cat => {
-    // Add null check for cat
-    return cat && typeof cat === 'object' && 'type' in cat && cat.type === 'rarity';
-  }).map(cat => {
-    // Add null check for cat
-    return cat && typeof cat === 'object' && 'name' in cat ? cat.name as string : '';
-  }).filter(name => name !== '') || [];
+  const rarityTypes = categories?.filter(cat => 
+    cat && typeof cat === 'object' && 'type' in cat && cat.type === 'rarity'
+  ).map(cat => 
+    cat && typeof cat === 'object' && 'name' in cat ? cat.name as string : ''
+  ).filter(name => name !== '') || [];
   
   // Calculate pagination
   const totalItems = skins?.length || 0;
