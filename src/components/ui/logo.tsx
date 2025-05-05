@@ -10,8 +10,8 @@ interface LogoProps {
 export const Logo: FC<LogoProps> = ({ size = "md", className = "", variant = "text-only" }) => {
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      <span className="font-bold text-foreground">CS SKIN</span>
-      <span className="font-bold text-primary">VAULT</span>
+      <span className="font-bold text-[#F0F0F0]">CS SKIN</span>
+      <span className="font-bold text-[#FFCC00]">VAULT</span>
     </div>
   );
 };

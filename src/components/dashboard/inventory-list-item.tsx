@@ -96,9 +96,9 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       {/* Main info */}
       <div className="flex-1 min-w-0 relative z-10">
         <div className="flex items-center gap-1">
-          <div className="font-medium text-sm truncate text-white">
+          <div className="font-medium text-sm truncate text-[#F0F0F0]">
             {skinName}
-            <span className="text-white/80 ml-1">{weaponName}</span>
+            <span className="text-[#A3A3A3] ml-1">{weaponName}</span>
           </div>
           {isStatTrak && (
             <Badge 
@@ -109,10 +109,10 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-1 text-xs text-white/80">
+        <div className="flex items-center gap-1 text-xs text-[#A3A3A3]">
           {wear && <span>{wear}</span>}
           {isLocked && daysLeft > 0 && (
-            <div className="flex items-center text-[10px] text-yellow-300 ml-1">
+            <div className="flex items-center text-[10px] text-[#FFCC00] ml-1">
               <Lock className="h-3 w-3 mr-0.5" />
               {daysLeft}d
             </div>
@@ -121,7 +121,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
       </div>
       
       {/* Price */}
-      {price && <div className="text-sm font-medium whitespace-nowrap text-white relative z-10">
+      {price && <div className="text-sm font-medium whitespace-nowrap text-[#F0F0F0] relative z-10">
         {typeof price === 'number' ? formatPrice(price) : price}
       </div>}
     </div>
