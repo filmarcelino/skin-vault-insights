@@ -11,11 +11,14 @@ import { CurrencySelector } from "@/components/ui/currency-selector";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { DuplicateSkinModal } from "@/components/inventory/DuplicateSkinModal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
+import { InventoryGrid } from "@/components/inventory/InventoryGrid";
+import { ViewToggle } from "@/components/ui/view-toggle";
 
 const Inventory = () => {
   const [search, setSearch] = useState("");
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const { toast } = useToast();
   const { data: inventory, isLoading, refetch } = useInventory();
   const invalidateInventory = useInvalidateInventory();
@@ -79,24 +82,24 @@ const Inventory = () => {
 
   return (
     <div className="container py-8 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-[#8B5CF6] to-[#D946EF] bg-clip-text text-transparent">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-cs2-gold to-cs2-gold-light bg-clip-text text-transparent">
           Meu Inventário
         </h1>
         <Button 
           onClick={handleRefreshInventory}
           disabled={isRefreshing}
           size="sm"
-          variant="outline"
-          className="gap-2"
+          variant="cs2Outline"
+          className="gap-2 whitespace-nowrap"
         >
           <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           {isRefreshing ? 'Atualizando...' : 'Atualizar Inventário'}
         </Button>
       </div>
 
-      <div className="flex items-center justify-between py-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
+        <div className="flex flex-1 items-center gap-4">
           <Input
             type="search"
             placeholder="Buscar skin..."
@@ -105,17 +108,34 @@ const Inventory = () => {
             className="max-w-sm"
           />
         </div>
-        <CurrencySelector />
+        <div className="flex items-center gap-2">
+          <CurrencySelector />
+          <ViewToggle
+            view={viewMode}
+            onChange={setViewMode}
+          />
+        </div>
       </div>
 
-      <InventoryTable
-        isLoading={isLoading}
-        inventory={filteredInventory}
-        onEdit={onEdit}
-        onDuplicate={onDuplicate}
-        onRemove={onRemove}
-        onSell={onSell}
-      />
+      {viewMode === 'list' ? (
+        <InventoryTable
+          isLoading={isLoading}
+          inventory={filteredInventory}
+          onEdit={onEdit}
+          onDuplicate={onDuplicate}
+          onRemove={onRemove}
+          onSell={onSell}
+        />
+      ) : (
+        <InventoryGrid
+          isLoading={isLoading}
+          inventory={filteredInventory}
+          onEdit={onEdit}
+          onDuplicate={onDuplicate}
+          onRemove={onRemove}
+          onSell={onSell}
+        />
+      )}
 
       <DuplicateSkinModal
         open={duplicateModalOpen}

@@ -36,51 +36,52 @@ export const SkinListItem = ({
 
   // Get the border color based on rarity
   const getBorderColor = (rarity?: string) => {
-    if (!rarity) return "#5E7D9A"; // Default azul escuro
+    if (!rarity) return "#B0C3D9"; // Default CS2 blue
     
-    // Cores baseadas na imagem de referência
+    // Cores baseadas nas cores do CS2
     switch (rarity.toLowerCase()) {
       case "consumer grade":
       case "white":
       case "comum":
-        return "#5E7D9A"; // Azul escuro
+        return "#B0C3D9"; // CS2 Branco/Cinza claro
       case "industrial grade":
       case "light blue": 
       case "pouco comum":
-        return "#0A4D8F"; // Azul médio
+        return "#5E98D9"; // CS2 Azul claro
       case "mil-spec grade":
       case "blue":
       case "militar":
-        return "#0B83C2"; // Azul 
+        return "#4B69FF"; // CS2 Azul
       case "restricted":
       case "purple":
       case "restrita":
-        return "#684498"; // Roxo
+        return "#8847FF"; // CS2 Roxo
       case "classified":
       case "pink":
       case "classificada":
-        return "#CD3F96"; // Rosa
+        return "#D32CE6"; // CS2 Rosa
       case "covert":
       case "red":
       case "secreta":
       case "rara":
-        return "#EB4B4B"; // Vermelho
+        return "#EB4B4B"; // CS2 Vermelho
       case "contraband":
       case "gold":
       case "contrabando":
-        return "#FFD700"; // Dourado
+        return "#FFD700"; // CS2 Dourado
       case "★ rare special item":
       case "special rare":
       case "knife":
       case "glove":
       case "especial rara":
-        return "#FFCA28"; // Amarelo
+      case "extraordinary":
+        return "#FFCA28"; // CS2 Amarelo
       default:
-        return "#5E7D9A"; // Default
+        return "#B0C3D9"; // Default
     }
   };
 
-  // Função para gerar o gradiente de cor baseado na raridade com cores inspiradas na imagem de referência
+  // Função para gerar o gradiente de cor baseado na raridade com cores do CS2
   const getBackgroundGradient = () => {
     const borderColor = getBorderColor(item.rarity || '');
     
@@ -92,7 +93,7 @@ export const SkinListItem = ({
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
     
-    // Cores baseadas na imagem de referência para backgrounds
+    // Cores baseadas nas cores do CS2 para backgrounds
     const getBackgroundColor = () => {
       switch ((item.rarity || '').toLowerCase()) {
         case "consumer grade":
@@ -128,6 +129,7 @@ export const SkinListItem = ({
         case "knife":
         case "glove":
         case "especial rara":
+        case "extraordinary":
           return "#1C1509"; // Amarelo escuro
         default:
           return "#1A1F2C"; // Cinza escuro como na imagem
@@ -166,7 +168,7 @@ export const SkinListItem = ({
       onClick={handleItemClick}
     >
       {/* Conteúdo do item */}
-      <div className="relative flex items-center p-3 gap-3">
+      <div className="relative flex flex-wrap sm:flex-nowrap items-center p-3 gap-3">
         {/* Imagem com halo luminoso */}
         <div className="h-16 w-16 bg-black/30 rounded flex items-center justify-center shrink-0 overflow-hidden backdrop-blur-sm relative">
           {item.image ? (
@@ -196,7 +198,7 @@ export const SkinListItem = ({
         </div>
 
         {/* Informações */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 w-full sm:w-auto">
           <div className="flex items-center gap-2">
             <h2 className="font-medium text-white truncate">{item.name}</h2>
             {item.isStatTrak && (
@@ -224,7 +226,7 @@ export const SkinListItem = ({
         </div>
 
         {/* Preço e ações */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 mt-2 sm:mt-0 w-full sm:w-auto justify-between sm:justify-start">
           <div className="text-right">
             <div className="text-sm font-medium text-white">
               {item.currentPrice !== undefined ? formatPrice(item.currentPrice) : 

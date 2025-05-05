@@ -13,64 +13,38 @@ export const useFilteredCategories = () => {
   // Extract weapon types with proper type checks
   const weaponTypes = categories
     ?.filter((item): item is Category => {
-      // Ensure item exists
-      if (item === null || item === undefined) {
+      // Ensure item exists and has the required properties
+      if (!item || typeof item !== 'object') {
         return false;
       }
       
-      // Ensure item is an object
-      if (typeof item !== 'object') {
-        return false;
-      }
-      
-      // Ensure item has the required properties
-      if (!('type' in item) || !('name' in item)) {
-        return false;
-      }
-      
-      // Get the properties with safe type checking
-      const type = (item as { type?: unknown }).type;
-      const name = (item as { name?: unknown }).name;
-      
-      // Ensure item properties are of the right type
-      if (typeof type !== 'string' || typeof name !== 'string') {
-        return false;
-      }
-      
-      // Ensure item is a weapon type
-      return type === 'weapon';
+      // Type guard check
+      return (
+        'type' in item && 
+        'name' in item && 
+        typeof item.type === 'string' && 
+        typeof item.name === 'string' && 
+        item.type === 'weapon'
+      );
     })
     .map((category) => category.name) || [];
   
   // Extract rarity types with proper type checks
   const rarityTypes = categories
     ?.filter((item): item is Category => {
-      // Ensure item exists
-      if (item === null || item === undefined) {
+      // Ensure item exists and has the required properties
+      if (!item || typeof item !== 'object') {
         return false;
       }
       
-      // Ensure item is an object
-      if (typeof item !== 'object') {
-        return false;
-      }
-      
-      // Ensure item has the required properties
-      if (!('type' in item) || !('name' in item)) {
-        return false;
-      }
-      
-      // Get the properties with safe type checking
-      const type = (item as { type?: unknown }).type;
-      const name = (item as { name?: unknown }).name;
-      
-      // Ensure item properties are of the right type
-      if (typeof type !== 'string' || typeof name !== 'string') {
-        return false;
-      }
-      
-      // Ensure item is a rarity type
-      return type === 'rarity';
+      // Type guard check
+      return (
+        'type' in item && 
+        'name' in item && 
+        typeof item.type === 'string' && 
+        typeof item.name === 'string' && 
+        item.type === 'rarity'
+      );
     })
     .map((category) => category.name) || [];
 

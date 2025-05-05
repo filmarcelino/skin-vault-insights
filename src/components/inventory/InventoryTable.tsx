@@ -48,7 +48,7 @@ export const InventoryTable = ({
   }
 
   return (
-    <div className="space-y-2 mt-4">
+    <div className="space-y-2 mt-4 w-full">
       {inventory.map((item) => (
         <SkinListItem 
           key={item.inventoryId} 
