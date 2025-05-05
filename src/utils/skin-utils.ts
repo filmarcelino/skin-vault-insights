@@ -1,4 +1,3 @@
-
 import { SkinWear } from "@/types/skin";
 
 // Get the color class for rarity styling
@@ -54,40 +53,40 @@ export const getRarityColor = (rarity?: string) => {
     case "consumer grade":
     case "white":
     case "comum":
-      return "#B0C3D9";
+      return "#B0C3D9"; // Azul acinzentado claro
     case "industrial grade":
     case "light blue":
     case "pouco comum":
-      return "#5E98D9";
+      return "#5E98D9"; // Azul médio
     case "mil-spec grade":
     case "blue":
     case "militar":
-      return "#4B69FF";
+      return "#4B69FF"; // Azul vibrante
     case "restricted":
     case "purple":
     case "restrita":
-      return "#8847FF";
+      return "#8847FF"; // Roxo médio
     case "classified":
     case "pink":
     case "classificada":
-      return "#E646FF";
+      return "#D32CE6"; // Rosa/roxo vibrante
     case "covert":
     case "red":
     case "secreta":
     case "rara":
-      return "#EB4B4B";
+      return "#EB4B4B"; // Vermelho vibrante
     case "contraband":
     case "gold":
     case "contrabando":
-      return "#FFD700";
+      return "#FFD700"; // Dourado
     case "extraordinary":
     case "rare special":
     case "knife":
     case "glove":
     case "especial rara":
-      return "#FFF99B";
+      return "#FFF99B"; // Amarelo claro
     default:
-      return "#888888";
+      return "#888888"; // Cinza como fallback
   }
 };
 
