@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { InventoryItem } from "@/types/skin";
 import { Edit, Heart, Lock, Info, DollarSign, Copy, ChevronDown } from "lucide-react";
@@ -171,6 +170,14 @@ export const SkinCard = ({
       style={getBackgroundStyle()}
       onClick={handleCardClick}
     >
+      {/* Trade Lock Indicator - Reposicionado para o topo */}
+      {item.tradeLockDays && item.tradeLockDays > 0 && (
+        <div className="absolute top-2 left-2 z-30 flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded text-yellow-300 text-xs">
+          <Lock className="h-3 w-3" />
+          <span>{item.tradeLockDays}d</span>
+        </div>
+      )}
+      
       {/* Conteúdo do card */}
       <div className="relative h-full flex flex-col p-3">
         {/* Cabeçalho do card */}
@@ -218,7 +225,7 @@ export const SkinCard = ({
         )}
 
         {/* Área central com imagem */}
-        <div className="flex-1 flex items-center justify-center py-1">
+        <div className="flex-1 flex items-center justify-center py-1 mt-2">
           {item.image ? (
             <div className="relative w-full h-full max-h-24 flex items-center justify-center">
               <img

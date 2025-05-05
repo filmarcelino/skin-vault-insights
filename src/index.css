@@ -216,3 +216,10 @@
 }
 
 /* Removida a classe .animate-pulse-glow para evitar o efeito pulsante */
+
+/* Responsive utilities */
+@media (min-width: 480px) {
+  .xs\:inline-block {
+    display: inline-block;
+  }
+}
