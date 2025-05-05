@@ -9,7 +9,7 @@ export const useFilteredCategories = () => {
     ?.filter((category) => {
       if (category === null || category === undefined) return false;
       if (typeof category !== 'object') return false;
-      return 'type' in category && category.type === 'weapon';
+      return category && 'type' in category && category.type === 'weapon';
     })
     .map((category) => {
       if (category === null || category === undefined) return '';
@@ -25,7 +25,7 @@ export const useFilteredCategories = () => {
     ?.filter((category) => {
       if (category === null || category === undefined) return false;
       if (typeof category !== 'object') return false;
-      return 'type' in category && category.type === 'rarity';
+      return category && 'type' in category && category.type === 'rarity';
     })
     .map((category) => {
       if (category === null || category === undefined) return '';

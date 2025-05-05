@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,7 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/auth/require-auth";
+import Landing from "./pages/Landing";
 
 // Configuração do React Query para 15 minutos de staleTime em vez de 5 minutos
 const queryClient = new QueryClient({
@@ -43,11 +45,12 @@ const App = () => {
               <BrowserRouter>
                 <Routes>
                   {/* Public routes */}
+                  <Route path="/" element={<Landing />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   
                   {/* Protected routes */}
-                  <Route path="/" element={
+                  <Route path="/dashboard" element={
                     <RequireAuth>
                       <Layout><Index /></Layout>
                     </RequireAuth>
