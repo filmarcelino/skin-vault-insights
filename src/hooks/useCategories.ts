@@ -14,12 +14,13 @@ export const useFilteredCategories = () => {
   const weaponTypes = categories
     ?.filter((item): item is Category => {
       // Ensure item exists and has the required properties
-      if (!item || typeof item !== 'object') {
+      if (!item) {
         return false;
       }
       
       // Type guard check
       return (
+        typeof item === 'object' &&
         'type' in item && 
         'name' in item && 
         typeof item.type === 'string' && 
@@ -33,12 +34,13 @@ export const useFilteredCategories = () => {
   const rarityTypes = categories
     ?.filter((item): item is Category => {
       // Ensure item exists and has the required properties
-      if (!item || typeof item !== 'object') {
+      if (!item) {
         return false;
       }
       
       // Type guard check
       return (
+        typeof item === 'object' &&
         'type' in item && 
         'name' in item && 
         typeof item.type === 'string' && 
