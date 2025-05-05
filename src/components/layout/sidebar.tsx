@@ -20,9 +20,9 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const sidebarItems = [
     {
-      title: "Overview",
+      title: "Dashboard",
       icon: LayoutDashboard,
-      href: "/",
+      href: "/dashboard",
       variant: "default",
     },
     {
@@ -46,7 +46,7 @@ export function Sidebar({ className }: SidebarProps) {
     {
       title: "Add Skin",
       icon: Plus,
-      href: "/add-skin",
+      href: "/add",
       variant: "ghost",
     },
     {

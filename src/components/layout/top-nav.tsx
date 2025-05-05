@@ -13,7 +13,7 @@ export const TopNav: FC = () => {
   // Function to get page name based on current route
   const getPageName = (path: string) => {
     switch (path) {
-      case "/":
+      case "/dashboard":
         return "Dashboard";
       case "/search":
         return "Search Skins";
@@ -49,8 +49,8 @@ export const TopNav: FC = () => {
           
           <div className="flex items-center space-x-0.5 sm:space-x-1 overflow-x-auto scrollbar-hide w-full md:w-auto">
             <Link 
-              to="/" 
-              className={getLinkClass("/")}
+              to="/dashboard" 
+              className={getLinkClass("/dashboard")}
               title="Dashboard"
             >
               <Home className="h-4 w-4" />
