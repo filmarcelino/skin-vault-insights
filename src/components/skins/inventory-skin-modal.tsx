@@ -1,12 +1,13 @@
+
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { InventoryItem, SellData, Skin } from "@/types/skin";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SkinDetailsCard } from "./skin-details-card";
 import { SkinSellingForm } from "./skin-selling-form";
 import { SkinAdditionalInfo } from "./skin-additional-info";
 import { Button } from "../ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAddSkin, useRemoveSkin } from "@/hooks/use-skins";
 import {
@@ -21,13 +22,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "../ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "../ui/form";
+import { useForm } from "react-hook-form";
 
 interface InventorySkinModalProps {
   item: InventoryItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSellSkin?: (itemId: string, sellData: SellData) => void;
+  onUpdateSkin?: (item: InventoryItem) => Promise<void>;
   onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
+  onClose?: () => void;
 }
 
 export function InventorySkinModal({
@@ -35,14 +41,29 @@ export function InventorySkinModal({
   open,
   onOpenChange,
   onSellSkin,
-  onAddToInventory
+  onUpdateSkin,
+  onAddToInventory,
+  onClose
 }: InventorySkinModalProps) {
   const [activeTab, setActiveTab] = useState("details");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [removalType, setRemovalType] = useState<'remove' | 'sell'>('remove');
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const addSkinMutation = useAddSkin();
   const removeSkinMutation = useRemoveSkin();
+  
+  // Criar form para edição
+  const form = useForm<InventoryItem>({
+    defaultValues: item || {}
+  });
+  
+  // Atualizar form quando o item mudar
+  useEffect(() => {
+    if (item && !isEditing) {
+      form.reset(item);
+    }
+  }, [item, form, isEditing]);
 
   const handleAddToInventory = async () => {
     if (!item) return;
@@ -151,6 +172,165 @@ export function InventorySkinModal({
     }
     onOpenChange(false);
   };
+  
+  const handleSaveEdit = async (data: InventoryItem) => {
+    if (!item || !onUpdateSkin) return;
+    
+    try {
+      // Garantir que mantemos o ID correto
+      const updatedItem = {
+        ...data,
+        inventoryId: item.inventoryId
+      };
+      
+      await onUpdateSkin(updatedItem);
+      toast({
+        title: "Skin Atualizada",
+        description: `${updatedItem.weapon} | ${updatedItem.name} foi atualizada com sucesso.`,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating skin:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar skin",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleCloseModal = () => {
+    setIsEditing(false);
+    if (onClose) onClose();
+    else onOpenChange(false);
+  };
+
+  const renderEditForm = () => {
+    if (!item) return null;
+    
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSaveEdit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome da Skin</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome da skin" {...field} value={field.value || ''} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="weapon"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Arma</FormLabel>
+                <FormControl>
+                  <Input placeholder="Tipo de arma" {...field} value={field.value || ''} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="wear"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Condição</FormLabel>
+                <FormControl>
+                  <Input placeholder="Condição da skin" {...field} value={field.value || ''} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="rarity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Raridade</FormLabel>
+                <FormControl>
+                  <Input placeholder="Raridade da skin" {...field} value={field.value || ''} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="floatValue"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor Float</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.0001"
+                    placeholder="Valor float" 
+                    {...field} 
+                    value={field.value?.toString() || '0'} 
+                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="currentPrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Preço Atual</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="Preço atual" 
+                    {...field} 
+                    value={field.value?.toString() || '0'} 
+                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="purchasePrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Preço de Compra</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="Preço de compra" 
+                    {...field} 
+                    value={field.value?.toString() || '0'} 
+                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" className="flex-1">Salvar Alterações</Button>
+            <Button type="button" variant="outline" onClick={() => setIsEditing(false)} className="flex-1">Cancelar</Button>
+          </div>
+        </form>
+      </Form>
+    );
+  };
 
   return (
     <>
@@ -158,94 +338,116 @@ export function InventorySkinModal({
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           {item && (
             <>
-              <SkinDetailsCard item={item} />
+              {!isEditing ? (
+                <SkinDetailsCard item={item} />
+              ) : (
+                <div className="p-4 border rounded-lg mb-4">
+                  <h3 className="text-lg font-semibold mb-4">Editar Informações da Skin</h3>
+                  {renderEditForm()}
+                </div>
+              )}
 
               {/* Action Buttons */}
-              <div className="mb-4 flex gap-2">
-                {!item.isInUserInventory && (onAddToInventory || addSkinMutation) && (
-                  <Button 
-                    onClick={handleAddToInventory} 
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    disabled={addSkinMutation.isPending}
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    {addSkinMutation.isPending ? "Adicionando..." : "Adicionar ao Inventário"}
-                  </Button>
-                )}
-                
-                {item.isInUserInventory && (
-                  <Button 
-                    onClick={() => setIsDeleteDialogOpen(true)} 
-                    variant="destructive"
-                    className="flex-1"
-                    disabled={removeSkinMutation.isPending}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {removeSkinMutation.isPending ? "Removendo..." : "Remover do Inventário"}
-                  </Button>
-                )}
-              </div>
-
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="w-full">
-                  <TabsTrigger value="details" className="flex-1">Detalhes</TabsTrigger>
-                  {item.isInUserInventory && onSellSkin && (
-                    <TabsTrigger value="sell" className="flex-1">Vender</TabsTrigger>
+              {!isEditing && (
+                <div className="mb-4 flex gap-2">
+                  {!item.isInUserInventory && (onAddToInventory || addSkinMutation) && (
+                    <Button 
+                      onClick={handleAddToInventory} 
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      disabled={addSkinMutation.isPending}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      {addSkinMutation.isPending ? "Adicionando..." : "Adicionar ao Inventário"}
+                    </Button>
                   )}
-                  <TabsTrigger value="notes" className="flex-1">Notas</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="details" className="py-4">
-                  <div className="space-y-6">
-                    {/* Histórico de preços - Placeholder por enquanto */}
-                    <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                      <h3 className="font-medium mb-2 text-[#8B5CF6]">Histórico de Preços</h3>
-                      <div className="h-24 flex items-center justify-center text-[#8A898C] text-sm">
-                        Gráficos de histórico de preços estarão disponíveis em breve.
-                      </div>
-                    </div>
+                  
+                  {item.isInUserInventory && onUpdateSkin && (
+                    <Button 
+                      onClick={() => setIsEditing(true)} 
+                      className="flex-1"
+                      variant="outline"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar Informações
+                    </Button>
+                  )}
+                  
+                  {item.isInUserInventory && (
+                    <Button 
+                      onClick={() => setIsDeleteDialogOpen(true)} 
+                      variant="destructive"
+                      className="flex-1"
+                      disabled={removeSkinMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {removeSkinMutation.isPending ? "Removendo..." : "Remover do Inventário"}
+                    </Button>
+                  )}
+                </div>
+              )}
 
-                    {/* Informa��ões da coleção - Placeholder por enquanto */}
-                    {item.collection && (
+              {!isEditing && (
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="details" className="flex-1">Detalhes</TabsTrigger>
+                    {item.isInUserInventory && onSellSkin && (
+                      <TabsTrigger value="sell" className="flex-1">Vender</TabsTrigger>
+                    )}
+                    <TabsTrigger value="notes" className="flex-1">Notas</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="details" className="py-4">
+                    <div className="space-y-6">
+                      {/* Histórico de preços - Placeholder por enquanto */}
                       <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                        <h3 className="font-medium mb-2 text-[#8B5CF6]">Coleção</h3>
-                        <div className="text-sm text-[#8A898C]">
-                          Esta skin faz parte de {item.collection.name || "Coleção Desconhecida"}
+                        <h3 className="font-medium mb-2 text-[#8B5CF6]">Histórico de Preços</h3>
+                        <div className="h-24 flex items-center justify-center text-[#8A898C] text-sm">
+                          Gráficos de histórico de preços estarão disponíveis em breve.
                         </div>
                       </div>
-                    )}
 
-                    {/* Informações do Float */}
-                    <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
-                      <h3 className="font-medium mb-2 text-[#8B5CF6]">Valor Float</h3>
-                      <div className="text-sm text-[#8A898C]">
-                        {item.floatValue ? (
-                          <>
-                            <p>Float Atual: {item.floatValue.toFixed(8)}</p>
-                            <p>Faixa de Float: {item.min_float?.toFixed(8) || "Desconhecido"} - {item.max_float?.toFixed(8) || "Desconhecido"}</p>
-                          </>
-                        ) : (
-                          <p>Informações do valor de float não disponíveis.</p>
-                        )}
+                      {/* Informa��ões da coleção - Placeholder por enquanto */}
+                      {item.collection && (
+                        <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
+                          <h3 className="font-medium mb-2 text-[#8B5CF6]">Coleção</h3>
+                          <div className="text-sm text-[#8A898C]">
+                            Esta skin faz parte de {item.collection.name || "Coleção Desconhecida"}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Informações do Float */}
+                      <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
+                        <h3 className="font-medium mb-2 text-[#8B5CF6]">Valor Float</h3>
+                        <div className="text-sm text-[#8A898C]">
+                          {item.floatValue ? (
+                            <>
+                              <p>Float Atual: {item.floatValue.toFixed(8)}</p>
+                              <p>Faixa de Float: {item.min_float?.toFixed(8) || "Desconhecido"} - {item.max_float?.toFixed(8) || "Desconhecido"}</p>
+                            </>
+                          ) : (
+                            <p>Informações do valor de float não disponíveis.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </TabsContent>
-
-                {item.isInUserInventory && onSellSkin && (
-                  <TabsContent value="sell" className="py-4">
-                    <SkinSellingForm 
-                      item={item} 
-                      onSell={onSellSkin} 
-                      onCancel={() => setActiveTab("details")} 
-                    />
                   </TabsContent>
-                )}
 
-                <TabsContent value="notes" className="py-4">
-                  <SkinAdditionalInfo item={item} />
-                </TabsContent>
-              </Tabs>
+                  {item.isInUserInventory && onSellSkin && (
+                    <TabsContent value="sell" className="py-4">
+                      <SkinSellingForm 
+                        item={item} 
+                        onSell={onSellSkin} 
+                        onCancel={() => setActiveTab("details")} 
+                      />
+                    </TabsContent>
+                  )}
+
+                  <TabsContent value="notes" className="py-4">
+                    <SkinAdditionalInfo item={item} />
+                  </TabsContent>
+                </Tabs>
+              )}
             </>
           )}
         </DialogContent>

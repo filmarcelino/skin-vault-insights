@@ -164,6 +164,8 @@ export default function SearchPage() {
         open={inventoryActions.isModalOpen}
         onOpenChange={inventoryActions.setIsModalOpen}
         onSellSkin={inventoryActions.handleSell}
+        onUpdateSkin={inventoryActions.handleUpdate}
+        onClose={inventoryActions.onClose}
       />
     </>
   );
