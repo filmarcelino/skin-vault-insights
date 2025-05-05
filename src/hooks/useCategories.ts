@@ -1,7 +1,7 @@
 
 import { useCategories as useOriginalCategories } from "@/hooks/use-skins";
 
-// Definindo interface para garantir tipo correto
+// Define interface for category objects
 interface Category {
   type: string;
   name: string;
@@ -12,35 +12,29 @@ export const useFilteredCategories = () => {
   
   // Extract weapon types with proper type checks
   const weaponTypes = categories
-    ?.filter((category): category is Category => {
-      // Verificação para garantir que category é um objeto válido com as propriedades necessárias
-      return category !== null && 
-             category !== undefined && 
-             typeof category === 'object' &&
-             'type' in category &&
-             typeof category.type === 'string' &&
-             category.type === 'weapon';
+    ?.filter((item): item is Category => {
+      // Type guard to ensure item is a valid Category object
+      return item !== null && 
+             item !== undefined && 
+             typeof item === 'object' &&
+             'type' in item &&
+             typeof item.type === 'string' &&
+             item.type === 'weapon';
     })
-    .map((category) => {
-      // Com o type guard acima, o TypeScript já sabe que category é do tipo Category
-      return category.name;
-    }) || [];
+    .map((category) => category.name) || [];
   
   // Extract rarity types with proper type checks
   const rarityTypes = categories
-    ?.filter((category): category is Category => {
-      // Verificação para garantir que category é um objeto válido com as propriedades necessárias
-      return category !== null && 
-             category !== undefined && 
-             typeof category === 'object' &&
-             'type' in category &&
-             typeof category.type === 'string' &&
-             category.type === 'rarity';
+    ?.filter((item): item is Category => {
+      // Type guard to ensure item is a valid Category object
+      return item !== null && 
+             item !== undefined && 
+             typeof item === 'object' &&
+             'type' in item &&
+             typeof item.type === 'string' &&
+             item.type === 'rarity';
     })
-    .map((category) => {
-      // Com o type guard acima, o TypeScript já sabe que category é do tipo Category
-      return category.name;
-    }) || [];
+    .map((category) => category.name) || [];
 
   return {
     weaponTypes,
