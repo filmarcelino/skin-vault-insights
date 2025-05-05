@@ -12,31 +12,57 @@ export const useFilteredCategories = () => {
   
   // Extract weapon types with proper type checks
   const weaponTypes = categories
-    ?.filter((item): item is Category => {
-      // Type guard to ensure item is a valid Category object with type 'weapon'
-      return item !== null && 
-             item !== undefined &&
-             typeof item === 'object' &&
-             'type' in item &&
-             'name' in item &&
-             typeof item.type === 'string' &&
-             item.type === 'weapon' &&
-             typeof item.name === 'string';
+    ?.filter((item): item is any => {
+      // Ensure item exists
+      if (item === null || item === undefined) {
+        return false;
+      }
+      
+      // Ensure item is an object
+      if (typeof item !== 'object') {
+        return false;
+      }
+      
+      // Ensure item has the required properties
+      if (!('type' in item) || !('name' in item)) {
+        return false;
+      }
+      
+      // Ensure item properties are of the right type
+      if (typeof item.type !== 'string' || typeof item.name !== 'string') {
+        return false;
+      }
+      
+      // Ensure item is a weapon type
+      return item.type === 'weapon';
     })
     .map((category) => category.name) || [];
   
   // Extract rarity types with proper type checks
   const rarityTypes = categories
-    ?.filter((item): item is Category => {
-      // Type guard to ensure item is a valid Category object with type 'rarity'
-      return item !== null && 
-             item !== undefined &&
-             typeof item === 'object' &&
-             'type' in item &&
-             'name' in item &&
-             typeof item.type === 'string' &&
-             item.type === 'rarity' &&
-             typeof item.name === 'string';
+    ?.filter((item): item is any => {
+      // Ensure item exists
+      if (item === null || item === undefined) {
+        return false;
+      }
+      
+      // Ensure item is an object
+      if (typeof item !== 'object') {
+        return false;
+      }
+      
+      // Ensure item has the required properties
+      if (!('type' in item) || !('name' in item)) {
+        return false;
+      }
+      
+      // Ensure item properties are of the right type
+      if (typeof item.type !== 'string' || typeof item.name !== 'string') {
+        return false;
+      }
+      
+      // Ensure item is a rarity type
+      return item.type === 'rarity';
     })
     .map((category) => category.name) || [];
 

@@ -18,7 +18,9 @@ try {
   const rootElement = document.getElementById("root");
   
   if (rootElement) {
+    console.log("Elemento root encontrado, renderizando aplicação...");
     createRoot(rootElement).render(<App />);
+    console.log("Aplicação renderizada com sucesso");
   } else {
     console.error("Elemento root não encontrado no DOM");
   }

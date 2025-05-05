@@ -71,7 +71,7 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
 
   return (
     <div 
-      className={`p-3 flex items-center gap-3 hover:brightness-110 transition-all relative ${className} ${onClick ? 'cursor-pointer' : ''} rounded-md`}
+      className={`p-3 flex items-center gap-3 hover:brightness-110 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 relative ${className} ${onClick ? 'cursor-pointer' : ''} rounded-md`}
       style={getBackgroundStyle()}
       onClick={onClick}
     >
