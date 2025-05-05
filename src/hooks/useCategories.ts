@@ -6,13 +6,13 @@ export const useFilteredCategories = () => {
   
   // Extract weapon types with proper null checks
   const weaponTypes = categories
-    ?.filter((category) => {
-      if (!category) return false;
+    ?.filter((category): boolean => {
+      if (category === null) return false;
       if (typeof category !== 'object') return false;
       return 'type' in category && category.type === 'weapon';
     })
-    .map((category) => {
-      if (!category) return '';
+    .map((category): string => {
+      if (category === null) return '';
       if (typeof category !== 'object') return '';
       if (!('name' in category)) return '';
       if (typeof category.name !== 'string') return '';
@@ -22,13 +22,13 @@ export const useFilteredCategories = () => {
   
   // Extract rarity types with proper null checks
   const rarityTypes = categories
-    ?.filter((category) => {
-      if (!category) return false;
+    ?.filter((category): boolean => {
+      if (category === null) return false;
       if (typeof category !== 'object') return false;
       return 'type' in category && category.type === 'rarity';
     })
-    .map((category) => {
-      if (!category) return '';
+    .map((category): string => {
+      if (category === null) return '';
       if (typeof category !== 'object') return '';
       if (!('name' in category)) return '';
       if (typeof category.name !== 'string') return '';

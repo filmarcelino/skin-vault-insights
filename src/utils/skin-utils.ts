@@ -70,7 +70,7 @@ export const getRarityColor = (rarity?: string) => {
     case "classified":
     case "pink":
     case "classificada":
-      return "#D32CE6";
+      return "#E646FF";
     case "covert":
     case "red":
     case "secreta":

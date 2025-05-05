@@ -36,11 +36,57 @@ export const SkinCard = ({
   const [showDetails, setShowDetails] = useState(false);
   const { formatPrice } = useCurrency();
 
+  // Obter a cor com base na raridade
+  const getBorderColor = (rarity?: string) => {
+    if (!rarity) return "";
+    
+    // Cores baseadas na imagem de referência
+    switch (rarity.toLowerCase()) {
+      case "consumer grade":
+      case "white":
+      case "comum":
+        return "#5E7D9A"; // Azul escuro
+      case "industrial grade":
+      case "light blue": 
+      case "pouco comum":
+        return "#0A4D8F"; // Azul médio
+      case "mil-spec grade":
+      case "blue":
+      case "militar":
+        return "#0B83C2"; // Azul 
+      case "restricted":
+      case "purple":
+      case "restrita":
+        return "#684498"; // Roxo
+      case "classified":
+      case "pink":
+      case "classificada":
+        return "#CD3F96"; // Rosa
+      case "covert":
+      case "red":
+      case "secreta":
+      case "rara":
+        return "#EB4B4B"; // Vermelho
+      case "contraband":
+      case "gold":
+      case "contrabando":
+        return "#FFD700"; // Dourado
+      case "★ rare special item":
+      case "special rare":
+      case "knife":
+      case "glove":
+      case "especial rara":
+        return "#FFCA28"; // Amarelo
+      default:
+        return "#5E7D9A"; // Default
+    }
+  };
+
   // Função para gerar o estilo baseado na raridade
   const getBackgroundStyle = () => {
     if (!item.rarity) return {};
     
-    const rarityColor = getRarityColor(item.rarity);
+    const borderColor = getBorderColor(item.rarity);
     
     // Convertemos a cor hex para rgba para poder aplicar transparência
     const hexToRgba = (hex: string, alpha: number) => {
@@ -50,12 +96,52 @@ export const SkinCard = ({
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
     
+    // Cores baseadas na imagem de referência para backgrounds
+    const getBackgroundColor = () => {
+      switch ((item.rarity || '').toLowerCase()) {
+        case "consumer grade":
+        case "white":
+        case "comum":
+          return "#1E293B"; // Azul muito escuro
+        case "industrial grade":
+        case "light blue": 
+        case "pouco comum":
+          return "#0F2A43"; // Azul escuro
+        case "mil-spec grade":
+        case "blue":
+        case "militar":
+          return "#0D1B36"; // Azul escuro
+        case "restricted":
+        case "purple":
+        case "restrita":
+          return "#1A0F36"; // Roxo escuro
+        case "classified":
+        case "pink":
+        case "classificada":
+          return "#2D1130"; // Rosa escuro
+        case "covert":
+        case "red":
+        case "secreta":
+        case "rara":
+          return "#2C0D0D"; // Vermelho escuro
+        case "contraband":
+        case "gold":
+        case "contrabando":
+        case "★ rare special item":
+        case "special rare":
+        case "knife":
+        case "glove":
+        case "especial rara":
+          return "#1C1509"; // Amarelo escuro
+        default:
+          return "#1A1F2C"; // Cinza escuro como na imagem
+      }
+    };
+    
     return {
-      background: `linear-gradient(135deg, ${hexToRgba(rarityColor, 0.25)} 0%, transparent 100%)`,
-      border: `1px solid ${hexToRgba(rarityColor, 0.6)}`,
-      boxShadow: `0 4px 20px ${hexToRgba(rarityColor, 0.3)}, inset 0 0 30px ${hexToRgba(rarityColor, 0.1)}`,
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
+      background: getBackgroundColor(),
+      border: `1px solid ${hexToRgba(borderColor, 0.7)}`,
+      boxShadow: `0 4px 20px ${hexToRgba(borderColor, 0.3)}, inset 0 0 30px ${hexToRgba(borderColor, 0.1)}`,
     };
   };
 
@@ -83,17 +169,6 @@ export const SkinCard = ({
       style={getBackgroundStyle()}
       onClick={handleCardClick}
     >
-      {/* Borda brilhante baseada na raridade */}
-      {item.rarity && (
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            boxShadow: `inset 0 0 0 1px ${getRarityColor(item.rarity)}60`,
-            borderRadius: 'inherit'
-          }}
-        ></div>
-      )}
-      
       {/* Conteúdo do card */}
       <div className="relative h-full flex flex-col p-4">
         {/* Cabeçalho do card */}
@@ -160,7 +235,7 @@ export const SkinCard = ({
                 className="absolute inset-0 -z-10 opacity-30"
                 style={{
                   background: item.rarity ? 
-                    `radial-gradient(circle at center, ${getRarityColor(item.rarity)} 0%, transparent 70%)` : 
+                    `radial-gradient(circle at center, ${getBorderColor(item.rarity)} 0%, transparent 70%)` : 
                     'none'
                 }}
               ></div>
@@ -182,7 +257,7 @@ export const SkinCard = ({
               <span 
                 className="px-3 py-1 rounded-full text-white text-xs"
                 style={{
-                  backgroundColor: `${getRarityColor(item.rarity)}40`
+                  backgroundColor: `${getBorderColor(item.rarity)}40`
                 }}
               >
                 {item.rarity}
@@ -190,15 +265,14 @@ export const SkinCard = ({
             )}
           </div>
           
-          {/* Preço de compra */}
+          {/* Preço completo */}
           <div className="mt-2 text-xl font-bold text-white">
-            {item.currentPrice ? formatPrice(item.currentPrice) : (
-              item.price ? formatPrice(item.price) : ""
-            )}
+            {item.currentPrice !== undefined ? formatPrice(item.currentPrice) : 
+             (item.price !== undefined ? formatPrice(item.price) : "")}
           </div>
 
-          {/* Mostrar metadados adicionais quando showMetadata é true */}
-          {showMetadata && item.purchasePrice && (
+          {/* Mostrar preço de compra */}
+          {item.purchasePrice !== undefined && (
             <div className="mt-1 text-sm text-white/80">
               Comprado: {formatPrice(item.purchasePrice)}
             </div>
@@ -215,8 +289,8 @@ export const SkinCard = ({
                 variant="ghost"
                 className="w-full flex justify-between items-center text-white/90 hover:text-white py-2 px-3 -mx-4 rounded-none"
                 style={{
-                  backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}30` : 'rgba(0,0,0,0.4)',
-                  borderTop: item.rarity ? `1px solid ${getRarityColor(item.rarity)}40` : '1px solid rgba(255,255,255,0.1)'
+                  backgroundColor: `${getBorderColor(item.rarity)}30`,
+                  borderTop: `1px solid ${getBorderColor(item.rarity)}40`
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -231,12 +305,12 @@ export const SkinCard = ({
             <CollapsibleContent 
               className="py-3 px-4"
               style={{
-                backgroundColor: item.rarity ? `${getRarityColor(item.rarity)}20` : 'rgba(0,0,0,0.3)',
+                backgroundColor: `${getBorderColor(item.rarity)}20`,
                 backdropFilter: 'blur(4px)'
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              {item.purchasePrice && (
+              {item.purchasePrice !== undefined && (
                 <div className="text-sm text-white/90 flex items-center mb-2">
                   <DollarSign className="h-3 w-3 mr-1" />
                   Comprado por {formatPrice(item.purchasePrice)}

@@ -115,7 +115,6 @@ const Inventory = () => {
         onDuplicate={onDuplicate}
         onRemove={onRemove}
         onSell={onSell}
-        onItemClick={handleItemClick}
       />
 
       <DuplicateSkinModal
@@ -123,8 +122,6 @@ const Inventory = () => {
         onOpenChange={setDuplicateModalOpen}
         onDuplicate={handleDuplicate}
         selectedItem={selectedItemForDuplicate}
-        duplicateCount={duplicateCount}
-        setDuplicateCount={setDuplicateCount}
       />
 
       <InventorySkinModal

@@ -34,9 +34,55 @@ export const SkinListItem = ({
 }: SkinListItemProps) => {
   const { formatPrice } = useCurrency();
 
-  // Função para gerar o gradiente de cor baseado na raridade com cores mais vivas
+  // Get the border color based on rarity
+  const getBorderColor = (rarity?: string) => {
+    if (!rarity) return "#5E7D9A"; // Default azul escuro
+    
+    // Cores baseadas na imagem de referência
+    switch (rarity.toLowerCase()) {
+      case "consumer grade":
+      case "white":
+      case "comum":
+        return "#5E7D9A"; // Azul escuro
+      case "industrial grade":
+      case "light blue": 
+      case "pouco comum":
+        return "#0A4D8F"; // Azul médio
+      case "mil-spec grade":
+      case "blue":
+      case "militar":
+        return "#0B83C2"; // Azul 
+      case "restricted":
+      case "purple":
+      case "restrita":
+        return "#684498"; // Roxo
+      case "classified":
+      case "pink":
+      case "classificada":
+        return "#CD3F96"; // Rosa
+      case "covert":
+      case "red":
+      case "secreta":
+      case "rara":
+        return "#EB4B4B"; // Vermelho
+      case "contraband":
+      case "gold":
+      case "contrabando":
+        return "#FFD700"; // Dourado
+      case "★ rare special item":
+      case "special rare":
+      case "knife":
+      case "glove":
+      case "especial rara":
+        return "#FFCA28"; // Amarelo
+      default:
+        return "#5E7D9A"; // Default
+    }
+  };
+
+  // Função para gerar o gradiente de cor baseado na raridade com cores inspiradas na imagem de referência
   const getBackgroundGradient = () => {
-    const rarityColor = getRarityColor(item.rarity || '');
+    const borderColor = getBorderColor(item.rarity || '');
     
     // Convertemos a cor hex para rgba para poder aplicar transparência
     const hexToRgba = (hex: string, alpha: number) => {
@@ -46,51 +92,52 @@ export const SkinListItem = ({
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
     
-    // Cores mais vibrantes para cada raridade
-    const getEnhancedColor = () => {
+    // Cores baseadas na imagem de referência para backgrounds
+    const getBackgroundColor = () => {
       switch ((item.rarity || '').toLowerCase()) {
         case "consumer grade":
         case "white":
         case "comum":
-          return '#B8C3D9'; // Ligeiramente mais brilhante
+          return "#1E293B"; // Azul muito escuro
         case "industrial grade":
         case "light blue": 
         case "pouco comum":
-          return '#5EA8F9'; // Azul mais vibrante
+          return "#0F2A43"; // Azul escuro
         case "mil-spec grade":
         case "blue":
         case "militar":
-          return '#4B75FF'; // Azul mais vibrante
+          return "#0D1B36"; // Azul escuro
         case "restricted":
         case "purple":
         case "restrita":
-          return '#9A5CFE'; // Roxo mais vibrante
+          return "#1A0F36"; // Roxo escuro
         case "classified":
         case "pink":
         case "classificada":
-          return '#F546EF'; // Rosa mais vibrante
+          return "#2D1130"; // Rosa escuro
         case "covert":
         case "red":
         case "secreta":
         case "rara":
-          return '#FF4B4B'; // Vermelho mais vibrante
+          return "#2C0D0D"; // Vermelho escuro
         case "contraband":
         case "gold":
         case "contrabando":
-          return '#FFDD00'; // Dourado mais vibrante
+        case "★ rare special item":
+        case "special rare":
+        case "knife":
+        case "glove":
+        case "especial rara":
+          return "#1C1509"; // Amarelo escuro
         default:
-          return rarityColor;
+          return "#1A1F2C"; // Cinza escuro como na imagem
       }
     };
     
-    const enhancedColor = getEnhancedColor();
-    
     return {
-      background: `linear-gradient(135deg, ${hexToRgba(enhancedColor, 0.35)} 0%, transparent 100%)`,
-      borderLeft: `3px solid ${hexToRgba(enhancedColor, 0.85)}`,
-      boxShadow: `0 3px 12px ${hexToRgba(enhancedColor, 0.3)}`,
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
+      background: getBackgroundColor(),
+      borderLeft: `3px solid ${hexToRgba(borderColor, 0.85)}`,
+      boxShadow: `0 3px 12px ${hexToRgba(borderColor, 0.3)}`,
     };
   };
 
@@ -128,7 +175,7 @@ export const SkinListItem = ({
               <div 
                 className="absolute inset-0 z-0 opacity-40" 
                 style={{
-                  background: `radial-gradient(circle at center, ${getRarityColor(item.rarity || '')} 0%, transparent 70%)`,
+                  background: `radial-gradient(circle at center, ${getBorderColor(item.rarity || '')} 0%, transparent 70%)`,
                   filter: 'blur(5px)'
                 }}
               />
@@ -180,11 +227,10 @@ export const SkinListItem = ({
         <div className="flex items-center gap-4">
           <div className="text-right">
             <div className="text-sm font-medium text-white">
-              {item.currentPrice ? formatPrice(item.currentPrice) : (
-                item.price ? formatPrice(item.price) : ""
-              )}
+              {item.currentPrice !== undefined ? formatPrice(item.currentPrice) : 
+               (item.price !== undefined ? formatPrice(item.price) : "")}
             </div>
-            {showMetadata && item.purchasePrice && (
+            {item.purchasePrice !== undefined && (
               <div className="text-xs text-white/80">
                 Comprou: {formatPrice(item.purchasePrice)}
               </div>
