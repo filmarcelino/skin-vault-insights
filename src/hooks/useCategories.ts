@@ -15,12 +15,12 @@ export const useFilteredCategories = () => {
     ?.filter((item): item is Category => {
       // Type guard to ensure item is a valid Category object with type 'weapon'
       return item !== null && 
-             typeof item === 'object' &&
              item !== undefined &&
+             typeof item === 'object' &&
              'type' in item &&
+             'name' in item &&
              typeof item.type === 'string' &&
              item.type === 'weapon' &&
-             'name' in item &&
              typeof item.name === 'string';
     })
     .map((category) => category.name) || [];
@@ -30,12 +30,12 @@ export const useFilteredCategories = () => {
     ?.filter((item): item is Category => {
       // Type guard to ensure item is a valid Category object with type 'rarity'
       return item !== null && 
-             typeof item === 'object' &&
              item !== undefined &&
+             typeof item === 'object' &&
              'type' in item &&
+             'name' in item &&
              typeof item.type === 'string' &&
              item.type === 'rarity' &&
-             'name' in item &&
              typeof item.name === 'string';
     })
     .map((category) => category.name) || [];
