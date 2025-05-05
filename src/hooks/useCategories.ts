@@ -12,7 +12,7 @@ export const useFilteredCategories = () => {
   
   // Extract weapon types with proper type checks
   const weaponTypes = categories
-    ?.filter((item): item is any => {
+    ?.filter((item): item is Category => {
       // Ensure item exists
       if (item === null || item === undefined) {
         return false;
@@ -23,24 +23,27 @@ export const useFilteredCategories = () => {
         return false;
       }
       
+      // Now TypeScript knows item is a non-null object
       // Ensure item has the required properties
       if (!('type' in item) || !('name' in item)) {
         return false;
       }
       
+      const typedItem = item as Record<string, unknown>;
+      
       // Ensure item properties are of the right type
-      if (typeof item.type !== 'string' || typeof item.name !== 'string') {
+      if (typeof typedItem.type !== 'string' || typeof typedItem.name !== 'string') {
         return false;
       }
       
       // Ensure item is a weapon type
-      return item.type === 'weapon';
+      return typedItem.type === 'weapon';
     })
     .map((category) => category.name) || [];
   
   // Extract rarity types with proper type checks
   const rarityTypes = categories
-    ?.filter((item): item is any => {
+    ?.filter((item): item is Category => {
       // Ensure item exists
       if (item === null || item === undefined) {
         return false;
@@ -51,18 +54,21 @@ export const useFilteredCategories = () => {
         return false;
       }
       
+      // Now TypeScript knows item is a non-null object
       // Ensure item has the required properties
       if (!('type' in item) || !('name' in item)) {
         return false;
       }
       
+      const typedItem = item as Record<string, unknown>;
+      
       // Ensure item properties are of the right type
-      if (typeof item.type !== 'string' || typeof item.name !== 'string') {
+      if (typeof typedItem.type !== 'string' || typeof typedItem.name !== 'string') {
         return false;
       }
       
       // Ensure item is a rarity type
-      return item.type === 'rarity';
+      return typedItem.type === 'rarity';
     })
     .map((category) => category.name) || [];
 
