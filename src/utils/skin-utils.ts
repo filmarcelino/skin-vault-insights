@@ -1,3 +1,4 @@
+
 import { SkinWear } from "@/types/skin";
 
 // Get the color class for rarity styling
@@ -45,7 +46,7 @@ export const getRarityColorClass = (rarity?: string) => {
   }
 };
 
-// Get the color for rarity styling
+// Get the color for rarity styling - mantendo as cores oficiais do CS2
 export const getRarityColor = (rarity?: string) => {
   if (!rarity) return "#888888";
   
