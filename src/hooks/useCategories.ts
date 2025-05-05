@@ -23,21 +23,22 @@ export const useFilteredCategories = () => {
         return false;
       }
       
-      // Now TypeScript knows item is a non-null object
       // Ensure item has the required properties
       if (!('type' in item) || !('name' in item)) {
         return false;
       }
       
-      const typedItem = item as Record<string, unknown>;
+      // Get the properties with safe type checking
+      const type = (item as { type?: unknown }).type;
+      const name = (item as { name?: unknown }).name;
       
       // Ensure item properties are of the right type
-      if (typeof typedItem.type !== 'string' || typeof typedItem.name !== 'string') {
+      if (typeof type !== 'string' || typeof name !== 'string') {
         return false;
       }
       
       // Ensure item is a weapon type
-      return typedItem.type === 'weapon';
+      return type === 'weapon';
     })
     .map((category) => category.name) || [];
   
@@ -54,21 +55,22 @@ export const useFilteredCategories = () => {
         return false;
       }
       
-      // Now TypeScript knows item is a non-null object
       // Ensure item has the required properties
       if (!('type' in item) || !('name' in item)) {
         return false;
       }
       
-      const typedItem = item as Record<string, unknown>;
+      // Get the properties with safe type checking
+      const type = (item as { type?: unknown }).type;
+      const name = (item as { name?: unknown }).name;
       
       // Ensure item properties are of the right type
-      if (typeof typedItem.type !== 'string' || typeof typedItem.name !== 'string') {
+      if (typeof type !== 'string' || typeof name !== 'string') {
         return false;
       }
       
       // Ensure item is a rarity type
-      return typedItem.type === 'rarity';
+      return type === 'rarity';
     })
     .map((category) => category.name) || [];
 
