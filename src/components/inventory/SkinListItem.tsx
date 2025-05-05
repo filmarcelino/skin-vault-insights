@@ -1,4 +1,3 @@
-
 import React from "react";
 import { InventoryItem } from "@/types/skin";
 import { Edit, Heart, Lock, Trash2, DollarSign, Copy } from "lucide-react";
@@ -185,7 +184,10 @@ export const SkinListItem = ({
                 src={item.image}
                 alt={`${item.weapon} | ${item.name}`}
                 className="max-h-full max-w-full object-contain relative z-10"
-                onError={handleImageError}
+                onError={(e) => { 
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder.svg';
+                }}
                 loading="lazy"
                 style={{
                   filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.5))",
@@ -213,7 +215,7 @@ export const SkinListItem = ({
             {/* Float value exibido com formatação específica */}
             {item.floatValue !== undefined && (
               <span className="text-white/90 text-xs bg-black/30 px-1.5 py-0.5 rounded-full">
-                {formatFloat(item.floatValue)}
+                {item.floatValue.toFixed(4)}
               </span>
             )}
             {item.tradeLockDays && item.tradeLockDays > 0 && (
@@ -256,47 +258,50 @@ export const SkinListItem = ({
               </Button>
             )}
             
-            {onEdit && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(item);
-                }}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {onDuplicate && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDuplicate(item);
-                }}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {onRemove && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove(item.inventoryId);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
+            {/* Botões de ações (edit, duplicate, remove) com visibilidade condicional para mobile */}
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item);
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onDuplicate && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white hidden sm:flex"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate(item);
+                  }}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {onRemove && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 p-0 rounded-full bg-black/40 hover:bg-black/60 text-white/70 hover:text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(item.inventoryId);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

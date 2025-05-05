@@ -1,9 +1,15 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Landing = () => {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    navigate('/auth');
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
@@ -22,8 +28,12 @@ const Landing = () => {
                 The most efficient way to track, analyze and manage your skin inventory with real-time statistics.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button asChild size="lg" className="bg-[#FFCC00] hover:bg-[#FFA800] text-black">
-                  <Link to="/auth">Get Started</Link>
+                <Button 
+                  size="lg" 
+                  className="bg-[#FFCC00] hover:bg-[#FFA800] text-black"
+                  onClick={handleGetStarted}
+                >
+                  Get Started
                 </Button>
                 <Button asChild variant="outline" size="lg" className="border-[#5A90A5] text-[#5A90A5] hover:bg-[#5A90A5]/10">
                   <a href="#features">Learn More</a>
@@ -128,8 +138,12 @@ const Landing = () => {
           <p className="text-xl mb-8 max-w-2xl mx-auto text-[#A3A3A3]">
             Sign up today and get access to all the tools you need to maximize the value of your skins.
           </p>
-          <Button asChild size="lg" className="bg-[#FFCC00] hover:bg-[#FFA800] text-black">
-            <Link to="/auth">Create Free Account</Link>
+          <Button 
+            size="lg" 
+            className="bg-[#FFCC00] hover:bg-[#FFA800] text-black"
+            onClick={handleGetStarted}
+          >
+            Create Free Account
           </Button>
         </div>
       </section>
