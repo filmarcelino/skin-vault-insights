@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -108,8 +109,8 @@ const Auth = () => {
   useEffect(() => {
     console.log("Auth useEffect triggered. User:", user);
     if (user) {
-      console.log("User is authenticated, navigating to home");
-      navigate("/");
+      console.log("User is authenticated, navigating to dashboard");
+      navigate("/dashboard");
     }
   }, [user, navigate]);
 
@@ -119,7 +120,7 @@ const Auth = () => {
     if (!error) {
       console.log("Login successful");
       toast.success("Login realizado com sucesso");
-      navigate("/");
+      navigate("/dashboard");
     } else {
       console.error("Login error:", error);
     }
@@ -140,7 +141,7 @@ const Auth = () => {
     if (!error) {
       console.log("Registration successful");
       toast.success("Conta criada com sucesso");
-      navigate("/");
+      navigate("/dashboard");
     } else {
       console.error("Registration error:", error);
     }
