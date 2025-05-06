@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ const Landing = () => {
   const handleGetStarted = () => {
     console.log("Navegando para a página de autenticação...");
     try {
-      // Mostrar feedback visual ao usuário
+      // Mostrar feedback visual ao usuário usando o toast correto
       toast("Redirecionando...", {
         description: "Você será redirecionado para a página de login."
       });
