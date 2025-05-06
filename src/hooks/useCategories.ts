@@ -16,7 +16,6 @@ export const useFilteredCategories = () => {
       // Type guard check for item structure
       return (
         item !== null && 
-        item !== undefined && 
         typeof item === 'object' &&
         'type' in item && 
         'name' in item && 
@@ -33,7 +32,6 @@ export const useFilteredCategories = () => {
       // Type guard check for item structure
       return (
         item !== null && 
-        item !== undefined && 
         typeof item === 'object' &&
         'type' in item && 
         'name' in item && 
