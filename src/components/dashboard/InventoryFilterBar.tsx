@@ -46,7 +46,7 @@ export const InventoryFilterBar = ({
             <SelectValue placeholder="Tipo de Arma" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas Armas</SelectItem>
+            <SelectItem value="all">Todas Armas</SelectItem>
             {weaponTypes.map(weapon => (
               <SelectItem key={weapon} value={weapon}>{weapon}</SelectItem>
             ))}
@@ -58,7 +58,7 @@ export const InventoryFilterBar = ({
             <SelectValue placeholder="Raridade" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas Raridades</SelectItem>
+            <SelectItem value="all">Todas Raridades</SelectItem>
             {rarityTypes.map(rarity => (
               <SelectItem key={rarity} value={rarity}>{rarity}</SelectItem>
             ))}

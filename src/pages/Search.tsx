@@ -25,8 +25,8 @@ export default function SearchPage() {
   const [currentTab, setCurrentTab] = useState<"inventory" | "allSkins">("inventory");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [weaponFilter, setWeaponFilter] = useState("");
-  const [rarityFilter, setRarityFilter] = useState("");
+  const [weaponFilter, setWeaponFilter] = useState("all");
+  const [rarityFilter, setRarityFilter] = useState("all");
   const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
   const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const { toast } = useToast();
@@ -42,8 +42,8 @@ export default function SearchPage() {
   const { data: skins, isLoading: isSkinsLoading, error: skinsError } = useSkins({
     search: searchQuery.length > 2 ? searchQuery : undefined,
     onlyUserInventory: currentTab === "inventory",
-    weapon: weaponFilter || undefined,
-    rarity: rarityFilter || undefined,
+    weapon: weaponFilter !== "all" ? weaponFilter : undefined,
+    rarity: rarityFilter !== "all" ? rarityFilter : undefined,
     minPrice: minPrice,
     maxPrice: maxPrice
   });

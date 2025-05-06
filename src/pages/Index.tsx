@@ -69,8 +69,8 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   const { data: skins, isLoading: isSkinsLoading, error: skinsError } = useSkins({
     search: searchQuery.length > 2 ? searchQuery : undefined,
     onlyUserInventory: currentTab === "inventory",
-    weapon: weaponFilter || undefined,
-    rarity: rarityFilter || undefined
+    weapon: weaponFilter !== "all" ? weaponFilter : undefined,
+    rarity: rarityFilter !== "all" ? rarityFilter : undefined
   });
 
   const refreshUserData = async () => {

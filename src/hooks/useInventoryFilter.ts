@@ -4,8 +4,8 @@ import { InventoryItem } from "@/types/skin";
 
 export const useInventoryFilter = (inventory: InventoryItem[]) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [weaponFilter, setWeaponFilter] = useState("");
-  const [rarityFilter, setRarityFilter] = useState("");
+  const [weaponFilter, setWeaponFilter] = useState("all");
+  const [rarityFilter, setRarityFilter] = useState("all");
   const [sortMethod, setSortMethod] = useState("price_desc");
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
 
@@ -23,8 +23,8 @@ export const useInventoryFilter = (inventory: InventoryItem[]) => {
         item.name?.toLowerCase().includes(search.toLowerCase()) || 
         item.weapon?.toLowerCase().includes(search.toLowerCase());
       
-      const matchesWeapon = !weapon || item.weapon === weapon;
-      const matchesRarity = !rarity || item.rarity === rarity;
+      const matchesWeapon = weapon === "all" || item.weapon === weapon;
+      const matchesRarity = rarity === "all" || item.rarity === rarity;
       
       return matchesSearch && matchesWeapon && matchesRarity;
     });
