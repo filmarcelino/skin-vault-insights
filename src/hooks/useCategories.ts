@@ -7,23 +7,27 @@ interface Category {
   name: string;
 }
 
+// Define tipo para qualquer elemento que possa estar no array de categorias
+type CategoryItem = unknown;
+
 export const useFilteredCategories = () => {
   const { data: categories } = useOriginalCategories();
   
   // Extract weapon types with proper type checks
   const weaponTypes = Array.isArray(categories) 
     ? categories
-      .filter((item): item is Category => {
+      .filter((item: CategoryItem): item is Category => {
         // Type guard check for item structure
         if (!item) return false;
         
         return (
-          typeof item === 'object' &&
+          typeof item === 'object' && 
+          item !== null &&
           'type' in item && 
           'name' in item && 
-          typeof item.type === 'string' && 
-          typeof item.name === 'string' && 
-          item.type === 'weapon'
+          typeof (item as any).type === 'string' && 
+          typeof (item as any).name === 'string' && 
+          (item as any).type === 'weapon'
         );
       })
       .map((category) => category.name) 
@@ -32,17 +36,18 @@ export const useFilteredCategories = () => {
   // Extract rarity types with proper type checks
   const rarityTypes = Array.isArray(categories) 
     ? categories
-      .filter((item): item is Category => {
+      .filter((item: CategoryItem): item is Category => {
         // Type guard check for item structure
         if (!item) return false;
         
         return (
-          typeof item === 'object' &&
+          typeof item === 'object' && 
+          item !== null &&
           'type' in item && 
           'name' in item && 
-          typeof item.type === 'string' && 
-          typeof item.name === 'string' && 
-          item.type === 'rarity'
+          typeof (item as any).type === 'string' && 
+          typeof (item as any).name === 'string' && 
+          (item as any).type === 'rarity'
         );
       })
       .map((category) => category.name) 
