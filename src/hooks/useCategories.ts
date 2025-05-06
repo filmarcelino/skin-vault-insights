@@ -13,13 +13,11 @@ export const useFilteredCategories = () => {
   // Extract weapon types with proper type checks
   const weaponTypes = categories
     ?.filter((item): item is Category => {
-      // If item is null, undefined, or not an object, return false
-      if (item === null || item === undefined || typeof item !== 'object') {
-        return false;
-      }
-      
-      // Type guard check
+      // Type guard check for item structure
       return (
+        item !== null && 
+        item !== undefined && 
+        typeof item === 'object' &&
         'type' in item && 
         'name' in item && 
         typeof item.type === 'string' && 
@@ -32,13 +30,11 @@ export const useFilteredCategories = () => {
   // Extract rarity types with proper type checks
   const rarityTypes = categories
     ?.filter((item): item is Category => {
-      // If item is null, undefined, or not an object, return false
-      if (item === null || item === undefined || typeof item !== 'object') {
-        return false;
-      }
-      
-      // Type guard check
+      // Type guard check for item structure
       return (
+        item !== null && 
+        item !== undefined && 
+        typeof item === 'object' &&
         'type' in item && 
         'name' in item && 
         typeof item.type === 'string' && 

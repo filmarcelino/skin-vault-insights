@@ -56,7 +56,7 @@ export const SearchPagination = ({
         <PaginationItem>
           <PaginationPrevious 
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+            className={`cursor-pointer ${currentPage === 1 ? "pointer-events-none opacity-50" : ""}`}
           />
         </PaginationItem>
         
@@ -66,6 +66,7 @@ export const SearchPagination = ({
               <PaginationLink
                 isActive={page === currentPage}
                 onClick={() => setCurrentPage(page)}
+                className="cursor-pointer"
               >
                 {page}
               </PaginationLink>
@@ -78,7 +79,7 @@ export const SearchPagination = ({
         <PaginationItem>
           <PaginationNext 
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+            className={`cursor-pointer ${currentPage === totalPages ? "pointer-events-none opacity-50" : ""}`}
           />
         </PaginationItem>
       </PaginationContent>

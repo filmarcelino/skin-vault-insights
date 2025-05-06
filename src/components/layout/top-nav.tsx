@@ -16,15 +16,15 @@ export const TopNav: FC = () => {
       case "/dashboard":
         return "Dashboard";
       case "/search":
-        return "Search Skins";
+        return "Buscar Skins";
       case "/add":
-        return "Add Skin";
+        return "Adicionar Skin";
       case "/inventory":
-        return "Inventory";
+        return "Inventário";
       case "/analytics":
-        return "Analytics";
+        return "Análise";
       case "/settings":
-        return "Settings";
+        return "Configurações";
       default:
         return "";
     }
@@ -59,42 +59,42 @@ export const TopNav: FC = () => {
             <Link 
               to="/search" 
               className={getLinkClass("/search")}
-              title="Search Skins"
+              title="Buscar Skins"
             >
               <Search className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Search</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Buscar</span>
             </Link>
             <Link 
               to="/add" 
               className={getLinkClass("/add")}
-              title="Add Skin"
+              title="Adicionar Skin"
             >
               <Plus className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Add</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Adicionar</span>
             </Link>
             <Link 
               to="/inventory" 
               className={getLinkClass("/inventory")}
-              title="Inventory"
+              title="Inventário"
             >
               <LayoutGrid className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Inventory</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Inventário</span>
             </Link>
             <Link 
               to="/analytics" 
               className={getLinkClass("/analytics")}
-              title="Analytics"
+              title="Análise"
             >
               <LineChart className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Analytics</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Análise</span>
             </Link>
             <Link 
               to="/settings" 
               className={getLinkClass("/settings")}
-              title="Settings"
+              title="Configurações"
             >
               <Settings className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Settings</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Configurações</span>
             </Link>
           </div>
         </div>

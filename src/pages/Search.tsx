@@ -1,19 +1,20 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSkins } from "@/hooks/use-skins";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { useToast } from "@/hooks/use-toast";
 import { addSkinToInventory } from "@/services/inventory";
 import { Skin, InventoryItem } from "@/types/skin";
+import { useFilteredCategories } from "@/hooks/useCategories";
+import { useInventoryActions } from "@/hooks/useInventoryActions";
 
-// Import refactored components
+// Import components
 import { SearchHeader } from "@/components/search/SearchHeader";
 import { FilterPanel } from "@/components/search/FilterPanel";
 import { PremiumCTA } from "@/components/search/PremiumCTA";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SearchPagination } from "@/components/search/SearchPagination";
-import { useFilteredCategories } from "@/hooks/useCategories";
-import { useInventoryActions } from "@/hooks/useInventoryActions";
 
 const itemsPerPageOptions = [10, 25, 50, 100];
 
@@ -29,6 +30,7 @@ export default function SearchPage() {
   const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
   const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Hooks para gerenciar ações de inventário
   const inventoryActions = useInventoryActions();
@@ -85,7 +87,7 @@ export default function SearchPage() {
         purchasePrice: skin.price || 0,
         marketplace: "Steam Market",
         feePercentage: 13,
-        notes: "Added from search"
+        notes: "Adicionada pela pesquisa"
       });
       
       toast({
@@ -95,7 +97,7 @@ export default function SearchPage() {
       
       return newItem;
     } catch (err) {
-      console.error("Error adding skin:", err);
+      console.error("Erro ao adicionar skin:", err);
       toast({
         title: "Erro",
         description: "Falha ao adicionar skin ao inventário",
@@ -139,7 +141,7 @@ export default function SearchPage() {
 
       {skinsError && (
         <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400">
-          Error loading skin data. Please try again later.
+          Erro ao carregar dados das skins. Por favor, tente novamente mais tarde.
         </div>
       )}
 
