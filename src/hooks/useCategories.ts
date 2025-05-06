@@ -30,7 +30,7 @@ export const useFilteredCategories = () => {
           (item as any).type === 'weapon'
         );
       })
-      .map((category: Category) => category.name) 
+      .map((category) => category.name) 
     : [];
   
   // Extract rarity types with proper type checks
@@ -50,7 +50,7 @@ export const useFilteredCategories = () => {
           (item as any).type === 'rarity'
         );
       })
-      .map((category: Category) => category.name) 
+      .map((category) => category.name) 
     : [];
 
   return {
