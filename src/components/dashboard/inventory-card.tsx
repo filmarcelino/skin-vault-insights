@@ -184,6 +184,16 @@ export const InventoryCard: FC<InventoryCardProps> = ({
       )}
       
       <div className="p-3 flex flex-col h-full relative z-10">
+        {/* Moved trade lock to top left corner */}
+        {tradeLockDays && tradeLockDays > 0 && (
+          <div className="absolute top-2 left-2 bg-black/60 rounded-full p-1 flex items-center">
+            <Lock className="h-3 w-3 text-yellow-500" />
+            <span className="text-[9px] text-yellow-500 ml-1">
+              {tradeLockDays}d
+            </span>
+          </div>
+        )}
+
         {/* Float value in top right corner */}
         {floatValue !== undefined && (
           <div className="absolute top-2 right-2 bg-black/40 px-1.5 py-0.5 rounded text-xs text-white font-mono">
@@ -212,15 +222,6 @@ export const InventoryCard: FC<InventoryCardProps> = ({
             <div className="text-[10px] text-white/70">No image</div>
           )}
           
-          {tradeLockDays && tradeLockDays > 0 && (
-            <div className="absolute top-1 left-1 bg-black/60 rounded-full p-1">
-              <Lock className="h-3 w-3 text-yellow-500" />
-              <span className="text-[9px] absolute -bottom-4 left-0 bg-black/70 rounded-sm px-1 text-yellow-500">
-                {tradeLockDays}d
-              </span>
-            </div>
-          )}
-
           {isStatTrak && (
             <div className="absolute top-1 right-1 bg-[#CF6A32]/80 text-white text-[10px] px-1 py-0.5 rounded">
               StatTrak™
@@ -282,3 +283,4 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     </div>
   );
 };
+

@@ -91,6 +91,14 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
         ) : (
           <div className="text-xs text-white/50">No image</div>
         )}
+        
+        {/* Trade lock icon on thumbnail */}
+        {isLocked && daysLeft > 0 && (
+          <div className="absolute top-0 left-0 bg-black/70 rounded-bl-md rounded-tr-md p-0.5 flex items-center">
+            <Lock className="h-2.5 w-2.5 text-yellow-500" />
+            <span className="text-[8px] ml-0.5 text-yellow-500">{daysLeft}d</span>
+          </div>
+        )}
       </div>
       
       {/* Main info */}
@@ -111,12 +119,6 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
         </div>
         <div className="flex items-center gap-1 text-xs text-[#A3A3A3]">
           {wear && <span>{wear}</span>}
-          {isLocked && daysLeft > 0 && (
-            <div className="flex items-center text-[10px] text-[#FFCC00] ml-1">
-              <Lock className="h-3 w-3 mr-0.5" />
-              {daysLeft}d
-            </div>
-          )}
         </div>
       </div>
       
@@ -127,3 +129,4 @@ export const InventoryListItem: FC<InventoryListItemProps> = ({
     </div>
   );
 };
+
