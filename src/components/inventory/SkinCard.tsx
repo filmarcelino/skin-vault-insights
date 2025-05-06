@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { InventoryItem } from "@/types/skin";
 import { Edit, Heart, Lock, Info, DollarSign, Copy, ChevronDown } from "lucide-react";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { getRarityColor } from "@/utils/skin-utils";
+import { getRarityColor, getTradeLockStatus } from "@/utils/skin-utils";
 
 interface SkinCardProps {
   item: InventoryItem;
@@ -34,6 +35,7 @@ export const SkinCard = ({
 }: SkinCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const { formatPrice } = useCurrency();
+  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(item.tradeLockUntil);
 
   // Obter a cor com base na raridade
   const getBorderColor = (rarity?: string) => {
@@ -170,14 +172,6 @@ export const SkinCard = ({
       style={getBackgroundStyle()}
       onClick={handleCardClick}
     >
-      {/* Trade Lock Indicator - Reposicionado para o topo */}
-      {item.tradeLockDays && item.tradeLockDays > 0 && (
-        <div className="absolute top-2 left-2 z-30 flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded text-yellow-300 text-xs">
-          <Lock className="h-3 w-3" />
-          <span>{item.tradeLockDays}d</span>
-        </div>
-      )}
-      
       {/* Conteúdo do card */}
       <div className="relative h-full flex flex-col p-3">
         {/* Cabeçalho do card */}
@@ -189,30 +183,30 @@ export const SkinCard = ({
           
           {/* Status de tradeable */}
           <div className="flex items-center ml-2 shrink-0">
-            {!item.tradeLockDays || item.tradeLockDays <= 0 ? (
-              <span className="text-white text-xs font-medium">Tradable</span>
-            ) : (
+            {isLocked && daysLeft > 0 ? (
               <div className="flex items-center gap-1 text-yellow-300">
                 <Lock className="h-3 w-3" />
-                <span className="text-xs">{item.tradeLockDays}d</span>
+                <span className="text-xs">{daysLeft}d</span>
               </div>
+            ) : (
+              <span className="text-white text-xs font-medium">Tradable</span>
             )}
           </div>
         </div>
 
         {/* Float value no canto superior direito */}
         {item.floatValue !== undefined && (
-          <div className="absolute top-3 right-3 bg-black/40 rounded px-2 py-1 z-10">
+          <div className="absolute top-10 right-3 bg-black/40 rounded px-2 py-1 z-10">
             <span className="text-xs font-mono text-white">{formatFloat(item.floatValue)}</span>
           </div>
         )}
 
-        {/* Botão de favorito */}
+        {/* Botão de favorito - reposicionado para não sobrepor */}
         {onToggleFavorite && (
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-2 right-2 h-6 w-6 bg-black/40 hover:bg-black/60 text-white/70 hover:text-white rounded-full z-10"
+            className="absolute top-3 right-3 h-6 w-6 bg-black/40 hover:bg-black/60 text-white/70 hover:text-white rounded-full z-20"
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(item.inventoryId);

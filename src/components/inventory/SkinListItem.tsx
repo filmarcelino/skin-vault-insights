@@ -1,10 +1,11 @@
+
 import React from "react";
 import { InventoryItem } from "@/types/skin";
 import { Edit, Heart, Lock, Trash2, DollarSign, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { cn } from "@/lib/utils";
-import { getRarityColor } from "@/utils/skin-utils";
+import { getRarityColor, getTradeLockStatus } from "@/utils/skin-utils";
 
 interface SkinListItemProps {
   item: InventoryItem;
@@ -32,6 +33,7 @@ export const SkinListItem = ({
   onClick,
 }: SkinListItemProps) => {
   const { formatPrice } = useCurrency();
+  const { isLocked, daysLeft } = getTradeLockStatus(item.tradeLockUntil);
 
   // Get the border color based on rarity
   const getBorderColor = (rarity?: string) => {
@@ -218,10 +220,10 @@ export const SkinListItem = ({
                 {item.floatValue.toFixed(4)}
               </span>
             )}
-            {item.tradeLockDays && item.tradeLockDays > 0 && (
+            {isLocked && daysLeft > 0 && (
               <div className="flex items-center gap-1 text-yellow-300">
                 <Lock className="h-3 w-3" />
-                <span className="text-xs">{item.tradeLockDays}d</span>
+                <span className="text-xs">{daysLeft}d</span>
               </div>
             )}
           </div>

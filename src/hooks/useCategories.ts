@@ -14,7 +14,7 @@ export const useFilteredCategories = () => {
   const weaponTypes = categories
     ?.filter((item): item is Category => {
       // If item is null, undefined, or not an object, return false
-      if (!item || typeof item !== 'object') {
+      if (item === null || item === undefined || typeof item !== 'object') {
         return false;
       }
       
@@ -33,7 +33,7 @@ export const useFilteredCategories = () => {
   const rarityTypes = categories
     ?.filter((item): item is Category => {
       // If item is null, undefined, or not an object, return false
-      if (!item || typeof item !== 'object') {
+      if (item === null || item === undefined || typeof item !== 'object') {
         return false;
       }
       

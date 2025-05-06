@@ -1,3 +1,4 @@
+
 import { InventoryItem } from "@/types/skin";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Info, Tag, Calendar, DollarSign, TrendingUp } from "lucide-react";
@@ -166,7 +167,7 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
               <Lock className="h-4 w-4 mr-2" />
               <span>
                 Trade Locked for {daysLeft} {daysLeft === 1 ? 'day' : 'days'} 
-                (until {tradeLockDate?.toLocaleDateString()})
+                {tradeLockDate && ` (until ${tradeLockDate.toLocaleDateString()})`}
               </span>
             </div>
           ) : (
@@ -179,52 +180,52 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-white/90">
             {item.rarity && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <div className="w-3 h-3 rounded-full mr-2" 
+                <div className="min-w-3 h-3 rounded-full mr-2" 
                   style={{ backgroundColor: getRarityColor(item.rarity) }}></div>
-                <span className="font-medium">Rarity:</span> {item.rarity}
+                <span className="font-medium mr-1">Rarity:</span> <span className="break-words">{item.rarity}</span>
               </div>
             )}
             
             {item.wear && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <Tag className="h-3 w-3 mr-2" />
-                <span className="font-medium">Wear:</span> {item.wear}
+                <Tag className="min-w-3 h-3 mr-2 shrink-0" />
+                <span className="font-medium mr-1">Wear:</span> <span className="break-words">{item.wear}</span>
               </div>
             )}
             
             {item.floatValue !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <span className="font-medium">Float:</span> {item.floatValue.toFixed(8)}
+                <span className="font-medium mr-1">Float:</span> <span className="break-words">{item.floatValue.toFixed(8)}</span>
               </div>
             )}
             
             <div className="flex items-center bg-black/20 p-2 rounded-md">
-              <Calendar className="h-3 w-3 mr-2" />
-              <span className="font-medium">Acquired:</span> {acquiredDate}
+              <Calendar className="min-w-3 h-3 mr-2 shrink-0" />
+              <span className="font-medium mr-1">Acquired:</span> <span className="break-words">{acquiredDate}</span>
             </div>
             
             {item.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <DollarSign className="h-3 w-3 mr-2" />
-                <span className="font-medium">Purchase:</span> {purchaseCurrency.symbol}{item.purchasePrice.toFixed(2)} {purchaseCurrency.code}
+                <DollarSign className="min-w-3 h-3 mr-2 shrink-0" />
+                <span className="font-medium mr-1">Purchase:</span> <span className="break-words">{purchaseCurrency.symbol}{item.purchasePrice.toFixed(2)} {purchaseCurrency.code}</span>
               </div>
             )}
             
             {item.currentPrice !== undefined && item.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <TrendingUp className="h-3 w-3 mr-2" />
-                <span className="font-medium">Current:</span> {formatPrice(item.currentPrice)}
+                <TrendingUp className="min-w-3 h-3 mr-2 shrink-0" />
+                <span className="font-medium mr-1">Current:</span> <span className="break-words">{formatPrice(item.currentPrice)}
                 {item.currentPrice > item.purchasePrice && (
                   <span className="ml-1 text-green-400 text-xs">
                     (+{formatPrice(item.currentPrice - item.purchasePrice)})
                   </span>
-                )}
+                )}</span>
               </div>
             )}
             
             {item.marketplace && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <span className="font-medium">Source:</span> {item.marketplace}
+                <span className="font-medium mr-1">Source:</span> <span className="break-words">{item.marketplace}</span>
               </div>
             )}
           </div>
