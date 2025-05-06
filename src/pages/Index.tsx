@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { InsightsCard } from "@/components/dashboard/insights-card";
@@ -27,6 +28,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { InventoryFilterBar } from "@/components/dashboard/InventoryFilterBar";
 
 interface IndexProps {
   activeTab?: "inventory" | "search";
@@ -39,6 +41,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<"inventory" | "search">(activeTab);
   const [userInventory, setUserInventory] = useState<InventoryItem[]>([]);
+  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [inventoryStats, setInventoryStats] = useState({
     totalSkins: 0,
@@ -53,14 +56,60 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [weaponFilter, setWeaponFilter] = useState("");
+  const [rarityFilter, setRarityFilter] = useState("");
+  const [sortMethod, setSortMethod] = useState("price_desc");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, session } = useAuth();
   
   const { data: skins, isLoading: isSkinsLoading, error: skinsError } = useSkins({
     search: searchQuery.length > 2 ? searchQuery : undefined,
-    onlyUserInventory: currentTab === "inventory"
+    onlyUserInventory: currentTab === "inventory",
+    weapon: weaponFilter || undefined,
+    rarity: rarityFilter || undefined
   });
+
+  // Função para filtrar e ordenar o inventário
+  const filterAndSortInventory = (
+    inventory: InventoryItem[],
+    search: string, 
+    weapon: string, 
+    rarity: string,
+    sort: string
+  ) => {
+    // Primeiro filtra
+    let filtered = inventory.filter(item => {
+      const matchesSearch = search.length < 3 || 
+        item.name?.toLowerCase().includes(search.toLowerCase()) || 
+        item.weapon?.toLowerCase().includes(search.toLowerCase());
+      
+      const matchesWeapon = !weapon || item.weapon === weapon;
+      const matchesRarity = !rarity || item.rarity === rarity;
+      
+      return matchesSearch && matchesWeapon && matchesRarity;
+    });
+
+    // Depois ordena
+    return filtered.sort((a, b) => {
+      switch (sort) {
+        case 'price_desc':
+          return (b.currentPrice || b.price || 0) - (a.currentPrice || a.price || 0);
+        case 'price_asc':
+          return (a.currentPrice || a.price || 0) - (b.currentPrice || b.price || 0);
+        case 'name_asc':
+          return a.name.localeCompare(b.name);
+        case 'name_desc':
+          return b.name.localeCompare(a.name);
+        case 'date_desc':
+          return new Date(b.acquiredDate).getTime() - new Date(a.acquiredDate).getTime();
+        case 'date_asc':
+          return new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
+        default:
+          return 0;
+      }
+    });
+  };
 
   const refreshUserData = async () => {
     setIsLoading(true);
@@ -111,6 +160,22 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     checkSubscription();
   }, [session]);
 
+  // Effect para atualizar o inventário filtrado quando as configurações de filtro mudarem
+  useEffect(() => {
+    if (userInventory.length > 0) {
+      const filtered = filterAndSortInventory(
+        userInventory, 
+        searchQuery, 
+        weaponFilter, 
+        rarityFilter, 
+        sortMethod
+      );
+      setFilteredInventory(filtered);
+    } else {
+      setFilteredInventory([]);
+    }
+  }, [userInventory, searchQuery, weaponFilter, rarityFilter, sortMethod]);
+
   useEffect(() => {
     refreshUserData();
   }, []);
@@ -121,7 +186,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
 
   useEffect(() => {
     if (currentTab === "inventory") {
-      setDebugInfo(`Loaded ${userInventory.length} skins from user inventory`);
+      setDebugInfo(`Loaded ${filteredInventory.length} skins from user inventory`);
     } else if (skins) {
       setDebugInfo(`Loaded ${skins.length} skins from search`);
     } else if (isSkinsLoading) {
@@ -129,7 +194,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     } else if (skinsError) {
       setDebugInfo(`Error: ${skinsError.toString()}`);
     }
-  }, [skins, isSkinsLoading, skinsError, userInventory, currentTab]);
+  }, [skins, isSkinsLoading, skinsError, filteredInventory, currentTab]);
 
   const prepareStats = async (inventory?: InventoryItem[]) => {
     try {
@@ -296,10 +361,6 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
 
       <PremiumCTA />
 
-      <div className="p-2 mb-4 bg-gray-100 dark:bg-gray-800 text-xs overflow-x-auto">
-        <p>{debugInfo}</p>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 animate-fade-in">
         <StatsCard 
           title="Total Skins" 
@@ -335,11 +396,21 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       <div className="mt-8">
         {currentTab === "inventory" && (
           <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold">My Inventory</h2>
-              <Button variant="outline" size="sm" className="text-primary border-primary hover:bg-primary/10">
-                Sort by Value
-              </Button>
+            <div className="flex flex-wrap items-center justify-between mb-4">
+              <h2 className="text-xl font-bold mb-4 md:mb-0">My Inventory</h2>
+              
+              <div className="w-full md:w-auto">
+                <InventoryFilterBar 
+                  searchQuery={searchQuery}
+                  onSearchChange={handleSearchChange}
+                  weaponFilter={weaponFilter}
+                  onWeaponFilterChange={setWeaponFilter}
+                  rarityFilter={rarityFilter}
+                  onRarityFilterChange={setRarityFilter}
+                  sortMethod={sortMethod}
+                  onSortMethodChange={setSortMethod}
+                />
+              </div>
             </div>
             
             {viewMode === 'grid' ? (
@@ -355,13 +426,13 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                       </div>
                     </div>
                   ))
-                ) : userInventory.length === 0 ? (
+                ) : filteredInventory.length === 0 ? (
                   <div className="col-span-full text-center py-8 text-muted-foreground">
                     <p>Your inventory is empty.</p>
                     <p className="mt-2">Switch to "Search Skins" tab to find and add skins to your inventory.</p>
                   </div>
                 ) : (
-                  userInventory.map((skin, index) => (
+                  filteredInventory.map((skin, index) => (
                     <InventoryCard 
                       key={skin.inventoryId}
                       weaponName={skin.weapon || "Unknown"}
@@ -373,7 +444,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                       isStatTrak={skin.isStatTrak}
                       tradeLockDays={skin.tradeLockDays}
                       tradeLockUntil={skin.tradeLockUntil}
-                      className="animate-fade-in hover:scale-105 transition-transform duration-200"
+                      className="animate-fade-in transition-transform duration-200"
                       style={{ animationDelay: `${0.5 + (index * 0.05)}s` }}
                       onClick={() => handleSkinClick(skin)}
                     />
@@ -393,13 +464,13 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                       <Skeleton className="h-4 w-12 shrink-0" />
                     </div>
                   ))
-                ) : userInventory.length === 0 ? (
+                ) : filteredInventory.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>Your inventory is empty.</p>
                     <p className="mt-2">Switch to "Search Skins" tab to find and add skins to your inventory.</p>
                   </div>
                 ) : (
-                  userInventory.map((skin, index) => (
+                  filteredInventory.map((skin, index) => (
                     <InventoryListItem 
                       key={skin.inventoryId}
                       weaponName={skin.weapon || "Unknown"}
@@ -426,8 +497,13 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
           <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold">Search Results</h2>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                Filter
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/search')}
+                className="text-primary border-primary hover:bg-primary/10"
+              >
+                Advanced Search
               </Button>
             </div>
             
@@ -456,7 +532,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
                       rarity={skin.rarity}
                       isStatTrak={skin.isStatTrak}
                       tradeLockDays={0}
-                      className="animate-fade-in hover:scale-105 transition-transform duration-200"
+                      className="animate-fade-in transition-transform duration-200"
                       style={{ animationDelay: `${0.5 + (index * 0.05)}s` }}
                       onClick={() => handleSkinClick(skin)}
                     />

@@ -26,6 +26,8 @@ export default function SearchPage() {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [weaponFilter, setWeaponFilter] = useState("");
   const [rarityFilter, setRarityFilter] = useState("");
+  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const { toast } = useToast();
 
   // Hooks para gerenciar ações de inventário
@@ -39,7 +41,9 @@ export default function SearchPage() {
     search: searchQuery.length > 2 ? searchQuery : undefined,
     onlyUserInventory: currentTab === "inventory",
     weapon: weaponFilter || undefined,
-    rarity: rarityFilter || undefined
+    rarity: rarityFilter || undefined,
+    minPrice: minPrice,
+    maxPrice: maxPrice
   });
   
   // Calculate pagination
@@ -53,7 +57,7 @@ export default function SearchPage() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, currentTab, weaponFilter, rarityFilter, itemsPerPage]);
+  }, [searchQuery, currentTab, weaponFilter, rarityFilter, minPrice, maxPrice, itemsPerPage]);
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -101,6 +105,11 @@ export default function SearchPage() {
     }
   };
 
+  const handlePriceFilterChange = (min?: number, max?: number) => {
+    setMinPrice(min);
+    setMaxPrice(max);
+  };
+
   return (
     <>
       <SearchHeader 
@@ -121,6 +130,9 @@ export default function SearchPage() {
         setItemsPerPage={setItemsPerPage}
         itemsPerPageOptions={itemsPerPageOptions}
         currentTab={currentTab}
+        onPriceFilterChange={handlePriceFilterChange}
+        minPrice={minPrice}
+        maxPrice={maxPrice}
       />
       
       <PremiumCTA />
@@ -147,7 +159,7 @@ export default function SearchPage() {
         currentPage={currentPage}
         totalPages={totalPages}
         setCurrentPage={setCurrentPage}
-        show={currentTab === "allSkins"}
+        show={totalPages > 1}
       />
 
       {/* Modal para adicionar nova skin */}

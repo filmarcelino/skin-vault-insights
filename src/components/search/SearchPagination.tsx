@@ -21,7 +21,7 @@ export const SearchPagination = ({
   setCurrentPage,
   show
 }: SearchPaginationProps) => {
-  if (!show || totalPages <= 1) return null;
+  if (!show) return null;
 
   // Display up to 5 page numbers, with ellipsis if needed
   const pageNumbers: (number | string)[] = [];
