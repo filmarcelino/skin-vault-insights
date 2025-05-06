@@ -30,8 +30,8 @@ export const useFilteredCategories = () => {
           (item as any).type === 'weapon'
         );
       })
-      // After the type guard, TypeScript knows this is Category[]
-      .map(category => category.name) 
+      // Now TypeScript knows we have a Category[], so we can safely access name
+      .map((category) => category.name) 
     : [];
   
   // Extract rarity types with proper type checks
@@ -51,8 +51,8 @@ export const useFilteredCategories = () => {
           (item as any).type === 'rarity'
         );
       })
-      // After the type guard, TypeScript knows this is Category[]
-      .map(category => category.name) 
+      // Now TypeScript knows we have a Category[], so we can safely access name
+      .map((category) => category.name) 
     : [];
 
   return {
