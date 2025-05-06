@@ -1,7 +1,7 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -9,9 +9,16 @@ const Landing = () => {
   const handleGetStarted = () => {
     console.log("Navegando para a página de autenticação...");
     try {
+      // Mostrar feedback visual ao usuário
+      toast("Redirecionando...", {
+        description: "Você será redirecionado para a página de login."
+      });
       navigate('/auth');
     } catch (error) {
       console.error("Erro ao navegar:", error);
+      toast("Erro ao navegar", {
+        description: "Ocorreu um erro ao tentar acessar a página de login."
+      });
     }
   };
 

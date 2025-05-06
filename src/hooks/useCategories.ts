@@ -7,14 +7,17 @@ interface Category {
   name: string;
 }
 
+// Define tipo para os itens na lista de categorias
+type CategoryItem = Category | null | undefined;
+
 export const useFilteredCategories = () => {
   const { data: categories } = useOriginalCategories();
   
   // Extract weapon types with proper type checks
   const weaponTypes = categories
-    ?.filter((item): item is Category => {
+    ?.filter((item: CategoryItem): item is Category => {
       // Type guard check for item structure
-      if (item === null) return false;
+      if (!item) return false;
       
       return (
         typeof item === 'object' &&
@@ -29,9 +32,9 @@ export const useFilteredCategories = () => {
   
   // Extract rarity types with proper type checks
   const rarityTypes = categories
-    ?.filter((item): item is Category => {
+    ?.filter((item: CategoryItem): item is Category => {
       // Type guard check for item structure
-      if (item === null) return false;
+      if (!item) return false;
       
       return (
         typeof item === 'object' &&
