@@ -7,7 +7,7 @@ interface Category {
   name: string;
 }
 
-// Define tipo para qualquer elemento que possa estar no array de categorias
+// Define type for any element that might be in the categories array
 type CategoryItem = unknown;
 
 export const useFilteredCategories = () => {
@@ -30,7 +30,8 @@ export const useFilteredCategories = () => {
           (item as any).type === 'weapon'
         );
       })
-      .map((category) => category.name) 
+      // Explicitly cast the filtered array to Category[] so TS knows it's safe to access .name
+      .map((category: Category) => category.name) 
     : [];
   
   // Extract rarity types with proper type checks
@@ -50,7 +51,8 @@ export const useFilteredCategories = () => {
           (item as any).type === 'rarity'
         );
       })
-      .map((category) => category.name) 
+      // Explicitly cast the filtered array to Category[] so TS knows it's safe to access .name
+      .map((category: Category) => category.name) 
     : [];
 
   return {
