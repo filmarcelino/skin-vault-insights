@@ -1,8 +1,8 @@
+
 import React from "react";
 import { ArrowUpIcon, ArrowDownIcon, DollarSignIcon, PackageIcon, PercentIcon, TrendingUpIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCurrency } from "@/contexts/CurrencyContext";
-import { getRarityColor } from "@/utils/skin-utils";
 
 interface StatsCardsProps {
   inventoryStats: {

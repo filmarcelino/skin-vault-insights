@@ -11,8 +11,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { LineChart } from '@/components/ui/chart';
+import { StatsCards } from '@/components/analytics/stats-cards';
+import { useInventory } from '@/hooks/use-skins';
 
 interface InventoryStats {
+  total_items: number;
+  total_value: number;
+  avg_price: number;
+  value_change_30d: number;
+  value_change_percentage_30d: number;
+}
+
+interface DetailedInventoryStats {
   totalValue: number;
   profitLoss: number;
   itemCount: number;
@@ -23,96 +34,7 @@ interface InventoryStats {
   recentTransactions: Array<{id: string, name: string, type: string, value: number, date: string}>;
 }
 
-const formatNumber = (value: number | undefined): string => {
-  if (value === undefined) return '0';
-  return value.toFixed(0);
-};
-
-const formatDecimal = (value: number | undefined): string => {
-  if (value === undefined) return '0.000';
-  return value.toFixed(3);
-};
-
-const StatCard: React.FC<{
-  title: string;
-  value: number | undefined;
-  icon: React.ReactNode;
-  isCurrency?: boolean;
-  isInteger?: boolean;
-  loading: boolean;
-  iconColor?: string;
-  bgColorClass?: string;
-}> = ({ title, value, icon, isCurrency = true, isInteger = false, loading, iconColor = "#8B5CF6", bgColorClass }) => {
-  const { formatPrice, currency } = useCurrency();
-  
-  return (
-    <Card className={`${bgColorClass || ""}`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className="rounded-full p-2" style={{ backgroundColor: `${iconColor}30` }}>
-          {React.cloneElement(icon as React.ReactElement, { 
-            className: "h-4 w-4", 
-            style: { color: iconColor } 
-          })}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-4 w-[100px]" />
-        ) : (
-          <div className="text-2xl font-bold">
-            {isCurrency ? 
-              formatPrice(value) : 
-              (isInteger ? formatNumber(value) : formatDecimal(value))
-            }
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-const ProfitLossSummary: React.FC<{
-  profitLoss: number | undefined;
-  loading: boolean;
-}> = ({ profitLoss, loading }) => {
-  const { formatPrice } = useCurrency();
-  const isProfit = profitLoss !== undefined && profitLoss > 0;
-  const arrowIcon = isProfit ? <ArrowUpRight className="h-4 w-4 text-green-500" /> : <ArrowDownRight className="h-4 w-4 text-red-500" />;
-  const badgeVariant = isProfit ? "outline" : "destructive";
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Profit / Loss</CardTitle>
-        <div className="rounded-full p-2 bg-opacity-20" style={{ backgroundColor: isProfit ? "#10B981" : "#EF4444", opacity: 0.2 }}>
-          {isProfit ? (
-            <TrendingUp className="h-4 w-4 text-green-500" />
-          ) : (
-            <ArrowDownRight className="h-4 w-4 text-red-500" />
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-4 w-[100px]" />
-        ) : (
-          <div className="space-y-1">
-            <div className="text-2xl font-bold" style={{ color: isProfit ? "#10B981" : "#EF4444" }}>
-              {formatPrice(profitLoss)}
-            </div>
-            <Badge variant={badgeVariant}>
-              {arrowIcon}
-              {isProfit ? "Profit" : "Loss"}
-            </Badge>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-const RarityDistribution: React.FC<{
+const RarityDistribution: FC<{
   rarities: Array<{name: string, count: number}> | undefined;
   loading: boolean;
 }> = ({ rarities, loading }) => {
@@ -157,7 +79,7 @@ const RarityDistribution: React.FC<{
   );
 };
 
-const RecentTransactions: React.FC<{
+const RecentTransactions: FC<{
   transactions: Array<{id: string, name: string, type: string, value: number, date: string}> | undefined;
   loading: boolean;
 }> = ({ transactions, loading }) => {
@@ -243,6 +165,7 @@ const PremiumFeatureCard = () => {
 const Analytics = () => {
   const { formatPrice, currency } = useCurrency();
   const { user } = useAuth();
+  const { data: inventoryData } = useInventory();
   
   const { data: inventoryStats, isLoading } = useQuery({
     queryKey: ['inventoryStats', currency.code, user?.id],
@@ -252,8 +175,9 @@ const Analytics = () => {
       }
 
       try {
-        console.log('Fetching inventory data for analytics...');
+        console.log('Fetching inventory and transaction data for analytics...');
         
+        // Get current inventory items
         const { data: inventoryItems, error: inventoryError } = await supabase
           .from('inventory')
           .select('*')
@@ -265,14 +189,14 @@ const Analytics = () => {
           throw new Error(inventoryError.message);
         }
         
-        console.log(`Found ${inventoryItems.length} inventory items`);
+        console.log(`Found ${inventoryItems?.length || 0} inventory items`);
         
+        // Get transactions (both buys and sells)
         const { data: transactionItems, error: transactionError } = await supabase
           .from('transactions')
           .select('*')
           .eq('user_id', user.id)
-          .order('date', { ascending: false })
-          .limit(5);
+          .order('date', { ascending: false });
           
         if (transactionError) {
           console.error('Error fetching transactions:', transactionError);
@@ -281,70 +205,116 @@ const Analytics = () => {
         
         console.log(`Found ${transactionItems?.length || 0} transactions`);
         
-        const totalValue = inventoryItems.reduce((sum, item) => {
+        // Calculate total current inventory value
+        const totalValue = inventoryItems ? inventoryItems.reduce((sum, item) => {
           const value = item.current_price || item.price || 0;
           return sum + parseFloat(String(value));
-        }, 0);
+        }, 0) : 0;
         
-        const profitLoss = inventoryItems.reduce((sum, item) => {
+        // Calculate profit/loss (current value vs purchase value)
+        const profitLoss = inventoryItems ? inventoryItems.reduce((sum, item) => {
           const currentValue = parseFloat(String(item.current_price || item.price || 0));
           const purchaseValue = parseFloat(String(item.purchase_price || currentValue));
           return sum + (currentValue - purchaseValue);
-        }, 0);
+        }, 0) : 0;
         
-        const averageItemValue = inventoryItems.length > 0 
-          ? totalValue / inventoryItems.length 
-          : 0;
+        // Add profit from sold items
+        const soldItemsProfit = transactionItems ? transactionItems
+          .filter(tx => tx.type === 'sell')
+          .reduce((sum, tx) => {
+            // Find the matching 'add' transaction to calculate profit
+            const addTransaction = transactionItems.find(
+              addTx => addTx.item_id === tx.item_id && addTx.type === 'add'
+            );
+            
+            if (addTransaction) {
+              const sellPrice = parseFloat(String(tx.price || 0));
+              const buyPrice = parseFloat(String(addTransaction.price || 0));
+              return sum + (sellPrice - buyPrice);
+            }
+            
+            return sum + parseFloat(String(tx.price || 0)); // If no matching buy, count full sell as profit
+          }, 0) : 0;
         
+        // Calculate average item value
+        const itemCount = inventoryItems?.length || 0;
+        const averageItemValue = itemCount > 0 ? totalValue / itemCount : 0;
+        
+        // Count items by rarity
         const rarityCounts: {[key: string]: number} = {};
-        inventoryItems.forEach(item => {
-          if (item.rarity) {
-            rarityCounts[item.rarity] = (rarityCounts[item.rarity] || 0) + 1;
-          }
-        });
+        if (inventoryItems) {
+          inventoryItems.forEach(item => {
+            if (item.rarity) {
+              rarityCounts[item.rarity] = (rarityCounts[item.rarity] || 0) + 1;
+            }
+          });
+        }
         
         const topRarities = Object.entries(rarityCounts)
           .map(([name, count]) => ({ name, count }))
           .sort((a, b) => b.count - a.count);
         
-        const recentTransactions = transactionItems.map(tx => ({
-          id: tx.id,
-          name: `${tx.weapon_name || ''} | ${tx.skin_name || 'Unknown'}`,
-          type: tx.type,
-          value: parseFloat(String(tx.price) || '0'),
-          date: tx.date
-        }));
+        // Format recent transactions for UI
+        const recentTransactions = transactionItems ? 
+          transactionItems
+            .slice(0, 5)
+            .map(tx => ({
+              id: tx.transaction_id || tx.id,
+              name: `${tx.weapon_name || ''} | ${tx.skin_name || 'Unknown'}`,
+              type: tx.type,
+              value: parseFloat(String(tx.price) || '0'),
+              date: tx.date
+            })) : [];
         
-        const valueChange30d = transactionItems
-          .filter(tx => {
-            const txDate = new Date(tx.date);
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            return txDate > thirtyDaysAgo;
-          })
-          .reduce((sum, tx) => {
-            if (tx.type === 'sell') {
-              return sum + parseFloat(String(tx.price || 0));
-            } else if (tx.type === 'add') {
-              return sum - parseFloat(String(tx.price || 0));
-            }
-            return sum;
-          }, 0);
+        // Calculate 30-day value change
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         
+        // Value change calculations from transactions
+        const valueChange30d = transactionItems ? 
+          transactionItems
+            .filter(tx => {
+              const txDate = new Date(tx.date);
+              return txDate > thirtyDaysAgo;
+            })
+            .reduce((sum, tx) => {
+              if (tx.type === 'sell') {
+                // For sells, count profit/loss compared to purchase price
+                const addTransaction = transactionItems.find(
+                  addTx => addTx.item_id === tx.item_id && addTx.type === 'add'
+                );
+                
+                if (addTransaction) {
+                  const sellPrice = parseFloat(String(tx.price || 0));
+                  const buyPrice = parseFloat(String(addTransaction.price || 0));
+                  return sum + (sellPrice - buyPrice);
+                }
+                return sum + parseFloat(String(tx.price || 0));
+              } else if (tx.type === 'add') {
+                // For buys, we don't add to value change as it's just a conversion of cash to item
+                return sum;
+              }
+              return sum;
+            }, 0) : 0;
+        
+        // Calculate percentage change (using total value as denominator)
         const valueChangePercent = totalValue > 0 
           ? (valueChange30d / totalValue) * 100
           : 0;
         
-        return {
+        // Final stats object
+        const stats = {
           totalValue: parseFloat(totalValue.toFixed(3)),
-          profitLoss: parseFloat(profitLoss.toFixed(3)),
-          itemCount: inventoryItems.length,
+          profitLoss: parseFloat((profitLoss + soldItemsProfit).toFixed(3)),
+          itemCount,
           averageItemValue: parseFloat(averageItemValue.toFixed(3)),
           valueChange30d: parseFloat(valueChange30d.toFixed(3)),
           valueChangePercent: parseFloat(valueChangePercent.toFixed(3)),
           topRarities,
           recentTransactions
         };
+        
+        return stats;
       } catch (error) {
         console.error('Error calculating inventory stats:', error);
         throw error;
@@ -353,6 +323,15 @@ const Analytics = () => {
     retry: 1,
     refetchOnWindowFocus: false
   });
+
+  // Prepare data for stats cards
+  const statsForCards: InventoryStats = {
+    total_items: inventoryStats?.itemCount || 0,
+    total_value: inventoryStats?.totalValue || 0,
+    avg_price: inventoryStats?.averageItemValue || 0,
+    value_change_30d: inventoryStats?.valueChange30d || 0,
+    value_change_percentage_30d: inventoryStats?.valueChangePercent || 0
+  };
 
   return (
     <div className="w-full space-y-4">
@@ -365,66 +344,16 @@ const Analytics = () => {
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Inventory Value"
-              value={inventoryStats?.totalValue}
-              icon={<DollarSign />}
-              loading={isLoading}
-              iconColor="#4B69FF"
-              bgColorClass="bg-[rgba(75,105,255,0.05)]"
-            />
-            
-            <ProfitLossSummary 
-              profitLoss={inventoryStats?.profitLoss} 
-              loading={isLoading} 
-            />
-            
-            <StatCard
-              title="Item Count"
-              value={inventoryStats?.itemCount}
-              icon={<Package />}
-              isCurrency={false}
-              isInteger={true}
-              loading={isLoading}
-              iconColor="#8847FF"
-              bgColorClass="bg-[rgba(136,71,255,0.05)]"
-            />
-            
-            <StatCard
-              title="Average Item Value"
-              value={inventoryStats?.averageItemValue}
-              icon={<BarChart3 />}
-              loading={isLoading}
-              iconColor="#D32CE6"
-              bgColorClass="bg-[rgba(211,44,230,0.05)]"
-            />
-            
-            <StatCard
-              title="30 Day Change"
-              value={inventoryStats?.valueChange30d}
-              icon={<TrendingUp />}
-              loading={isLoading}
-              iconColor="#EB4B4B"
-              bgColorClass="bg-[rgba(235,75,75,0.05)]"
-            />
-            
-            <StatCard
-              title="Percent Change"
-              value={inventoryStats?.valueChangePercent}
-              icon={<Percent />}
-              isCurrency={false}
-              loading={isLoading}
-              iconColor="#FFD700"
-              bgColorClass="bg-[rgba(255,215,0,0.05)]"
-            />
-          </div>
+          {/* StatsCards component with accurate inventory data */}
+          <StatsCards inventoryStats={statsForCards} />
 
+          {/* Rarity distribution card */}
           <RarityDistribution 
             rarities={inventoryStats?.topRarities} 
             loading={isLoading} 
           />
           
+          {/* Recent transactions card */}
           <RecentTransactions 
             transactions={inventoryStats?.recentTransactions} 
             loading={isLoading} 

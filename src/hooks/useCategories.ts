@@ -13,7 +13,7 @@ export const useFilteredCategories = () => {
   // Extract weapon types with proper type checks
   const weaponTypes = categories
     ?.filter((item): item is Category => {
-      // Se o item for nulo, indefinido ou não for um objeto, retornamos false
+      // If item is null, undefined, or not an object, return false
       if (!item || typeof item !== 'object') {
         return false;
       }
@@ -32,7 +32,7 @@ export const useFilteredCategories = () => {
   // Extract rarity types with proper type checks
   const rarityTypes = categories
     ?.filter((item): item is Category => {
-      // Se o item for nulo, indefinido ou não for um objeto, retornamos false
+      // If item is null, undefined, or not an object, return false
       if (!item || typeof item !== 'object') {
         return false;
       }
