@@ -7,45 +7,46 @@ interface Category {
   name: string;
 }
 
-// Define tipo para os itens na lista de categorias
-type CategoryItem = Category | null | undefined;
-
 export const useFilteredCategories = () => {
   const { data: categories } = useOriginalCategories();
   
   // Extract weapon types with proper type checks
-  const weaponTypes = categories
-    ?.filter((item: CategoryItem): item is Category => {
-      // Type guard check for item structure
-      if (!item) return false;
-      
-      return (
-        typeof item === 'object' &&
-        'type' in item && 
-        'name' in item && 
-        typeof item.type === 'string' && 
-        typeof item.name === 'string' && 
-        item.type === 'weapon'
-      );
-    })
-    .map((category) => category.name) || [];
+  const weaponTypes = Array.isArray(categories) 
+    ? categories
+      .filter((item): item is Category => {
+        // Type guard check for item structure
+        if (!item) return false;
+        
+        return (
+          typeof item === 'object' &&
+          'type' in item && 
+          'name' in item && 
+          typeof item.type === 'string' && 
+          typeof item.name === 'string' && 
+          item.type === 'weapon'
+        );
+      })
+      .map((category) => category.name) 
+    : [];
   
   // Extract rarity types with proper type checks
-  const rarityTypes = categories
-    ?.filter((item: CategoryItem): item is Category => {
-      // Type guard check for item structure
-      if (!item) return false;
-      
-      return (
-        typeof item === 'object' &&
-        'type' in item && 
-        'name' in item && 
-        typeof item.type === 'string' && 
-        typeof item.name === 'string' && 
-        item.type === 'rarity'
-      );
-    })
-    .map((category) => category.name) || [];
+  const rarityTypes = Array.isArray(categories) 
+    ? categories
+      .filter((item): item is Category => {
+        // Type guard check for item structure
+        if (!item) return false;
+        
+        return (
+          typeof item === 'object' &&
+          'type' in item && 
+          'name' in item && 
+          typeof item.type === 'string' && 
+          typeof item.name === 'string' && 
+          item.type === 'rarity'
+        );
+      })
+      .map((category) => category.name) 
+    : [];
 
   return {
     weaponTypes,
