@@ -14,8 +14,9 @@ export const useFilteredCategories = () => {
   const weaponTypes = categories
     ?.filter((item): item is Category => {
       // Type guard check for item structure
+      if (item === null) return false;
+      
       return (
-        item !== null && 
         typeof item === 'object' &&
         'type' in item && 
         'name' in item && 
@@ -30,8 +31,9 @@ export const useFilteredCategories = () => {
   const rarityTypes = categories
     ?.filter((item): item is Category => {
       // Type guard check for item structure
+      if (item === null) return false;
+      
       return (
-        item !== null && 
         typeof item === 'object' &&
         'type' in item && 
         'name' in item && 
