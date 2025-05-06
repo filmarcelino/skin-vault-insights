@@ -30,8 +30,8 @@ export const useFilteredCategories = () => {
           (item as any).type === 'weapon'
         );
       })
-      // Explicitly cast the filtered array to Category[] so TS knows it's safe to access .name
-      .map((category: Category) => category.name) 
+      // Use as Category[] to tell TypeScript what the array contains after filtering
+      .map((category) => category.name) 
     : [];
   
   // Extract rarity types with proper type checks
@@ -51,8 +51,8 @@ export const useFilteredCategories = () => {
           (item as any).type === 'rarity'
         );
       })
-      // Explicitly cast the filtered array to Category[] so TS knows it's safe to access .name
-      .map((category: Category) => category.name) 
+      // Use as Category[] to tell TypeScript what the array contains after filtering
+      .map((category) => category.name) 
     : [];
 
   return {
