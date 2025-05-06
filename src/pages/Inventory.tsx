@@ -13,13 +13,24 @@ import { DuplicateSkinModal } from "@/components/inventory/DuplicateSkinModal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
 import { InventoryGrid } from "@/components/inventory/InventoryGrid";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { SoldSkinsTable } from "@/components/inventory/SoldSkinsTable";
+import { InventorySkinEditModal } from "@/components/skins/inventory-skin-edit-modal";
 
 const Inventory = () => {
   const [search, setSearch] = useState("");
   const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [soldItems, setSoldItems] = useState<any[]>([]);
+  const [loadingSold, setLoadingSold] = useState(true);
+  const [editingSoldItem, setEditingSoldItem] = useState<any>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
   const { toast } = useToast();
+  const { user } = useAuth();
   const { data: inventory, isLoading, refetch } = useInventory();
   const invalidateInventory = useInvalidateInventory();
 
@@ -54,11 +65,45 @@ const Inventory = () => {
       setFilteredInventory(filtered);
     }
   }, [inventory, search]);
+  
+  useEffect(() => {
+    if (user) {
+      loadSoldItems();
+    }
+  }, [user]);
+
+  const loadSoldItems = async () => {
+    setLoadingSold(true);
+    try {
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('type', 'sell')
+        .order('date', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      setSoldItems(transactions || []);
+    } catch (error) {
+      console.error('Erro ao carregar itens vendidos:', error);
+      toast({
+        title: "Erro ao Carregar",
+        description: "Não foi possível carregar os itens vendidos.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingSold(false);
+    }
+  };
 
   const handleRefreshInventory = async () => {
     setIsRefreshing(true);
     try {
       await refetch();
+      await loadSoldItems();
       toast({
         title: "Inventário Atualizado",
         description: "Seu inventário foi atualizado com sucesso.",
@@ -75,10 +120,49 @@ const Inventory = () => {
     }
   };
 
-  // Lidar com clique no item da lista ou card para abrir modal de edição
+  const handleEditSoldItem = (item: any) => {
+    setEditingSoldItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateSoldItem = async (updatedItem: any) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({
+          price: updatedItem.price,
+          notes: updatedItem.notes,
+          date: updatedItem.date
+        })
+        .eq('id', updatedItem.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Venda Atualizada",
+        description: "As informações da venda foram atualizadas com sucesso."
+      });
+      
+      loadSoldItems();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Erro ao atualizar venda:', error);
+      toast({
+        title: "Erro ao Atualizar",
+        description: "Não foi possível atualizar as informações da venda.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleItemClick = (item: InventoryItem) => {
     onEdit(item);
   };
+
+  const filteredSoldItems = soldItems.filter(item =>
+    (item.skin_name && item.skin_name.toLowerCase().includes(search.toLowerCase())) ||
+    (item.weapon_name && item.weapon_name.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <div className="container py-8 animate-fade-in">
@@ -116,26 +200,43 @@ const Inventory = () => {
           />
         </div>
       </div>
-
-      {viewMode === 'list' ? (
-        <InventoryTable
-          isLoading={isLoading}
-          inventory={filteredInventory}
-          onEdit={onEdit}
-          onDuplicate={onDuplicate}
-          onRemove={onRemove}
-          onSell={onSell}
-        />
-      ) : (
-        <InventoryGrid
-          isLoading={isLoading}
-          inventory={filteredInventory}
-          onEdit={onEdit}
-          onDuplicate={onDuplicate}
-          onRemove={onRemove}
-          onSell={onSell}
-        />
-      )}
+      
+      <Tabs defaultValue="current" className="mt-4">
+        <TabsList>
+          <TabsTrigger value="current">Itens Atuais</TabsTrigger>
+          <TabsTrigger value="sold">Itens Vendidos</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="current" className="pt-4">
+          {viewMode === 'list' ? (
+            <InventoryTable
+              isLoading={isLoading}
+              inventory={filteredInventory}
+              onEdit={onEdit}
+              onDuplicate={onDuplicate}
+              onRemove={onRemove}
+              onSell={onSell}
+            />
+          ) : (
+            <InventoryGrid
+              isLoading={isLoading}
+              inventory={filteredInventory}
+              onEdit={onEdit}
+              onDuplicate={onDuplicate}
+              onRemove={onRemove}
+              onSell={onSell}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="sold" className="pt-4">
+          <SoldSkinsTable
+            items={filteredSoldItems}
+            isLoading={loadingSold}
+            onEdit={handleEditSoldItem}
+          />
+        </TabsContent>
+      </Tabs>
 
       <DuplicateSkinModal
         open={duplicateModalOpen}
@@ -152,6 +253,13 @@ const Inventory = () => {
         onUpdateSkin={handleUpdate}
         onAddToInventory={handleAddToInventory}
         onClose={onClose}
+      />
+      
+      <InventorySkinEditModal
+        item={editingSoldItem}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onUpdateSold={handleUpdateSoldItem}
       />
     </div>
   );

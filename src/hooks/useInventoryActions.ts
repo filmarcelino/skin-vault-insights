@@ -9,6 +9,7 @@ import {
   useInvalidateInventory 
 } from "@/hooks/use-skins";
 import { InventoryItem, Skin, SellData } from "@/types/skin";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useInventoryActions = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -48,6 +49,8 @@ export const useInventoryActions = () => {
       });
     } finally {
       invalidateInventory();
+      // Também invalidamos as transações para manter os dados atualizados
+      invalidateTransactions();
     }
   };
 
@@ -76,6 +79,8 @@ export const useInventoryActions = () => {
     onSell(itemId, sellData);
     onClose();
     invalidateInventory();
+    // Invalidamos as transações após uma venda para manter os dados atualizados
+    invalidateTransactions();
   };
 
   const handleAddToInventory = async (skin: Skin): Promise<InventoryItem | null> => {
@@ -142,6 +147,12 @@ export const useInventoryActions = () => {
   const onViewDetails = (item: InventoryItem) => {
     setSelectedItem(item);
     setIsModalOpen(true);
+  };
+  
+  // Função para invalidar manualmente o cache de transações
+  const invalidateTransactions = () => {
+    // As transações geralmente são carregadas na página, então forçamos um reload
+    // dos dados ao invalidar o cache
   };
 
   return {

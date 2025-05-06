@@ -21,6 +21,9 @@ interface InventoryStats {
   avg_price: number;
   value_change_30d: number;
   value_change_percentage_30d: number;
+  sold_items: number;
+  total_sold_value: number;
+  total_profit: number;
 }
 
 interface DetailedInventoryStats {
@@ -30,11 +33,14 @@ interface DetailedInventoryStats {
   averageItemValue: number;
   valueChange30d: number;
   valueChangePercent: number;
+  soldItems: number;
+  totalSoldValue: number;
+  totalProfit: number;
   topRarities: Array<{name: string, count: number}>;
   recentTransactions: Array<{id: string, name: string, type: string, value: number, date: string}>;
 }
 
-const RarityDistribution: FC<{
+const RarityDistribution: React.FC<{
   rarities: Array<{name: string, count: number}> | undefined;
   loading: boolean;
 }> = ({ rarities, loading }) => {
@@ -79,7 +85,7 @@ const RarityDistribution: FC<{
   );
 };
 
-const RecentTransactions: FC<{
+const RecentTransactions: React.FC<{
   transactions: Array<{id: string, name: string, type: string, value: number, date: string}> | undefined;
   loading: boolean;
 }> = ({ transactions, loading }) => {
@@ -128,6 +134,54 @@ const RecentTransactions: FC<{
           ) : (
             <p className="text-center text-muted-foreground py-4">No recent transactions</p>
           )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const SoldItemsSummary: React.FC<{
+  soldItems: number;
+  totalSoldValue: number;
+  totalProfit: number;
+  loading: boolean;
+}> = ({ soldItems, totalSoldValue, totalProfit, loading }) => {
+  const { formatPrice } = useCurrency();
+  
+  if (loading) {
+    return (
+      <Card className="col-span-full">
+        <CardHeader>
+          <CardTitle className="text-lg">Sold Items Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-24 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="col-span-full">
+      <CardHeader>
+        <CardTitle className="text-lg">Sold Items Summary</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-muted/20 p-4 rounded-lg border border-muted">
+            <p className="text-sm font-medium text-muted-foreground">Items Sold</p>
+            <p className="text-2xl font-bold">{soldItems}</p>
+          </div>
+          <div className="bg-muted/20 p-4 rounded-lg border border-muted">
+            <p className="text-sm font-medium text-muted-foreground">Total Sold Value</p>
+            <p className="text-2xl font-bold">{formatPrice(totalSoldValue)}</p>
+          </div>
+          <div className="bg-muted/20 p-4 rounded-lg border border-muted">
+            <p className="text-sm font-medium text-muted-foreground">Total Profit</p>
+            <p className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {totalProfit >= 0 ? '+' : ''}{formatPrice(totalProfit)}
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -191,7 +245,7 @@ const Analytics = () => {
         
         console.log(`Found ${inventoryItems?.length || 0} inventory items`);
         
-        // Get transactions (both buys and sells)
+        // Get ALL transactions (both buys and sells)
         const { data: transactionItems, error: transactionError } = await supabase
           .from('transactions')
           .select('*')
@@ -211,30 +265,37 @@ const Analytics = () => {
           return sum + parseFloat(String(value));
         }, 0) : 0;
         
-        // Calculate profit/loss (current value vs purchase value)
+        // Get sold transactions
+        const soldTransactions = transactionItems ? transactionItems.filter(tx => tx.type === 'sell') : [];
+        const soldItemsCount = soldTransactions.length;
+        
+        // Calculate total sold value
+        const totalSoldValue = soldTransactions.reduce((sum, tx) => {
+          return sum + parseFloat(String(tx.price || 0));
+        }, 0);
+        
+        // Calculate total profit from sold items
+        const totalProfit = soldTransactions.reduce((sum, tx) => {
+          // Find the matching 'add' transaction to calculate profit
+          const addTransaction = transactionItems?.find(
+            addTx => addTx.item_id === tx.item_id && addTx.type === 'add'
+          );
+          
+          if (addTransaction) {
+            const sellPrice = parseFloat(String(tx.price || 0));
+            const buyPrice = parseFloat(String(addTransaction.price || 0));
+            return sum + (sellPrice - buyPrice);
+          }
+          
+          return sum;
+        }, 0);
+        
+        // Calculate profit/loss (current value + sold profit vs purchase value)
         const profitLoss = inventoryItems ? inventoryItems.reduce((sum, item) => {
           const currentValue = parseFloat(String(item.current_price || item.price || 0));
           const purchaseValue = parseFloat(String(item.purchase_price || currentValue));
           return sum + (currentValue - purchaseValue);
-        }, 0) : 0;
-        
-        // Add profit from sold items
-        const soldItemsProfit = transactionItems ? transactionItems
-          .filter(tx => tx.type === 'sell')
-          .reduce((sum, tx) => {
-            // Find the matching 'add' transaction to calculate profit
-            const addTransaction = transactionItems.find(
-              addTx => addTx.item_id === tx.item_id && addTx.type === 'add'
-            );
-            
-            if (addTransaction) {
-              const sellPrice = parseFloat(String(tx.price || 0));
-              const buyPrice = parseFloat(String(addTransaction.price || 0));
-              return sum + (sellPrice - buyPrice);
-            }
-            
-            return sum + parseFloat(String(tx.price || 0)); // If no matching buy, count full sell as profit
-          }, 0) : 0;
+        }, 0) + totalProfit : totalProfit;
         
         // Calculate average item value
         const itemCount = inventoryItems?.length || 0;
@@ -305,11 +366,14 @@ const Analytics = () => {
         // Final stats object
         const stats = {
           totalValue: parseFloat(totalValue.toFixed(3)),
-          profitLoss: parseFloat((profitLoss + soldItemsProfit).toFixed(3)),
+          profitLoss: parseFloat((profitLoss).toFixed(3)),
           itemCount,
           averageItemValue: parseFloat(averageItemValue.toFixed(3)),
           valueChange30d: parseFloat(valueChange30d.toFixed(3)),
           valueChangePercent: parseFloat(valueChangePercent.toFixed(3)),
+          soldItems: soldItemsCount,
+          totalSoldValue: parseFloat(totalSoldValue.toFixed(3)),
+          totalProfit: parseFloat(totalProfit.toFixed(3)),
           topRarities,
           recentTransactions
         };
@@ -330,7 +394,10 @@ const Analytics = () => {
     total_value: inventoryStats?.totalValue || 0,
     avg_price: inventoryStats?.averageItemValue || 0,
     value_change_30d: inventoryStats?.valueChange30d || 0,
-    value_change_percentage_30d: inventoryStats?.valueChangePercent || 0
+    value_change_percentage_30d: inventoryStats?.valueChangePercent || 0,
+    sold_items: inventoryStats?.soldItems || 0,
+    total_sold_value: inventoryStats?.totalSoldValue || 0,
+    total_profit: inventoryStats?.totalProfit || 0
   };
 
   return (
@@ -340,6 +407,7 @@ const Analytics = () => {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="sold">Sold Items</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
         
@@ -356,6 +424,20 @@ const Analytics = () => {
           {/* Recent transactions card */}
           <RecentTransactions 
             transactions={inventoryStats?.recentTransactions} 
+            loading={isLoading} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="sold" className="space-y-4">
+          <SoldItemsSummary
+            soldItems={inventoryStats?.soldItems || 0}
+            totalSoldValue={inventoryStats?.totalSoldValue || 0}
+            totalProfit={inventoryStats?.totalProfit || 0}
+            loading={isLoading}
+          />
+          
+          <RecentTransactions 
+            transactions={inventoryStats?.recentTransactions?.filter(tx => tx.type === 'sell')} 
             loading={isLoading} 
           />
         </TabsContent>

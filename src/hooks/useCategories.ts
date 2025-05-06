@@ -1,5 +1,6 @@
 
 import { useCategories as useOriginalCategories } from "@/hooks/use-skins";
+import { ReactNode } from "react";
 
 // Define interface for category objects
 interface Category {

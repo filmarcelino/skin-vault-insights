@@ -1,6 +1,6 @@
 
 import React from "react";
-import { ArrowUpIcon, ArrowDownIcon, DollarSignIcon, PackageIcon, PercentIcon, TrendingUpIcon } from "lucide-react";
+import { ArrowUpIcon, ArrowDownIcon, DollarSignIcon, PackageIcon, PercentIcon, TrendingUpIcon, TagIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCurrency } from "@/contexts/CurrencyContext";
 
@@ -11,6 +11,9 @@ interface StatsCardsProps {
     avg_price: number;
     value_change_30d: number;
     value_change_percentage_30d: number;
+    sold_items?: number;
+    total_sold_value?: number;
+    total_profit?: number;
   } | null;
 }
 
@@ -22,10 +25,14 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
     total_value: 0,
     avg_price: 0,
     value_change_30d: 0,
-    value_change_percentage_30d: 0
+    value_change_percentage_30d: 0,
+    sold_items: 0,
+    total_sold_value: 0,
+    total_profit: 0
   };
   
   const isPositiveChange = stats.value_change_30d >= 0;
+  const isPositiveProfit = stats.total_profit && stats.total_profit >= 0;
 
   const metallicRarityColors = {
     consumerGrade: '#8E9196', // Neutral metallic gray
@@ -130,6 +137,83 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
           </p>
         </CardContent>
       </Card>
+      
+      {/* Novo card para skins vendidas */}
+      {stats.sold_items !== undefined && (
+        <Card style={{ 
+          backgroundColor: metallicRarityColors.contraband, 
+          color: '#FFFFFF', 
+          border: 'none', 
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+        }}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white/80">Sold Items</CardTitle>
+            <div className="rounded-full p-2 bg-white/20">
+              <TagIcon className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">{stats.sold_items}</div>
+            <p className="text-xs text-white/70">
+              Total items sold
+            </p>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Novo card para valor total de vendas */}
+      {stats.total_sold_value !== undefined && (
+        <Card style={{ 
+          backgroundColor: metallicRarityColors.covert, 
+          color: '#FFFFFF', 
+          border: 'none', 
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+        }}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white/80">Total Sold</CardTitle>
+            <div className="rounded-full p-2 bg-white/20">
+              <DollarSignIcon className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">
+              {formatPrice(stats.total_sold_value)}
+            </div>
+            <p className="text-xs text-white/70">
+              Total value of sold items
+            </p>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Novo card para lucro total */}
+      {stats.total_profit !== undefined && (
+        <Card style={{ 
+          backgroundColor: isPositiveProfit ? '#4A6D7C' : '#9A4A4A', 
+          color: '#FFFFFF', 
+          border: 'none', 
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+        }}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white/80">Total Profit</CardTitle>
+            <div className="rounded-full p-2 bg-white/20">
+              {isPositiveProfit ? (
+                <ArrowUpIcon className="h-4 w-4 text-white" />
+              ) : (
+                <ArrowDownIcon className="h-4 w-4 text-white" />
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-white">
+              {isPositiveProfit ? "+" : ""}{formatPrice(stats.total_profit)}
+            </div>
+            <p className="text-xs text-white/70">
+              Profit from sold items
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
