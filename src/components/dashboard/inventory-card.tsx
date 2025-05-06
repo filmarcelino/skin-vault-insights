@@ -168,7 +168,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
 
   return (
     <div 
-      className={`group relative overflow-hidden rounded-xl transition-all duration-300 hover:scale-[1.03] hover:shadow-lg ${className} cursor-pointer`}
+      className={`group relative overflow-hidden rounded-xl transition-all duration-300 ${className} cursor-pointer`}
       onClick={onClick}
       style={getBackgroundStyle()}
     >
@@ -208,7 +208,7 @@ export const InventoryCard: FC<InventoryCardProps> = ({
               <img 
                 src={image} 
                 alt={`${weaponName} ${skinName}`}
-                className="max-h-full max-w-full object-contain transform transition-transform group-hover:scale-110"
+                className="max-h-full max-w-full object-contain"
                 onError={handleImageError}
                 loading="lazy"
                 style={{
@@ -258,14 +258,6 @@ export const InventoryCard: FC<InventoryCardProps> = ({
         </div>
       </div>
 
-      {/* Hover effect glow */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-40 pointer-events-none transition-opacity duration-300"
-        style={{
-          background: rarity ? `radial-gradient(circle at center, ${getBorderColor(rarity)}80 0%, transparent 70%)` : ''
-        }}
-      ></div>
-
       {showDeleteButton && onDelete && (
         <div 
           className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
@@ -283,4 +275,3 @@ export const InventoryCard: FC<InventoryCardProps> = ({
     </div>
   );
 };
-

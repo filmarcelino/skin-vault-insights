@@ -9,7 +9,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import Index from "./pages/Index";
 import Inventory from "./pages/Inventory";
-import SearchPage from "./pages/Search";
 import Analytics from "./pages/Analytics";
 import AddSkin from "./pages/AddSkin";
 import Profile from "./pages/Profile";
@@ -63,11 +62,6 @@ const App = () => {
                   <Route path="/add" element={
                     <RequireAuth>
                       <Layout><AddSkin /></Layout>
-                    </RequireAuth>
-                  } />
-                  <Route path="/search" element={
-                    <RequireAuth>
-                      <Layout><SearchPage /></Layout>
                     </RequireAuth>
                   } />
                   <Route path="/analytics" element={
