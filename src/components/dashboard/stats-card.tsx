@@ -84,13 +84,13 @@ export const StatsCard: FC<StatsCardProps> = ({
         {icon && <div className="p-2 bg-secondary/40 rounded-md">{icon}</div>}
       </div>
       
-      {/* Image Display */}
+      {/* Image Display - mantendo o mesmo comportamento, apenas ajustando o tamanho */}
       {image && !imageError && (
         <div className="mt-3 flex justify-center">
           <img 
             src={image} 
             alt={`${title} image`} 
-            className="h-16 object-contain rounded" 
+            className="h-16 max-w-full object-contain rounded" 
             onError={handleImageError}
           />
         </div>

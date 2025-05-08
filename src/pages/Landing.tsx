@@ -55,7 +55,7 @@ const Landing = () => {
             </div>
             <div className="hidden md:block">
               <img 
-                src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=1200" 
+                src="/lovable-uploads/7357e849-ec40-4249-a06f-25fed40114d6.png" 
                 alt="CS Skin Vault Dashboard" 
                 className="rounded-lg shadow-2xl"
               />
