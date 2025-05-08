@@ -12,6 +12,27 @@ interface Collection {
   name: string;
 }
 
+// Extract unique weapon types and rarities from the inventory items
+export const useFilteredCategories = () => {
+  const { categories, collections, isLoading } = useCategories();
+  
+  // Extract unique weapon types from inventory items
+  const weaponTypes = Array.from(
+    new Set(categories.map(category => category.name))
+  ).sort();
+  
+  // Extract unique rarity types from inventory items
+  const rarityTypes = Array.from(
+    new Set(collections.map(collection => collection.name))
+  ).sort();
+  
+  return {
+    weaponTypes,
+    rarityTypes,
+    isLoading,
+  };
+};
+
 export const useCategories = () => {
   // Type guard for Category
   const isCategory = (item: any): item is Category => {
@@ -37,39 +58,40 @@ export const useCategories = () => {
     );
   };
 
-  const { data: categories, isLoading: categoriesLoading } = useQuery({
-    queryKey: ['categories'],
+  // Instead of querying non-existent tables, extract categories from inventory data
+  const { data: inventoryItems, isLoading: inventoryLoading } = useQuery({
+    queryKey: ['inventory-for-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
+        .from('inventory')
+        .select('weapon, rarity')
+        .order('weapon');
 
       if (error) throw new Error(error.message);
       
-      // Filter out invalid data using type guard
-      return (data || []).filter(isCategory);
+      return data || [];
     },
   });
 
-  const { data: collections, isLoading: collectionsLoading } = useQuery({
-    queryKey: ['collections'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('collections')
-        .select('*')
-        .order('name');
+  // Create categories from unique weapon types
+  const categories: Category[] = inventoryItems 
+    ? Array.from(new Set(inventoryItems
+        .filter(item => item.weapon)
+        .map(item => item.weapon)))
+        .map(weapon => ({ id: weapon, name: weapon }))
+    : [];
 
-      if (error) throw new Error(error.message);
-      
-      // Filter out invalid data using type guard
-      return (data || []).filter(isCollection);
-    },
-  });
+  // Create collections from unique rarity types
+  const collections: Collection[] = inventoryItems
+    ? Array.from(new Set(inventoryItems
+        .filter(item => item.rarity)
+        .map(item => item.rarity)))
+        .map(rarity => ({ id: rarity, name: rarity }))
+    : [];
 
   return {
-    categories: categories || [],
-    collections: collections || [],
-    isLoading: categoriesLoading || collectionsLoading,
+    categories,
+    collections,
+    isLoading: inventoryLoading,
   };
 };
