@@ -18,7 +18,7 @@ export const SubscriptionManagement = () => {
     { valid: boolean; message?: string; trialMonths?: number } | null
   >(null);
 
-  // Verificar se o cupom é válido sem submeter o formulário
+  // Check if coupon is valid without submitting the form
   const checkCoupon = async () => {
     if (!coupon.trim()) {
       setCouponStatus(null);
@@ -37,7 +37,7 @@ export const SubscriptionManagement = () => {
         console.error("Error checking coupon:", error);
         setCouponStatus({
           valid: false,
-          message: "Erro ao verificar cupom"
+          message: "Error checking coupon"
         });
         return;
       }
@@ -45,12 +45,12 @@ export const SubscriptionManagement = () => {
       if (!data) {
         setCouponStatus({
           valid: false,
-          message: "Cupom inválido ou inativo"
+          message: "Invalid or inactive coupon"
         });
         return;
       }
 
-      // Verificar se atingiu o limite de usos
+      // Check if redemption limit reached
       if (
         data.max_redemptions &&
         data.times_redeemed &&
@@ -58,21 +58,21 @@ export const SubscriptionManagement = () => {
       ) {
         setCouponStatus({
           valid: false,
-          message: "Este cupom já atingiu o limite de usos"
+          message: "This coupon has reached its usage limit"
         });
         return;
       }
 
       setCouponStatus({
         valid: true,
-        message: `Cupom válido para ${data.duration_months} meses de trial!`,
+        message: `Valid coupon for ${data.duration_months} ${data.duration_months === 1 ? 'month' : 'months'} of trial!`,
         trialMonths: data.duration_months
       });
     } catch (err) {
       console.error("Error checking coupon:", err);
       setCouponStatus({
         valid: false,
-        message: "Erro ao verificar cupom"
+        message: "Error checking coupon"
       });
     }
   };
@@ -87,21 +87,21 @@ export const SubscriptionManagement = () => {
       if (data?.url) {
         window.location.href = data.url;
       } else if (data?.error) {
-        toast.error("Erro ao iniciar pagamento", {
+        toast.error("Error starting payment", {
           description: data.error
         });
       } else if (error) {
-        toast.error("Erro ao iniciar pagamento", {
+        toast.error("Error starting payment", {
           description: error.message
         });
       } else {
-        toast.error("Erro inesperado", {
-          description: "Tente novamente mais tarde."
+        toast.error("Unexpected error", {
+          description: "Please try again later."
         });
       }
     } catch (err: any) {
-      toast.error("Erro inesperado", {
-        description: err.message || "Tente novamente."
+      toast.error("Unexpected error", {
+        description: err.message || "Please try again."
       });
       console.error("Subscription error:", err);
     } finally {
@@ -116,15 +116,15 @@ export const SubscriptionManagement = () => {
           CS Skin Vault Premium
         </CardTitle>
         <CardDescription>
-          Assine para acessar recursos premium
+          Subscribe to access premium features
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4 pt-6">
         <Tabs defaultValue="monthly" onValueChange={val => setPlan(val as "monthly" | "annual")}>
           <TabsList className="w-full mb-4">
-            <TabsTrigger value="monthly" className="w-1/2">Mensal</TabsTrigger>
-            <TabsTrigger value="annual" className="w-1/2">Anual (10% OFF)</TabsTrigger>
+            <TabsTrigger value="monthly" className="w-1/2">Monthly</TabsTrigger>
+            <TabsTrigger value="annual" className="w-1/2">Annual (10% OFF)</TabsTrigger>
           </TabsList>
 
           <TabsContent value="monthly">
@@ -135,10 +135,10 @@ export const SubscriptionManagement = () => {
                     <CreditCard className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-medium">Plano Mensal</h4>
+                    <h4 className="font-medium">Monthly Plan</h4>
                     <div className="flex items-baseline gap-1">
                       <span className="text-xl font-bold">$3.99</span>
-                      <span className="text-sm text-muted-foreground">/mês</span>
+                      <span className="text-sm text-muted-foreground">/month</span>
                     </div>
                   </div>
                 </div>
@@ -147,20 +147,20 @@ export const SubscriptionManagement = () => {
               <ul className="text-sm space-y-2 p-4 rounded-lg bg-muted/50">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Skins ilimitadas no inventário</span>
+                  <span>Unlimited skins in inventory</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Analytics e rastreamento de preços avançados</span>
+                  <span>Advanced analytics and price tracking</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Suporte prioritário</span>
+                  <span>Priority support</span>
                 </li>
               </ul>
 
               <div>
-                <label htmlFor="coupon" className="block text-sm font-medium mb-1">Cupom (até 12 meses grátis)</label>
+                <label htmlFor="coupon" className="block text-sm font-medium mb-1">Coupon (up to 12 months free)</label>
                 <div className="flex gap-2">
                   <Input
                     id="coupon"
@@ -170,7 +170,7 @@ export const SubscriptionManagement = () => {
                       setCouponStatus(null);
                     }}
                     onBlur={checkCoupon}
-                    placeholder="Digite seu cupom"
+                    placeholder="Enter your coupon"
                     className="mb-2"
                     maxLength={32}
                     autoComplete="off"
@@ -183,7 +183,7 @@ export const SubscriptionManagement = () => {
                     disabled={submitting || !coupon.trim()}
                     className="shrink-0"
                   >
-                    Verificar
+                    Verify
                   </Button>
                 </div>
                 
@@ -208,10 +208,10 @@ export const SubscriptionManagement = () => {
                 className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
                 disabled={submitting}
               >
-                {submitting ? "Processando..." : "Assinar Plano Mensal"}
+                {submitting ? "Processing..." : "Subscribe to Monthly Plan"}
                 {couponStatus?.valid && couponStatus?.trialMonths && (
                   <span className="ml-1">
-                    ({couponStatus.trialMonths} {couponStatus.trialMonths === 1 ? 'mês' : 'meses'} grátis)
+                    ({couponStatus.trialMonths} {couponStatus.trialMonths === 1 ? 'month' : 'months'} free)
                   </span>
                 )}
               </Button>
@@ -227,13 +227,13 @@ export const SubscriptionManagement = () => {
                   </div>
                   <div>
                     <h4 className="font-medium">
-                      Plano Anual <Badge variant="outline" className="ml-1 bg-green-500/10 text-green-500 border-green-500/30">ECONOMIZE 10%</Badge>
+                      Annual Plan <Badge variant="outline" className="ml-1 bg-green-500/10 text-green-500 border-green-500/30">SAVE 10%</Badge>
                     </h4>
                     <div className="flex items-baseline gap-1">
                       <span className="text-xl font-bold">$43.00</span>
-                      <span className="text-sm text-muted-foreground">/ano</span>
+                      <span className="text-sm text-muted-foreground">/year</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">Equivalente a $3.58/mês</div>
+                    <div className="text-sm text-muted-foreground">Equivalent to $3.58/month</div>
                   </div>
                 </div>
               </div>
@@ -241,20 +241,20 @@ export const SubscriptionManagement = () => {
               <ul className="text-sm space-y-2 p-4 rounded-lg bg-muted/50">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Skins ilimitadas no inventário</span>
+                  <span>Unlimited skins in inventory</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Analytics e rastreamento de preços avançados</span>
+                  <span>Advanced analytics and price tracking</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Suporte prioritário</span>
+                  <span>Priority support</span>
                 </li>
               </ul>
 
               <div>
-                <label htmlFor="coupon-a" className="block text-sm font-medium mb-1">Cupom (até 12 meses grátis)</label>
+                <label htmlFor="coupon-a" className="block text-sm font-medium mb-1">Coupon (up to 12 months free)</label>
                 <div className="flex gap-2">
                   <Input
                     id="coupon-a"
@@ -264,7 +264,7 @@ export const SubscriptionManagement = () => {
                       setCouponStatus(null);
                     }}
                     onBlur={checkCoupon}
-                    placeholder="Digite seu cupom"
+                    placeholder="Enter your coupon"
                     className="mb-2"
                     maxLength={32}
                     autoComplete="off"
@@ -277,7 +277,7 @@ export const SubscriptionManagement = () => {
                     disabled={submitting || !coupon.trim()}
                     className="shrink-0"
                   >
-                    Verificar
+                    Verify
                   </Button>
                 </div>
                 
@@ -302,10 +302,10 @@ export const SubscriptionManagement = () => {
                 className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90"
                 disabled={submitting}
               >
-                {submitting ? "Processando..." : "Assinar Plano Anual"}
+                {submitting ? "Processing..." : "Subscribe to Annual Plan"}
                 {couponStatus?.valid && couponStatus?.trialMonths && (
                   <span className="ml-1">
-                    ({couponStatus.trialMonths} {couponStatus.trialMonths === 1 ? 'mês' : 'meses'} grátis)
+                    ({couponStatus.trialMonths} {couponStatus.trialMonths === 1 ? 'month' : 'months'} free)
                   </span>
                 )}
               </Button>

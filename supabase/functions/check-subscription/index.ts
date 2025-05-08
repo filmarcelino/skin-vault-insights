@@ -24,6 +24,18 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    
+    // Important: Check if the stripe key is in the correct format (should start with sk_)
+    if (!stripeKey.startsWith("sk_")) {
+      return new Response(JSON.stringify({ 
+        error: "Invalid Stripe secret key format. The key should start with sk_", 
+        subscribed: false 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, // Return 200 even with error
+      });
+    }
+
     logStep("Stripe key verified");
 
     // Initialize Supabase client with service role key for admin operations

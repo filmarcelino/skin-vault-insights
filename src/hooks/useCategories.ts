@@ -17,14 +17,13 @@ export const useFilteredCategories = () => {
         // Type guard check for item structure
         if (item === null || item === undefined) return false;
         
-        return (
-          typeof item === 'object' && 
-          'type' in item && 
-          'name' in item && 
-          typeof item.type === 'string' && 
-          typeof item.name === 'string' && 
-          item.type === 'weapon'
-        );
+        if (typeof item !== 'object') return false;
+        
+        if (!('type' in item) || !('name' in item)) return false;
+        
+        if (typeof item.type !== 'string' || typeof item.name !== 'string') return false;
+        
+        return item.type === 'weapon';
       })
       .map((category) => category.name) 
     : [];
@@ -36,14 +35,13 @@ export const useFilteredCategories = () => {
         // Type guard check for item structure
         if (item === null || item === undefined) return false;
         
-        return (
-          typeof item === 'object' && 
-          'type' in item && 
-          'name' in item && 
-          typeof item.type === 'string' && 
-          typeof item.name === 'string' && 
-          item.type === 'rarity'
-        );
+        if (typeof item !== 'object') return false;
+        
+        if (!('type' in item) || !('name' in item)) return false;
+        
+        if (typeof item.type !== 'string' || typeof item.name !== 'string') return false;
+        
+        return item.type === 'rarity';
       })
       .map((category) => category.name) 
     : [];

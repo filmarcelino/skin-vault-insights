@@ -38,27 +38,27 @@ import { toast } from "sonner";
 import { CURRENCIES } from "@/contexts/CurrencyContext";
 
 const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
   rememberMe: z.boolean().default(false),
 });
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Nome de usuário deve ter pelo menos 3 caracteres"),
-  fullName: z.string().min(3, "Nome completo é obrigatório"),
-  email: z.string().email("Email inválido"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  fullName: z.string().min(3, "Full name is required"),
+  email: z.string().email("Invalid email"),
   city: z.string().optional(),
   country: z.string().optional(),
   preferredCurrency: z.enum(["USD", "BRL", "RUB", "CNY", "EUR", "GBP"]),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-  confirmPassword: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não correspondem",
+  message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
 const resetPasswordSchema = z.object({
-  email: z.string().email("Email inválido"),
+  email: z.string().email("Invalid email"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -119,7 +119,7 @@ const Auth = () => {
     const { error } = await signIn(data.email, data.password, data.rememberMe);
     if (!error) {
       console.log("Login successful");
-      toast.success("Login realizado com sucesso");
+      toast.success("Login successful");
       navigate("/dashboard");
     } else {
       console.error("Login error:", error);
@@ -140,7 +140,7 @@ const Auth = () => {
     
     if (!error) {
       console.log("Registration successful");
-      toast.success("Conta criada com sucesso");
+      toast.success("Account created successfully");
       navigate("/dashboard");
     } else {
       console.error("Registration error:", error);
@@ -167,10 +167,10 @@ const Auth = () => {
           </CardTitle>
           <CardDescription>
             {showResetPassword 
-              ? "Digite seu email para recuperar sua senha" 
+              ? "Enter your email to recover your password" 
               : activeTab === "login" 
-                ? "Faça login para acessar sua conta" 
-                : "Crie uma nova conta"}
+                ? "Sign in to your account" 
+                : "Create a new account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -184,7 +184,7 @@ const Auth = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="seu.email@exemplo.com" {...field} />
+                        <Input placeholder="your.email@example.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -196,10 +196,10 @@ const Auth = () => {
                     variant="outline" 
                     onClick={() => setShowResetPassword(false)}
                   >
-                    Cancelar
+                    Cancel
                   </Button>
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Enviando..." : "Enviar link de recuperação"}
+                    {isLoading ? "Sending..." : "Send recovery link"}
                   </Button>
                 </div>
               </form>
@@ -208,7 +208,7 @@ const Auth = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Cadastro</TabsTrigger>
+                <TabsTrigger value="register">Register</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
@@ -221,7 +221,7 @@ const Auth = () => {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="seu.email@exemplo.com" {...field} />
+                            <Input placeholder="your.email@example.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -233,7 +233,7 @@ const Auth = () => {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Senha</FormLabel>
+                          <FormLabel>Password</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -259,7 +259,7 @@ const Auth = () => {
                               htmlFor="rememberMe"
                               className="text-sm font-medium cursor-pointer"
                             >
-                              Lembrar-me
+                              Remember me
                             </Label>
                           </FormItem>
                         )}
@@ -271,12 +271,12 @@ const Auth = () => {
                         className="text-sm"
                         onClick={() => setShowResetPassword(true)}
                       >
-                        Esqueceu sua senha?
+                        Forgot password?
                       </Button>
                     </div>
                     
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Entrando..." : "Entrar"}
+                      {isLoading ? "Signing in..." : "Sign in"}
                     </Button>
                   </form>
                 </Form>
@@ -291,7 +291,7 @@ const Auth = () => {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nome de usuário</FormLabel>
+                            <FormLabel>Username</FormLabel>
                             <FormControl>
                               <Input placeholder="username" {...field} />
                             </FormControl>
@@ -305,9 +305,9 @@ const Auth = () => {
                         name="fullName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nome completo</FormLabel>
+                            <FormLabel>Full name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Nome Sobrenome" {...field} />
+                              <Input placeholder="First Last" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -322,7 +322,7 @@ const Auth = () => {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="seu.email@exemplo.com" {...field} />
+                            <Input placeholder="your.email@example.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -335,9 +335,9 @@ const Auth = () => {
                         name="city"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Cidade</FormLabel>
+                            <FormLabel>City</FormLabel>
                             <FormControl>
-                              <Input placeholder="Cidade" {...field} />
+                              <Input placeholder="City" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -349,9 +349,9 @@ const Auth = () => {
                         name="country"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>País</FormLabel>
+                            <FormLabel>Country</FormLabel>
                             <FormControl>
-                              <Input placeholder="País" {...field} />
+                              <Input placeholder="Country" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -364,20 +364,20 @@ const Auth = () => {
                       name="preferredCurrency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Moeda preferida</FormLabel>
+                          <FormLabel>Preferred Currency</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecione uma moeda" />
+                                <SelectValue placeholder="Select a currency" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="USD">USD (Dólar Americano)</SelectItem>
-                              <SelectItem value="BRL">BRL (Real Brasileiro)</SelectItem>
-                              <SelectItem value="RUB">RUB (Rublo Russo)</SelectItem>
-                              <SelectItem value="CNY">CNY (Yuan Chinês)</SelectItem>
+                              <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                              <SelectItem value="BRL">BRL (Brazilian Real)</SelectItem>
+                              <SelectItem value="RUB">RUB (Russian Ruble)</SelectItem>
+                              <SelectItem value="CNY">CNY (Chinese Yuan)</SelectItem>
                               <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                              <SelectItem value="GBP">GBP (Libra Esterlina)</SelectItem>
+                              <SelectItem value="GBP">GBP (British Pound)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -390,7 +390,7 @@ const Auth = () => {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Senha</FormLabel>
+                          <FormLabel>Password</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -404,7 +404,7 @@ const Auth = () => {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Confirmar senha</FormLabel>
+                          <FormLabel>Confirm password</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -414,7 +414,7 @@ const Auth = () => {
                     />
                     
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Cadastrando..." : "Cadastrar"}
+                      {isLoading ? "Registering..." : "Register"}
                     </Button>
                   </form>
                 </Form>

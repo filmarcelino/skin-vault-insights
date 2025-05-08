@@ -16,7 +16,7 @@ export const PremiumCTA = () => {
             Upgrade to CS Skin Vault Premium
           </h3>
           <p className="text-sm text-muted-foreground max-w-md">
-            Get unlimited skins, advanced analytics, and priority support. Start with a 3-day free trial.
+            Get unlimited skins, advanced analytics, and priority support. Start with a 7-day free trial.
           </p>
         </div>
         <Button 
