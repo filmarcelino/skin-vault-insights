@@ -13,7 +13,7 @@ interface PremiumFeatureGuardProps {
 
 export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({ 
   children, 
-  fallbackMessage = "This feature requires a premium subscription" 
+  fallbackMessage = "Esta funcionalidade requer uma assinatura premium" 
 }) => {
   const { isSubscribed, isTrial, trialDaysRemaining, isLoading } = useSubscription();
   const navigate = useNavigate();
@@ -23,8 +23,8 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
     return <>{children}</>;
   }
 
-  // If subscribed or trial is active, show the children
-  if (isSubscribed) {
+  // If subscribed or trial is active with remaining days, show the children
+  if (isSubscribed || (isTrial && trialDaysRemaining && trialDaysRemaining > 0)) {
     return <>{children}</>;
   }
 
@@ -36,7 +36,7 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
           <Lock className="h-6 w-6 text-primary" />
         </div>
         
-        <h3 className="text-xl font-semibold">Premium Feature</h3>
+        <h3 className="text-xl font-semibold">Funcionalidade Premium</h3>
         
         <p className="text-muted-foreground max-w-md">
           {fallbackMessage}
@@ -44,7 +44,7 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
         
         {isTrial && trialDaysRemaining === 0 && (
           <p className="text-amber-500 font-medium">
-            Your trial has expired
+            Seu período de teste expirou
           </p>
         )}
         
@@ -53,7 +53,7 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
           className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
         >
           <Crown className="h-4 w-4 mr-2" />
-          Get Premium Access
+          Obter Acesso Premium
         </Button>
       </CardContent>
     </Card>
