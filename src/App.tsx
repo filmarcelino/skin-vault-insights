@@ -1,107 +1,52 @@
-
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SubscriptionProvider } from './contexts/SubscriptionContext';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Settings from './pages/Settings';
+import Subscription from './pages/Subscription';
+import { Loading } from './components/ui/loading';
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Layout } from "@/components/layout/layout";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { CurrencyProvider } from "@/contexts/CurrencyContext";
-import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
-import Index from "./pages/Index";
-import Inventory from "./pages/Inventory";
-import Analytics from "./pages/Analytics";
-import AddSkin from "./pages/AddSkin";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import Subscription from "./pages/Subscription";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import RequireAuth from "./components/auth/require-auth";
-import Landing from "./pages/Landing";
-import SearchPage from "./pages/Search";
 
-// Set up React Query with 15 minutes staleTime instead of 5 minutes
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 15, // 15 minutes
-      retry: 1,
-    },
-  },
-});
-
-const App = () => {
-  console.log("App component rendering");
-  
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <CurrencyProvider>
-            <SubscriptionProvider>
-              <div className="min-h-screen bg-background text-foreground antialiased">
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<Landing />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    
-                    {/* Protected routes */}
-                    <Route path="/dashboard" element={
-                      <RequireAuth>
-                        <Layout><Index /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/inventory" element={
-                      <RequireAuth>
-                        <Layout><Inventory /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/add" element={
-                      <RequireAuth>
-                        <Layout><AddSkin /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/search" element={
-                      <RequireAuth>
-                        <Layout><SearchPage /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/analytics" element={
-                      <RequireAuth>
-                        <Layout><Analytics /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/profile" element={
-                      <RequireAuth>
-                        <Layout><Profile /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/settings" element={
-                      <RequireAuth>
-                        <Layout><Settings /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/subscription" element={
-                      <RequireAuth>
-                        <Layout><Subscription /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="*" element={<Layout><NotFound /></Layout>} />
-                  </Routes>
-                </BrowserRouter>
-              </div>
-            </SubscriptionProvider>
-          </CurrencyProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <SubscriptionProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </SubscriptionProvider>
+    </AuthProvider>
   );
-};
+}
+
+function AppContent() {
+  const { user, isLoading } = useAuth();
+
+  // Show loading indicator while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loading size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Routes>
+        <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
+        <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
+        <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+        <Route path="/settings" element={user ? <Settings /> : <Navigate to="/login" />} />
+        <Route path="/subscription" element={user ? <Subscription /> : <Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+      </Routes>
+      <Toaster />
+    </>
+  );
+}
 
 export default App;

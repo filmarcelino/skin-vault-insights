@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Crown, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface PremiumFeatureGuardProps {
   children: React.ReactNode;
@@ -15,7 +16,7 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
   children, 
   fallbackMessage = "Esta funcionalidade requer uma assinatura premium" 
 }) => {
-  const { isSubscribed, isTrial, trialDaysRemaining, isLoading } = useSubscription();
+  const { isSubscribed, isTrial, trialDaysRemaining, isLoading, checkSubscription } = useSubscription();
   const navigate = useNavigate();
 
   // Allow access during loading to prevent flicker
@@ -27,6 +28,20 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
   if (isSubscribed || (isTrial && trialDaysRemaining && trialDaysRemaining > 0)) {
     return <>{children}</>;
   }
+
+  const handleSubscribeClick = async () => {
+    // Force a fresh check of subscription status before navigating
+    try {
+      await checkSubscription();
+      navigate('/subscription');
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+      toast.error("Erro ao verificar status da assinatura", {
+        description: "Tente novamente em alguns instantes."
+      });
+      navigate('/subscription');
+    }
+  };
 
   // Show upgrade card if not subscribed or trial expired
   return (
@@ -49,7 +64,7 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
         )}
         
         <Button 
-          onClick={() => navigate('/subscription')}
+          onClick={handleSubscribeClick}
           className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
         >
           <Crown className="h-4 w-4 mr-2" />

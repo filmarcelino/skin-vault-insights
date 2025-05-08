@@ -21,6 +21,23 @@ const Subscription = () => {
   const ADMIN_EMAIL = "luisfelipemarcelino33@gmail.com";
   const isAdmin = user?.email === ADMIN_EMAIL;
 
+  // Check subscription configuration on load
+  useEffect(() => {
+    const verifyConfiguration = async () => {
+      try {
+        await checkSubscription();
+        setIsConfigValid(true);
+        setConfigError(null);
+      } catch (error) {
+        console.error("Error checking subscription config:", error);
+        setIsConfigValid(false);
+        setConfigError("Erro ao validar configuração de assinatura. Verifique suas chaves API.");
+      }
+    };
+    
+    verifyConfiguration();
+  }, [checkSubscription]);
+
   // Check for success parameter in URL
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
