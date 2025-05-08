@@ -94,16 +94,7 @@ const Subscription = () => {
       {renderStatus()}
       
       <div className="max-w-3xl mx-auto">
-        <SubscriptionManagement 
-          onConfigError={(error) => {
-            setConfigError(error);
-            setIsConfigValid(false);
-          }}
-          onConfigValid={() => {
-            setConfigError(null);
-            setIsConfigValid(true);
-          }}
-        />
+        <SubscriptionManagement />
       </div>
     </div>
   );
