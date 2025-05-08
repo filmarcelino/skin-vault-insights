@@ -16,7 +16,7 @@ export const useFilteredCategories = () => {
   // Extract weapon types with proper type checks
   const weaponTypes = Array.isArray(categories) 
     ? categories
-      .filter((item: CategoryItem): item is Category => {
+      .filter((item): item is Category => {
         // Type guard check for item structure
         if (!item) return false;
         
@@ -30,13 +30,13 @@ export const useFilteredCategories = () => {
           (item as any).type === 'weapon'
         );
       })
-      .map((category: Category) => category.name) 
+      .map((category) => category.name) 
     : [];
   
   // Extract rarity types with proper type checks
   const rarityTypes = Array.isArray(categories) 
     ? categories
-      .filter((item: CategoryItem): item is Category => {
+      .filter((item): item is Category => {
         // Type guard check for item structure
         if (!item) return false;
         
@@ -50,7 +50,7 @@ export const useFilteredCategories = () => {
           (item as any).type === 'rarity'
         );
       })
-      .map((category: Category) => category.name) 
+      .map((category) => category.name) 
     : [];
 
   return {
