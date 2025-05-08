@@ -1,10 +1,10 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Index from './pages/Index';
+import Auth from './pages/Auth';
 import Settings from './pages/Settings';
 import Subscription from './pages/Subscription';
 import { Loading } from './components/ui/loading';
@@ -37,9 +37,9 @@ function AppContent() {
   return (
     <>
       <Routes>
-        <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
-        <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
-        <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+        <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Auth />} />
+        <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Auth />} />
+        <Route path="/dashboard" element={user ? <Index /> : <Navigate to="/login" />} />
         <Route path="/settings" element={user ? <Settings /> : <Navigate to="/login" />} />
         <Route path="/subscription" element={user ? <Subscription /> : <Navigate to="/login" />} />
         <Route path="/" element={<Navigate to="/dashboard" />} />
