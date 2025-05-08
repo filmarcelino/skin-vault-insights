@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,12 +51,12 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-// Interface para resolver a dependência circular com CurrencyContext
+// Interface to resolve the circular dependency with CurrencyContext
 export interface CurrencyUpdater {
   setCurrency: (currency: { code: string; symbol: string; name: string; rate: number }) => void;
 }
 
-// Contexto para atualizações de moeda
+// Context for currency updates
 const CurrencyUpdateContext = createContext<CurrencyUpdater | null>(null);
 
 export const CurrencyUpdateProvider = ({ children, updater }: { children: React.ReactNode; updater: CurrencyUpdater }) => {
@@ -158,6 +157,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const createTrialSubscription = async (userId: string, email: string) => {
+    try {
+      // Create a 7-day trial
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 7);
+      
+      const { error } = await supabase
+        .from('subscribers')
+        .upsert({
+          user_id: userId,
+          email: email,
+          subscribed: true,
+          is_trial: true,
+          subscription_end: trialEnd.toISOString(),
+          updated_at: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+        
+      if (error) {
+        console.error("Error creating trial subscription:", error);
+      } else {
+        console.log("Trial subscription created successfully", { userId, trialEnd });
+      }
+    } catch (err) {
+      console.error("Exception creating trial subscription:", err);
+    }
+  };
+
   const signIn = async (email: string, password: string, rememberMe: boolean) => {
     setIsLoading(true);
     
@@ -168,22 +195,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (response.error) {
-        toast("Erro ao fazer login", {
+        toast("Error signing in", {
           description: response.error.message,
         });
         return { error: response.error, data: null };
       } else if (response.data.session) {
-        toast("Login realizado com sucesso", {
-          description: "Bem-vindo de volta!"
+        toast("Successfully signed in", {
+          description: "Welcome back!"
         });
         return { error: null, data: response.data.session };
       }
       
-      return { error: new Error("Erro desconhecido"), data: null };
+      return { error: new Error("Unknown error"), data: null };
     } catch (error) {
       console.error("Sign in error:", error);
-      toast("Erro ao fazer login", {
-        description: "Ocorreu um erro inesperado. Tente novamente."
+      toast("Error signing in", {
+        description: "An unexpected error occurred. Please try again."
       });
       return { error: error as Error, data: null };
     } finally {
@@ -218,22 +245,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (authResponse.error) {
-        toast("Erro ao criar conta", {
+        toast("Error creating account", {
           description: authResponse.error.message
         });
         return { error: authResponse.error, data: null };
       } else if (authResponse.data.session) {
-        toast("Conta criada com sucesso", {
-          description: "Bem-vindo ao CS Skin Vault!"
+        // Create a trial subscription for the new user
+        if (authResponse.data.user) {
+          await createTrialSubscription(authResponse.data.user.id, data.email);
+        }
+        
+        toast("Account created successfully", {
+          description: "Welcome to CS Skin Vault!"
         });
         return { error: null, data: authResponse.data.session };
       }
       
-      return { error: new Error("Erro desconhecido"), data: null };
+      return { error: new Error("Unknown error"), data: null };
     } catch (error) {
       console.error("Sign up error:", error);
-      toast("Erro ao criar conta", {
-        description: "Ocorreu um erro inesperado. Tente novamente."
+      toast("Error creating account", {
+        description: "An unexpected error occurred. Please try again."
       });
       return { error: error as Error, data: null };
     } finally {
@@ -269,20 +301,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (response.error) {
-        toast("Erro ao enviar e-mail", {
+        toast("Error sending email", {
           description: response.error.message
         });
       } else {
-        toast("E-mail enviado", {
-          description: "Verifique sua caixa de entrada para redefinir sua senha."
+        toast("Email sent", {
+          description: "Check your inbox to reset your password."
         });
       }
       
       return response;
     } catch (error) {
       console.error("Reset password error:", error);
-      toast("Erro ao redefinir senha", {
-        description: "Ocorreu um erro inesperado. Tente novamente."
+      toast("Error resetting password", {
+        description: "An unexpected error occurred. Please try again."
       });
       return { error: error as Error, data: null };
     } finally {
@@ -306,15 +338,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
         
       if (error) {
-        toast("Erro ao atualizar perfil", {
+        toast("Error updating profile", {
           description: error.message
         });
         return { error, data: null };
       }
       
       setProfile(updatedProfile as UserProfile);
-      toast("Perfil atualizado", {
-        description: "Seu perfil foi atualizado com sucesso."
+      toast("Profile updated", {
+        description: "Your profile was updated successfully."
       });
       
       // Atualizar a moeda preferida se foi alterada
@@ -328,8 +360,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: null, data: updatedProfile as UserProfile };
     } catch (error) {
       console.error("Update profile error:", error);
-      toast("Erro ao atualizar perfil", {
-        description: "Ocorreu um erro inesperado. Tente novamente."
+      toast("Error updating profile", {
+        description: "An unexpected error occurred. Please try again."
       });
       return { error: error as Error, data: null };
     } finally {

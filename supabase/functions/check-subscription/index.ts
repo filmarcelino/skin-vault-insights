@@ -73,8 +73,58 @@ serve(async (req) => {
     
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // First, check if the user has an active trial in the subscribers table
+    const { data: existingSubscriber, error: subscriberError } = await supabaseClient
+      .from("subscribers")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (subscriberError && subscriberError.code !== "PGRST116") { // Not found is ok
+      logStep("Error checking subscriber record", { message: subscriberError.message });
+    }
+
+    // Check if user is on a trial period and it's still valid
+    if (existingSubscriber?.is_trial && existingSubscriber?.subscription_end) {
+      const trialEnd = new Date(existingSubscriber.subscription_end);
+      const now = new Date();
+      const isTrialActive = trialEnd > now;
+      
+      if (isTrialActive) {
+        logStep("Active trial found", { 
+          end_date: existingSubscriber.subscription_end,
+          days_remaining: Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+        });
+        
+        return new Response(JSON.stringify({ 
+          subscribed: true, 
+          is_trial: true,
+          subscription_end: existingSubscriber.subscription_end
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
+      // If we get here, trial has expired
+      logStep("Trial expired", { end_date: existingSubscriber.subscription_end });
+    }
+
     // Initialize Stripe
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    let stripe: Stripe;
+    try {
+      stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    } catch (stripeInitError) {
+      logStep("Stripe initialization error", { message: String(stripeInitError) });
+      // Return default response, don't throw
+      return new Response(JSON.stringify({ 
+        subscribed: false,
+        error: "Could not initialize Stripe client"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     
     try {
       // Check if user exists as a customer with a timeout to prevent hanging
@@ -87,11 +137,40 @@ serve(async (req) => {
       
       if (customers.data.length === 0) {
         logStep("No customer found for user");
+        
+        // Check if we need to create a trial for a new user
+        if (!existingSubscriber) {
+          // Create a 7-day trial for new users
+          const trialEnd = new Date();
+          trialEnd.setDate(trialEnd.getDate() + 7); // 7 days trial
+          
+          await supabaseClient.from("subscribers").upsert({
+            user_id: user.id,
+            email: user.email,
+            subscribed: true,
+            is_trial: true,
+            subscription_end: trialEnd.toISOString(),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+          
+          logStep("Created new trial subscription", { end_date: trialEnd.toISOString() });
+          
+          return new Response(JSON.stringify({ 
+            subscribed: true,
+            is_trial: true,
+            subscription_end: trialEnd.toISOString()
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+        
         // Update subscriber status in database as not subscribed
         await supabaseClient.from("subscribers").upsert({
           user_id: user.id,
           email: user.email,
           subscribed: false,
+          is_trial: false,
           updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
         
