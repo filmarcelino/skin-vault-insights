@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
@@ -363,17 +362,17 @@ const Analytics = () => {
           ? (valueChange30d / totalValue) * 100
           : 0;
         
-        // Final stats object
+        // Final stats object with fixed 2 decimal places
         const stats = {
-          totalValue: parseFloat(totalValue.toFixed(3)),
-          profitLoss: parseFloat((profitLoss).toFixed(3)),
+          totalValue: parseFloat(totalValue.toFixed(2)),
+          profitLoss: parseFloat((profitLoss).toFixed(2)),
           itemCount,
-          averageItemValue: parseFloat(averageItemValue.toFixed(3)),
-          valueChange30d: parseFloat(valueChange30d.toFixed(3)),
-          valueChangePercent: parseFloat(valueChangePercent.toFixed(3)),
+          averageItemValue: parseFloat(averageItemValue.toFixed(2)),
+          valueChange30d: parseFloat(valueChange30d.toFixed(2)),
+          valueChangePercent: parseFloat(valueChangePercent.toFixed(2)),
           soldItems: soldItemsCount,
-          totalSoldValue: parseFloat(totalSoldValue.toFixed(3)),
-          totalProfit: parseFloat(totalProfit.toFixed(3)),
+          totalSoldValue: parseFloat(totalSoldValue.toFixed(2)),
+          totalProfit: parseFloat(totalProfit.toFixed(2)),
           topRarities,
           recentTransactions
         };

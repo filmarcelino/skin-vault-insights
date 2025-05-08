@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryItem } from "@/types/skin";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -22,9 +21,12 @@ export const calculateInventoryValue = async (): Promise<number> => {
       return 0;
     }
     
-    return data.reduce((total, item) => {
+    const total = data.reduce((total, item) => {
       return total + (item.current_price || 0);
     }, 0);
+    
+    // Return the value with 2 decimal places
+    return parseFloat(total.toFixed(2));
   } catch (error) {
     console.error("Error calculating inventory value:", error);
     return 0;

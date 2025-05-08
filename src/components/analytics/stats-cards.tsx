@@ -1,4 +1,3 @@
-
 import React from "react";
 import { ArrowUpIcon, ArrowDownIcon, DollarSignIcon, PackageIcon, PercentIcon, TrendingUpIcon, TagIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +46,7 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Total Value Card */}
       <Card style={{ 
         backgroundColor: metallicRarityColors.milSpec, 
         color: '#FFFFFF', 
@@ -69,6 +69,7 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
         </CardContent>
       </Card>
       
+      {/* Items Count Card */}
       <Card style={{ 
         backgroundColor: metallicRarityColors.restricted, 
         color: '#FFFFFF', 
@@ -89,6 +90,7 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
         </CardContent>
       </Card>
       
+      {/* 30 Day Change Card */}
       <Card style={{ 
         backgroundColor: isPositiveChange ? '#4A6D7C' : '#9A4A4A', 
         color: '#FFFFFF', 
@@ -115,6 +117,7 @@ export function StatsCards({ inventoryStats }: StatsCardsProps) {
         </CardContent>
       </Card>
       
+      {/* ROI Card */}
       <Card style={{ 
         backgroundColor: metallicRarityColors.classified, 
         color: '#FFFFFF', 

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -92,30 +91,30 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const formatPrice = (amount: number | undefined): string => {
-    if (amount === undefined) return `${currency.symbol}0.000`;
+    if (amount === undefined) return `${currency.symbol}0.00`;
     
     const rate = getExchangeRate("USD", currency.code);
     const convertedAmount = amount * rate;
     
-    return `${currency.symbol}${convertedAmount.toFixed(3)}`;
+    return `${currency.symbol}${convertedAmount.toFixed(2)}`;
   };
 
   const convertPrice = (amount: number | undefined, fromCurrency: string = "USD"): number => {
     if (amount === undefined) return 0;
     
     const rate = getExchangeRate(fromCurrency, currency.code);
-    return parseFloat((amount * rate).toFixed(3));
+    return parseFloat((amount * rate).toFixed(2));
   };
 
   const getOriginalPrice = (amount: number | undefined, toCurrency: string = "USD"): number => {
     if (amount === undefined) return 0;
     
     const rate = getExchangeRate(currency.code, toCurrency);
-    return parseFloat((amount * rate).toFixed(3));
+    return parseFloat((amount * rate).toFixed(2));
   };
 
   const formatWithCurrency = (amount: number | undefined, currencyCode?: string): string => {
-    if (amount === undefined) return `$0.000`;
+    if (amount === undefined) return `$0.00`;
     
     if (!currencyCode) {
       return formatPrice(amount);
@@ -124,7 +123,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const specificCurrency = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
     const convertedAmount = getOriginalPrice(amount, currencyCode);
     
-    return `${specificCurrency.symbol}${convertedAmount.toFixed(3)}`;
+    return `${specificCurrency.symbol}${convertedAmount.toFixed(2)}`;
   };
 
   const handleSetCurrency = (newCurrency: Currency) => {

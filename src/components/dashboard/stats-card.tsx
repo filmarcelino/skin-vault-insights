@@ -32,11 +32,11 @@ export const StatsCard: FC<StatsCardProps> = ({
     setImageError(true);
   };
   
-  // Formatação dos números para exibir no máximo 2 casas decimais
+  // Update number formatting to display maximum 2 decimal places
   const formatNumber = (val: string | number): string => {
     if (typeof val === 'string') {
-      // Se já for uma string, verifica se inclui um símbolo de moeda
-      if (val.startsWith('$') || val.startsWith('€') || val.startsWith('¥')) {
+      // If already a string, check if it includes a currency symbol
+      if (val.startsWith('$') || val.startsWith('€') || val.startsWith('¥') || val.startsWith('R$') || val.startsWith('£') || val.startsWith('₽')) {
         const currencySymbol = val.charAt(0);
         const numericPart = parseFloat(val.substring(1).replace(/,/g, ''));
         if (!isNaN(numericPart)) {
@@ -46,7 +46,7 @@ export const StatsCard: FC<StatsCardProps> = ({
           })}`;
         }
       }
-      // Tenta converter para número e formatar
+      // Try to convert to number and format
       const num = parseFloat(val.replace(/[^\d.-]/g, ''));
       if (!isNaN(num)) {
         return num.toLocaleString(undefined, {
@@ -56,7 +56,7 @@ export const StatsCard: FC<StatsCardProps> = ({
       }
       return val;
     } else if (typeof val === 'number') {
-      // Se for um número, formata com no máximo 2 casas decimais
+      // Format number with max 2 decimal places
       return val.toLocaleString(undefined, {
         maximumFractionDigits: 2,
         minimumFractionDigits: 0
