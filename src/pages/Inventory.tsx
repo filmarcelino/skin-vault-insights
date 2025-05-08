@@ -75,9 +75,10 @@ const Inventory = () => {
   const loadSoldItems = async () => {
     setLoadingSold(true);
     try {
+      // Consulta atualizada para buscar informações de compra dos itens vendidos
       const { data: transactions, error } = await supabase
         .from('transactions')
-        .select('*')
+        .select('id, transaction_id, type, item_id, weapon_name, skin_name, date, price, notes, currency_code')
         .eq('user_id', user?.id)
         .eq('type', 'sell')
         .order('date', { ascending: false });
@@ -86,7 +87,51 @@ const Inventory = () => {
         throw error;
       }
       
-      setSoldItems(transactions || []);
+      // Para cada item vendido, buscar o valor de compra original
+      if (transactions && transactions.length > 0) {
+        const itemsWithPurchaseDetails = await Promise.all(
+          transactions.map(async (transaction) => {
+            // Buscamos nas transações do tipo "add" ou "purchase" para o mesmo item
+            const { data: purchaseTransactions } = await supabase
+              .from('transactions')
+              .select('price, currency_code')
+              .eq('user_id', user?.id)
+              .eq('item_id', transaction.item_id)
+              .in('type', ['add', 'purchase'])
+              .order('date', { ascending: true })
+              .limit(1);
+
+            // Se encontramos alguma transação de compra, anexamos o valor
+            if (purchaseTransactions && purchaseTransactions.length > 0) {
+              return {
+                ...transaction,
+                purchase_price: purchaseTransactions[0].price,
+                purchase_currency: purchaseTransactions[0].currency_code
+              };
+            }
+            
+            // Se não encontramos, verificamos na tabela de inventory
+            const { data: inventoryItems } = await supabase
+              .from('inventory')
+              .select('purchase_price')
+              .eq('inventory_id', transaction.item_id)
+              .limit(1);
+              
+            if (inventoryItems && inventoryItems.length > 0) {
+              return {
+                ...transaction,
+                purchase_price: inventoryItems[0].purchase_price
+              };
+            }
+            
+            return transaction;
+          })
+        );
+        
+        setSoldItems(itemsWithPurchaseDetails || []);
+      } else {
+        setSoldItems([]);
+      }
     } catch (error) {
       console.error('Erro ao carregar itens vendidos:', error);
       toast({

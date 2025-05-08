@@ -7,9 +7,6 @@ interface Category {
   name: string;
 }
 
-// Define type for any element that might be in the categories array
-type CategoryItem = unknown;
-
 export const useFilteredCategories = () => {
   const { data: categories } = useOriginalCategories();
   
@@ -25,9 +22,9 @@ export const useFilteredCategories = () => {
           item !== null &&
           'type' in item && 
           'name' in item && 
-          typeof (item as any).type === 'string' && 
-          typeof (item as any).name === 'string' && 
-          (item as any).type === 'weapon'
+          typeof item.type === 'string' && 
+          typeof item.name === 'string' && 
+          item.type === 'weapon'
         );
       })
       .map((category) => category.name) 
@@ -45,9 +42,9 @@ export const useFilteredCategories = () => {
           item !== null &&
           'type' in item && 
           'name' in item && 
-          typeof (item as any).type === 'string' && 
-          typeof (item as any).name === 'string' && 
-          (item as any).type === 'rarity'
+          typeof item.type === 'string' && 
+          typeof item.name === 'string' && 
+          item.type === 'rarity'
         );
       })
       .map((category) => category.name) 

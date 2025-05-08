@@ -15,6 +15,22 @@ interface SoldSkinsTableProps {
 export const SoldSkinsTable = ({ items, isLoading, onEdit }: SoldSkinsTableProps) => {
   const { formatPrice } = useCurrency();
 
+  // Função para calcular o lucro percentual
+  const calculateProfitPercentage = (soldPrice: number, purchasePrice: number) => {
+    if (!purchasePrice || purchasePrice === 0) return 0;
+    return ((soldPrice - purchasePrice) / purchasePrice) * 100;
+  };
+
+  // Função para formatar o percentual de lucro/prejuízo
+  const formatProfitPercentage = (percentage: number) => {
+    const isProfit = percentage >= 0;
+    return (
+      <span className={`font-medium ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
+        {percentage > 0 ? '+' : ''}{percentage.toFixed(2)}%
+      </span>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="w-full space-y-4">
@@ -42,7 +58,9 @@ export const SoldSkinsTable = ({ items, isLoading, onEdit }: SoldSkinsTableProps
           <TableRow>
             <TableHead className="w-[300px]">Skin</TableHead>
             <TableHead>Data da Venda</TableHead>
+            <TableHead className="text-right">Valor de Compra</TableHead>
             <TableHead className="text-right">Valor Vendido</TableHead>
+            <TableHead className="text-right">Lucro/Prejuízo</TableHead>
             <TableHead className="text-right">Notas</TableHead>
             <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
@@ -57,7 +75,13 @@ export const SoldSkinsTable = ({ items, isLoading, onEdit }: SoldSkinsTableProps
                 {new Date(item.date).toLocaleDateString()}
               </TableCell>
               <TableCell className="text-right">
+                {item.purchase_price ? formatPrice(item.purchase_price) : '-'}
+              </TableCell>
+              <TableCell className="text-right">
                 {formatPrice(item.price || 0)}
+              </TableCell>
+              <TableCell className="text-right">
+                {item.purchase_price ? formatProfitPercentage(calculateProfitPercentage(item.price || 0, item.purchase_price)) : '-'}
               </TableCell>
               <TableCell className="text-right max-w-[200px] truncate">
                 {item.notes || '-'}

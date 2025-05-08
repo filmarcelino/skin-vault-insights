@@ -44,6 +44,14 @@ export const useInventoryFilter = (inventory: InventoryItem[]) => {
           return new Date(b.acquiredDate).getTime() - new Date(a.acquiredDate).getTime();
         case 'date_asc':
           return new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
+        case 'profit_desc':
+          const profitA = a.currentPrice && a.purchasePrice ? (a.currentPrice - a.purchasePrice) / a.purchasePrice * 100 : 0;
+          const profitB = b.currentPrice && b.purchasePrice ? (b.currentPrice - b.purchasePrice) / b.purchasePrice * 100 : 0;
+          return profitB - profitA;
+        case 'profit_asc':
+          const profitAsc1 = a.currentPrice && a.purchasePrice ? (a.currentPrice - a.purchasePrice) / a.purchasePrice * 100 : 0;
+          const profitAsc2 = b.currentPrice && b.purchasePrice ? (b.currentPrice - b.purchasePrice) / b.purchasePrice * 100 : 0;
+          return profitAsc1 - profitAsc2;
         default:
           return 0;
       }
