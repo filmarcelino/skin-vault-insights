@@ -19,7 +19,7 @@ export const useFilteredCategories = () => {
         
         if (typeof item !== 'object') return false;
         
-        if (!('type' in item) || !('name' in item)) return false;
+        if (!('type' in item && 'name' in item)) return false;
         
         if (typeof item.type !== 'string' || typeof item.name !== 'string') return false;
         
@@ -37,7 +37,7 @@ export const useFilteredCategories = () => {
         
         if (typeof item !== 'object') return false;
         
-        if (!('type' in item) || !('name' in item)) return false;
+        if (!('type' in item && 'name' in item)) return false;
         
         if (typeof item.type !== 'string' || typeof item.name !== 'string') return false;
         
