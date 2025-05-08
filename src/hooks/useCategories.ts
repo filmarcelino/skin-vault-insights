@@ -15,11 +15,10 @@ export const useFilteredCategories = () => {
     ? categories
       .filter((item): item is Category => {
         // Type guard check for item structure
-        if (!item) return false;
+        if (item === null || item === undefined) return false;
         
         return (
           typeof item === 'object' && 
-          item !== null &&
           'type' in item && 
           'name' in item && 
           typeof item.type === 'string' && 
@@ -35,11 +34,10 @@ export const useFilteredCategories = () => {
     ? categories
       .filter((item): item is Category => {
         // Type guard check for item structure
-        if (!item) return false;
+        if (item === null || item === undefined) return false;
         
         return (
           typeof item === 'object' && 
-          item !== null &&
           'type' in item && 
           'name' in item && 
           typeof item.type === 'string' && 
