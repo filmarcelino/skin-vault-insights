@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,14 +25,13 @@ serve(async (req) => {
       });
     }
     
-    // Update the Stripe secret in Supabase environment variables
-    // This actually just sets the secret in the Deno environment for this function invocation
-    // For a permanent update, you need to set it in the Supabase dashboard
-    Deno.env.set("STRIPE_SECRET_KEY", stripeKey);
+    // Since we can't update secrets directly from edge functions,
+    // we'll just verify the key format and tell the user to set it in dashboard
+    console.log("Stripe key format is valid. Key should be set in Supabase dashboard.");
     
     return new Response(JSON.stringify({ 
       success: true,
-      message: "Stripe secret key format validated. To permanently update the key, please set it in the Supabase dashboard." 
+      message: "Stripe secret key format is valid. Please set the key as STRIPE_SECRET_KEY in the Supabase dashboard under Edge Function secrets." 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200
