@@ -1,26 +1,21 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SubscriptionTab } from "./subscription-tab";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 
 export const SubscriptionManagement = () => {
   const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
   const [coupon, setCoupon] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [couponStatus, setCouponStatus] = useState<
     { valid: boolean; message?: string; trialMonths?: number } | null
   >(null);
 
   const handleSubscribe = async () => {
     setSubmitting(true);
-    setError(null);
-    
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { plan, coupon: coupon.trim() || undefined },
@@ -29,25 +24,21 @@ export const SubscriptionManagement = () => {
       if (data?.url) {
         window.location.href = data.url;
       } else if (data?.error) {
-        setError(data.error);
-        toast.error("Erro ao iniciar pagamento", {
+        toast.error("Error starting payment", {
           description: data.error
         });
       } else if (error) {
-        setError(error.message);
-        toast.error("Erro ao iniciar pagamento", {
+        toast.error("Error starting payment", {
           description: error.message
         });
       } else {
-        setError("Erro inesperado, tente novamente mais tarde.");
-        toast.error("Erro inesperado", {
-          description: "Por favor, tente novamente mais tarde."
+        toast.error("Unexpected error", {
+          description: "Please try again later."
         });
       }
     } catch (err: any) {
-      setError(err.message || "Erro inesperado, tente novamente.");
-      toast.error("Erro inesperado", {
-        description: err.message || "Por favor, tente novamente."
+      toast.error("Unexpected error", {
+        description: err.message || "Please try again."
       });
       console.error("Subscription error:", err);
     } finally {
@@ -62,22 +53,15 @@ export const SubscriptionManagement = () => {
           CS Skin Vault Premium
         </CardTitle>
         <CardDescription>
-          Assine para acessar funcionalidades premium
+          Subscribe to access premium features
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4 pt-6">
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
         <Tabs defaultValue="monthly" onValueChange={val => setPlan(val as "monthly" | "annual")}>
           <TabsList className="w-full mb-4">
-            <TabsTrigger value="monthly" className="w-1/2">Mensal</TabsTrigger>
-            <TabsTrigger value="annual" className="w-1/2">Anual (10% OFF)</TabsTrigger>
+            <TabsTrigger value="monthly" className="w-1/2">Monthly</TabsTrigger>
+            <TabsTrigger value="annual" className="w-1/2">Annual (10% OFF)</TabsTrigger>
           </TabsList>
 
           <TabsContent value="monthly">

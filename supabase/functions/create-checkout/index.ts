@@ -269,8 +269,8 @@ serve(async (req) => {
         customer_email: customerId ? undefined : user.email,
         mode: "subscription",
         line_items,
-        success_url: `${req.headers.get("origin")}/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${req.headers.get("origin")}/subscription`,
+        success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get("origin")}`,
       });
       
       const session = await Promise.race([

@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Crown, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 interface PremiumFeatureGuardProps {
   children: React.ReactNode;
@@ -14,9 +13,9 @@ interface PremiumFeatureGuardProps {
 
 export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({ 
   children, 
-  fallbackMessage = "Esta funcionalidade requer uma assinatura premium" 
+  fallbackMessage = "This feature requires a premium subscription" 
 }) => {
-  const { isSubscribed, isTrial, trialDaysRemaining, isLoading, checkSubscription } = useSubscription();
+  const { isSubscribed, isTrial, trialDaysRemaining, isLoading } = useSubscription();
   const navigate = useNavigate();
 
   // Allow access during loading to prevent flicker
@@ -24,24 +23,10 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
     return <>{children}</>;
   }
 
-  // If subscribed or trial is active with remaining days, show the children
-  if (isSubscribed || (isTrial && trialDaysRemaining && trialDaysRemaining > 0)) {
+  // If subscribed or trial is active, show the children
+  if (isSubscribed) {
     return <>{children}</>;
   }
-
-  const handleSubscribeClick = async () => {
-    // Force a fresh check of subscription status before navigating
-    try {
-      await checkSubscription();
-      navigate('/subscription');
-    } catch (error) {
-      console.error("Error checking subscription:", error);
-      toast.error("Erro ao verificar status da assinatura", {
-        description: "Tente novamente em alguns instantes."
-      });
-      navigate('/subscription');
-    }
-  };
 
   // Show upgrade card if not subscribed or trial expired
   return (
@@ -51,7 +36,7 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
           <Lock className="h-6 w-6 text-primary" />
         </div>
         
-        <h3 className="text-xl font-semibold">Funcionalidade Premium</h3>
+        <h3 className="text-xl font-semibold">Premium Feature</h3>
         
         <p className="text-muted-foreground max-w-md">
           {fallbackMessage}
@@ -59,16 +44,16 @@ export const PremiumFeatureGuard: React.FC<PremiumFeatureGuardProps> = ({
         
         {isTrial && trialDaysRemaining === 0 && (
           <p className="text-amber-500 font-medium">
-            Seu período de teste expirou
+            Your trial has expired
           </p>
         )}
         
         <Button 
-          onClick={handleSubscribeClick}
+          onClick={() => navigate('/subscription')}
           className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
         >
           <Crown className="h-4 w-4 mr-2" />
-          Obter Acesso Premium
+          Get Premium Access
         </Button>
       </CardContent>
     </Card>
