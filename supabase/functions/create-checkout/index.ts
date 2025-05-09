@@ -45,7 +45,7 @@ serve(async (req) => {
     
     logStep("Stripe key found", { keyLength: stripeKey.length });
     
-    // Verify that the key begins with sk_ (indicating it's a secret key, not publishable)
+    // Verificar que a chave começa com sk_ (indicando que é uma chave secreta)
     if (!stripeKey.startsWith('sk_')) {
       logStep("Invalid Stripe key format");
       return new Response(JSON.stringify({ 
@@ -61,7 +61,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     
-    // Get user token from request headers
+    // Obter token do usuário do cabeçalho da requisição
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       logStep("Missing authorization header");
@@ -73,7 +73,7 @@ serve(async (req) => {
       });
     }
     
-    // Authenticate user
+    // Autenticar usuário
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
@@ -103,31 +103,23 @@ serve(async (req) => {
       const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
       logStep("Stripe initialized");
       
-      // Check if user already exists as a customer
+      // Verificar se o usuário já existe como cliente
       logStep("Checking if customer exists");
-      const customersPromise = stripe.customers.list({ email: user.email, limit: 1 });
-      const customers = await Promise.race([
-        customersPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while fetching customer")), 30000))
-      ]) as Stripe.ApiList<Stripe.Customer>;
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
       
       let customerId: string | undefined;
       if (customers.data.length > 0) {
         customerId = customers.data[0].id;
         logStep("Found existing customer", { customerId });
-        // Check if customer already has an active subscription
-        const subscriptionsPromise = stripe.subscriptions.list({
+        // Verificar se o cliente já tem uma assinatura ativa
+        const subscriptions = await stripe.subscriptions.list({
           customer: customerId,
           status: "active",
           limit: 1,
         });
-        const subscriptions = await Promise.race([
-          subscriptionsPromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while checking subscriptions")), 30000))
-        ]) as Stripe.ApiList<Stripe.Subscription>;
         if (subscriptions.data.length > 0) {
           logStep("Customer already has an active subscription");
-          // Return URL to manage subscription
+          // Retornar URL para gerenciar assinatura
           const session = await stripe.billingPortal.sessions.create({
             customer: customerId,
             return_url: `${req.headers.get("origin")}`,
@@ -140,7 +132,7 @@ serve(async (req) => {
       }
 
       // Lógica do cupom
-      let trial_days = 3; // padrão
+      let trialPeriodDays = 3; // padrão
       if (couponCode.length > 0) {
         logStep("Checking coupon", { couponCode });
         // procurar um cupom ativo
@@ -198,7 +190,7 @@ serve(async (req) => {
         }
 
         // Cupom válido: concede trial personalizado
-        trial_days = couponRow.duration_months * 30; // cada mês = 30 dias
+        trialPeriodDays = couponRow.duration_months * 30; // cada mês = 30 dias
 
         // registrar cupom na tabela user_coupons (marcar como usado)
         const { error: userCouponError } = await supabaseClient.from("user_coupons").insert({
@@ -223,65 +215,61 @@ serve(async (req) => {
           // Continuamos o fluxo mesmo com erro
         }
 
-        logStep("Valid coupon applied", { trial_days });
+        logStep("Valid coupon applied", { trial_days: trialPeriodDays });
       }
       
       // Definição de planos
-      let line_items;
+      let lineItems;
       if (plan === 'annual') {
-        line_items = [{
+        lineItems = [{
           price_data: {
             currency: "usd",
-            recurring: {
-              interval: "year",
-              trial_period_days: trial_days,
-            },
             product_data: {
               name: "CS Skin Vault Premium (Annual)",
               description: "Premium access to CS Skin Vault with 10% savings",
             },
             unit_amount: 4300, // $43.00 in cents
+            recurring: {
+              interval: "year",
+            },
           },
           quantity: 1,
         }];
       } else {
-        line_items = [{
+        lineItems = [{
           price_data: {
             currency: "usd",
-            recurring: {
-              interval: "month",
-              trial_period_days: trial_days,
-            },
             product_data: {
               name: "CS Skin Vault Premium",
               description: "Premium access to CS Skin Vault",
             },
             unit_amount: 399, // $3.99 in cents
+            recurring: {
+              interval: "month",
+            },
           },
           quantity: 1,
         }];
       }
       
-      logStep("Creating checkout session", { customerId: customerId || "new customer", trial_days, plan, coupon: couponCode });
+      logStep("Creating checkout session", { customerId: customerId || "new customer", trial_days: trialPeriodDays, plan, coupon: couponCode });
 
-      const sessionPromise = stripe.checkout.sessions.create({
+      const session = await stripe.checkout.sessions.create({
         customer: customerId,
         customer_email: customerId ? undefined : user.email,
         mode: "subscription",
-        line_items,
+        line_items: lineItems,
         success_url: `${req.headers.get("origin")}/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get("origin")}`,
+        subscription_data: {
+          trial_period_days: trialPeriodDays,
+        }
       });
-      
-      const session = await Promise.race([
-        sessionPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout exceeded while creating checkout")), 30000))
-      ]) as Stripe.Checkout.Session;
 
       logStep("Checkout session created", { sessionId: session.id, url: session.url });
       
       // Registrar que foi aplicado um trial (se houver cupom)
-      if (couponCode.length > 0 && trial_days > 3) {
+      if (couponCode.length > 0 && trialPeriodDays > 3) {
         const { error: subError } = await supabaseClient.from("subscribers").upsert({
           email: user.email,
           user_id: user.id,

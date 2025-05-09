@@ -1,12 +1,14 @@
 
 import React, { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { CheckCircle, XCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface CouponInputProps {
+  id: string;
   coupon: string;
   setCoupon: (coupon: string) => void;
   submitting: boolean;
@@ -20,117 +22,143 @@ interface CouponInputProps {
     message?: string;
     trialMonths?: number;
   } | null>>;
-  id?: string;
 }
 
 export const CouponInput: React.FC<CouponInputProps> = ({
+  id,
   coupon,
   setCoupon,
   submitting,
   couponStatus,
   setCouponStatus,
-  id = "coupon",
 }) => {
-  const checkCoupon = async () => {
+  const [validating, setValidating] = useState(false);
+
+  const validateCoupon = async () => {
     if (!coupon.trim()) {
       setCouponStatus(null);
       return;
     }
-
+    
+    setValidating(true);
+    
     try {
-      const { data, error } = await supabase
-        .from("coupons")
+      const { data, error } = await supabase.from("coupons")
         .select("*")
-        .eq("code", coupon.toUpperCase())
+        .eq("code", coupon.trim().toUpperCase())
         .eq("active", true)
         .maybeSingle();
-
+      
       if (error) {
-        console.error("Error checking coupon:", error);
-        setCouponStatus({
-          valid: false,
-          message: "Error checking coupon"
+        toast.error("Erro ao verificar cupom", {
+          description: error.message
         });
+        setCouponStatus(null);
         return;
       }
-
+      
+      // Verificar se o cupom existe e está ativo
       if (!data) {
         setCouponStatus({
           valid: false,
-          message: "Invalid or inactive coupon"
+          message: "Cupom inválido ou inativo"
         });
         return;
       }
 
-      // Check if redemption limit reached
-      if (
-        data.max_redemptions &&
-        data.times_redeemed &&
-        data.times_redeemed >= data.max_redemptions
-      ) {
+      // Verificar limite de usos
+      if (data.max_redemptions && data.times_redeemed && data.times_redeemed >= data.max_redemptions) {
         setCouponStatus({
           valid: false,
-          message: "This coupon has reached its usage limit"
+          message: "Este cupom atingiu o limite de usos"
         });
         return;
       }
-
+      
+      // Verificar se o usuário já usou este cupom
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+      
+      const { data: usedCoupon, error: usedError } = await supabase.from("user_coupons")
+        .select("*")
+        .eq("user_id", user.user.id)
+        .eq("coupon_id", data.id)
+        .maybeSingle();
+      
+      if (usedError) {
+        toast.error("Erro ao verificar uso do cupom", {
+          description: usedError.message
+        });
+        return;
+      }
+      
+      if (usedCoupon) {
+        setCouponStatus({
+          valid: false,
+          message: "Você já utilizou este cupom"
+        });
+        return;
+      }
+      
+      // Cupom válido!
       setCouponStatus({
         valid: true,
-        message: `Valid coupon for ${data.duration_months} ${data.duration_months === 1 ? 'month' : 'months'} of trial!`,
+        message: `${data.duration_months} ${data.duration_months > 1 ? 'meses' : 'mês'} de teste grátis`,
         trialMonths: data.duration_months
       });
-    } catch (err) {
-      console.error("Error checking coupon:", err);
-      setCouponStatus({
-        valid: false,
-        message: "Error checking coupon"
+      
+    } catch (err: any) {
+      toast.error("Erro ao validar cupom", {
+        description: err.message
       });
+      setCouponStatus(null);
+    } finally {
+      setValidating(false);
     }
   };
 
   return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium mb-1">Coupon (up to 12 months free)</label>
-      <div className="flex gap-2">
-        <Input
-          id={id}
-          value={coupon}
-          onChange={e => {
-            setCoupon(e.target.value.toUpperCase());
-            setCouponStatus(null);
-          }}
-          onBlur={checkCoupon}
-          placeholder="Enter your coupon"
-          className="mb-2"
-          maxLength={32}
-          autoComplete="off"
-          disabled={submitting}
-        />
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={checkCoupon}
-          disabled={submitting || !coupon.trim()}
-          className="shrink-0"
+    <div className="space-y-2">
+      <Label htmlFor={id}>Cupom (opcional)</Label>
+      <div className="flex space-x-2">
+        <div className="relative flex-1">
+          <Input
+            id={id}
+            value={coupon}
+            onChange={(e) => {
+              setCoupon(e.target.value);
+              if (couponStatus) setCouponStatus(null);
+            }}
+            placeholder="Digite seu cupom"
+            className="pr-8"
+            disabled={submitting || validating}
+          />
+          {couponStatus && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+              {couponStatus.valid ? (
+                <CheckCircle className="h-4 w-4 text-green-500" />
+              ) : (
+                <XCircle className="h-4 w-4 text-red-500" />
+              )}
+            </div>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={validateCoupon}
+          disabled={!coupon.trim() || submitting || validating}
         >
-          Verify
+          {validating ? "Verificando..." : "Verificar"}
         </Button>
       </div>
-      
       {couponStatus && (
-        <Alert variant={couponStatus.valid ? "default" : "destructive"} className="mb-4 p-3">
-          <div className="flex gap-2 items-center">
-            {couponStatus.valid ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <AlertCircle className="h-4 w-4" />
-            )}
-            <AlertDescription>
-              {couponStatus.message}
-            </AlertDescription>
-          </div>
-        </Alert>
+        <p className={`text-sm ${couponStatus.valid ? 'text-green-500' : 'text-red-500'}`}>
+          {couponStatus.message}
+        </p>
       )}
     </div>
   );
