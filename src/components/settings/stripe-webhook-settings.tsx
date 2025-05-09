@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -6,14 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, AlertCircle, CheckCircle, Copy } from "lucide-react";
+import { ExternalLink, AlertCircle, CheckCircle, Copy, Key } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 
 export const StripeWebhookSettings = () => {
   const [webhookSecret, setWebhookSecret] = useState("");
+  const [stripeKey, setStripeKey] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingStripeKey, setIsSavingStripeKey] = useState(false);
   const [testResult, setTestResult] = useState<{success: boolean; message?: string} | null>(null);
   const { user } = useAuth();
   
@@ -56,6 +60,42 @@ export const StripeWebhookSettings = () => {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+  
+  const handleSaveStripeKey = async () => {
+    if (!stripeKey.trim()) {
+      toast.error("Please enter your Stripe Secret Key");
+      return;
+    }
+    
+    if (!stripeKey.startsWith('sk_')) {
+      toast.error("Invalid key format", {
+        description: "Stripe Secret Keys must start with 'sk_'"
+      });
+      return;
+    }
+    
+    setIsSavingStripeKey(true);
+    try {
+      const { error } = await supabase.functions.invoke("save-stripe-key", {
+        body: { stripeKey }
+      });
+      
+      if (error) {
+        toast.error("Failed to save Stripe key", {
+          description: error.message
+        });
+      } else {
+        toast.success("Stripe key saved successfully");
+        setStripeKey("");
+      }
+    } catch (err: any) {
+      toast.error("Failed to save Stripe key", {
+        description: err.message || "An unexpected error occurred"
+      });
+    } finally {
+      setIsSavingStripeKey(false);
     }
   };
   
@@ -109,6 +149,35 @@ export const StripeWebhookSettings = () => {
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {/* Stripe API Key Section */}
+        <div className="space-y-2">
+          <div className="flex items-center">
+            <Key className="mr-2 h-4 w-4 text-primary" />
+            <Label htmlFor="stripe-key">Stripe Secret Key</Label>
+          </div>
+          <div className="flex gap-2">
+            <Input 
+              id="stripe-key" 
+              value={stripeKey} 
+              onChange={(e) => setStripeKey(e.target.value)}
+              placeholder="sk_live_..." 
+              type="password"
+              className="flex-1 font-mono"
+            />
+            <Button 
+              onClick={handleSaveStripeKey} 
+              disabled={isSavingStripeKey || !stripeKey.trim()}
+            >
+              {isSavingStripeKey ? "Saving..." : "Save Key"}
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            Enter your Stripe Secret Key to enable subscription functionality
+          </p>
+        </div>
+        
+        <Separator />
+
         <div className="space-y-2">
           <Label htmlFor="webhook-url">Webhook URL (to set in Stripe Dashboard)</Label>
           <div className="flex gap-2">
