@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SubscriptionProvider } from './contexts/SubscriptionContext';
@@ -9,16 +9,22 @@ import Settings from './pages/Settings';
 import Subscription from './pages/Subscription';
 import { Loading } from './components/ui/loading';
 import { Toaster } from "@/components/ui/toaster";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Criando uma instância do QueryClient
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <AuthProvider>
-      <SubscriptionProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </SubscriptionProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SubscriptionProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
