@@ -39,10 +39,9 @@ serve(async (req) => {
       });
     }
 
-    // Only admin can test webhooks
-    const ADMIN_EMAIL = "luisfelipemarcelino33@gmail.com";
-    if (userData.user?.email !== ADMIN_EMAIL) {
-      return new Response(JSON.stringify({ error: "Unauthorized - Admin access required" }), {
+    // Qualquer usuário autenticado pode verificar o status do webhook
+    if (!userData.user) {
+      return new Response(JSON.stringify({ error: "User not found" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });

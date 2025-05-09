@@ -7,11 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ExternalLink, AlertCircle, CheckCircle, Copy, Key } from "lucide-react";
+import { ExternalLink, AlertCircle, CheckCircle, Copy, Key, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 
 export const StripeWebhookSettings = () => {
   const [webhookSecret, setWebhookSecret] = useState("");
@@ -21,11 +20,12 @@ export const StripeWebhookSettings = () => {
   const [testResult, setTestResult] = useState<{success: boolean; message?: string} | null>(null);
   const { user } = useAuth();
   
-  // Only admins should see this component
+  // Admin email para controle de permissões
   const ADMIN_EMAIL = "luisfelipemarcelino33@gmail.com";
   const isAdmin = user?.email === ADMIN_EMAIL;
 
-  if (!isAdmin) {
+  // Caso não tenha usuário autenticado, não mostra nada
+  if (!user) {
     return null;
   }
 
@@ -34,6 +34,11 @@ export const StripeWebhookSettings = () => {
   const handleSaveSecret = async () => {
     if (!webhookSecret.trim()) {
       toast.error("Please enter a webhook secret");
+      return;
+    }
+    
+    if (!isAdmin) {
+      toast.error("Apenas administradores podem salvar o webhook secret");
       return;
     }
     
@@ -66,6 +71,11 @@ export const StripeWebhookSettings = () => {
   const handleSaveStripeKey = async () => {
     if (!stripeKey.trim()) {
       toast.error("Please enter your Stripe Secret Key");
+      return;
+    }
+    
+    if (!isAdmin) {
+      toast.error("Apenas administradores podem salvar a chave Stripe");
       return;
     }
     
@@ -141,45 +151,53 @@ export const StripeWebhookSettings = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           Stripe Webhook Settings
-          <Badge variant="outline" className="ml-2 text-xs">Admin Only</Badge>
+          {isAdmin ? (
+            <Badge variant="outline" className="ml-2 text-xs">Admin</Badge>
+          ) : (
+            <Badge variant="outline" className="ml-2 text-xs bg-blue-100">Funcionário</Badge>
+          )}
         </CardTitle>
         <CardDescription>
-          Configure Stripe webhooks to receive real-time subscription updates
+          Configuração do webhook do Stripe para receber atualizações de assinaturas em tempo real
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Stripe API Key Section */}
-        <div className="space-y-2">
-          <div className="flex items-center">
-            <Key className="mr-2 h-4 w-4 text-primary" />
-            <Label htmlFor="stripe-key">Stripe Secret Key</Label>
-          </div>
-          <div className="flex gap-2">
-            <Input 
-              id="stripe-key" 
-              value={stripeKey} 
-              onChange={(e) => setStripeKey(e.target.value)}
-              placeholder="sk_live_..." 
-              type="password"
-              className="flex-1 font-mono"
-            />
-            <Button 
-              onClick={handleSaveStripeKey} 
-              disabled={isSavingStripeKey || !stripeKey.trim()}
-            >
-              {isSavingStripeKey ? "Saving..." : "Save Key"}
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Enter your Stripe Secret Key to enable subscription functionality
-          </p>
-        </div>
-        
-        <Separator />
+        {/* Seção de chave da API do Stripe - apenas Admin */}
+        {isAdmin && (
+          <>
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <Key className="mr-2 h-4 w-4 text-primary" />
+                <Label htmlFor="stripe-key">Stripe Secret Key</Label>
+              </div>
+              <div className="flex gap-2">
+                <Input 
+                  id="stripe-key" 
+                  value={stripeKey} 
+                  onChange={(e) => setStripeKey(e.target.value)}
+                  placeholder="sk_live_..." 
+                  type="password"
+                  className="flex-1 font-mono"
+                />
+                <Button 
+                  onClick={handleSaveStripeKey} 
+                  disabled={isSavingStripeKey || !stripeKey.trim()}
+                >
+                  {isSavingStripeKey ? "Salvando..." : "Salvar Chave"}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Digite sua Stripe Secret Key para habilitar funcionalidades de assinatura
+              </p>
+            </div>
+            <Separator />
+          </>
+        )}
 
+        {/* URL do Webhook - visível para todos */}
         <div className="space-y-2">
-          <Label htmlFor="webhook-url">Webhook URL (to set in Stripe Dashboard)</Label>
+          <Label htmlFor="webhook-url">URL do Webhook (para configurar no Dashboard do Stripe)</Label>
           <div className="flex gap-2">
             <Input 
               id="webhook-url" 
@@ -191,49 +209,54 @@ export const StripeWebhookSettings = () => {
               variant="outline" 
               size="icon"
               onClick={handleCopyUrl}
-              title="Copy URL"
+              title="Copiar URL"
             >
               <Copy className="h-4 w-4" />
             </Button>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Add this URL in your Stripe Dashboard under Developers &gt; Webhooks
+            Adicione esta URL no seu Dashboard do Stripe em Developers &gt; Webhooks
           </p>
         </div>
         
         <Separator />
         
-        <div className="space-y-2">
-          <Label htmlFor="webhook-secret">Webhook Signing Secret</Label>
-          <div className="flex gap-2">
-            <Input 
-              id="webhook-secret" 
-              value={webhookSecret} 
-              onChange={(e) => setWebhookSecret(e.target.value)}
-              placeholder="whsec_..." 
-              className="flex-1"
-            />
-            <Button 
-              onClick={handleSaveSecret} 
-              disabled={isSaving || !webhookSecret.trim()}
-            >
-              {isSaving ? "Saving..." : "Save Secret"}
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Copy the signing secret provided by Stripe when you create the webhook
-          </p>
-        </div>
+        {/* Seção de Webhook Secret - apenas Admin */}
+        {isAdmin && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="webhook-secret">Webhook Signing Secret</Label>
+              <div className="flex gap-2">
+                <Input 
+                  id="webhook-secret" 
+                  value={webhookSecret} 
+                  onChange={(e) => setWebhookSecret(e.target.value)}
+                  placeholder="whsec_..." 
+                  className="flex-1"
+                />
+                <Button 
+                  onClick={handleSaveSecret} 
+                  disabled={isSaving || !webhookSecret.trim()}
+                >
+                  {isSaving ? "Salvando..." : "Salvar Secret"}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Copie o signing secret fornecido pelo Stripe quando você criar o webhook
+              </p>
+            </div>
+            <Separator />
+          </>
+        )}
         
-        <Separator />
-        
+        {/* Testar configuração - visível para todos */}
         <div>
           <Button 
             variant="outline" 
             onClick={testWebhook}
             className="w-full"
           >
-            Test Webhook Configuration
+            Testar Configuração do Webhook
           </Button>
         </div>
         
@@ -245,17 +268,30 @@ export const StripeWebhookSettings = () => {
               <AlertCircle className="h-4 w-4" />
             )}
             <AlertTitle>
-              {testResult.success ? "Success" : "Configuration Issue"}
+              {testResult.success ? "Sucesso" : "Problema na configuração"}
             </AlertTitle>
             <AlertDescription>{testResult.message}</AlertDescription>
           </Alert>
         )}
         
+        {/* Informações sobre webhook - visível para todos */}
+        {!isAdmin && testResult && !testResult.success && (
+          <Alert variant="default" className="bg-yellow-50 border-yellow-200 text-yellow-800">
+            <Lock className="h-4 w-4" />
+            <AlertTitle>Configuração é necessária</AlertTitle>
+            <AlertDescription>
+              O webhook do Stripe não está configurado ou está com problemas. 
+              Entre em contato com um administrador para resolver este problema.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* Informações sobre eventos importantes - visível para todos */}
         <Alert variant="default" className="bg-blue-500/10 text-blue-600 border-blue-200">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Important Webhook Events to Enable</AlertTitle>
+          <AlertTitle>Eventos importantes para habilitar no webhook</AlertTitle>
           <AlertDescription className="space-y-2">
-            <p>Make sure you enable the following events in your Stripe webhook configuration:</p>
+            <p>Certifique-se de habilitar os seguintes eventos na configuração do webhook do Stripe:</p>
             <ul className="list-disc pl-5 text-sm space-y-1">
               <li>checkout.session.completed</li>
               <li>customer.subscription.created</li>
@@ -274,7 +310,7 @@ export const StripeWebhookSettings = () => {
             asChild
           >
             <a href="https://dashboard.stripe.com/webhooks" target="_blank" rel="noopener noreferrer">
-              Open Stripe Dashboard
+              Abrir Dashboard do Stripe
               <ExternalLink className="h-3 w-3" />
             </a>
           </Button>
