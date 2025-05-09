@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -183,7 +182,7 @@ export const StripeWebhookSettings = () => {
           </Alert>
         )}
         
-        <Alert variant="info" className="bg-blue-500/10 text-blue-600 border-blue-200">
+        <Alert variant="default" className="bg-blue-500/10 text-blue-600 border-blue-200">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Important Webhook Events to Enable</AlertTitle>
           <AlertDescription className="space-y-2">
