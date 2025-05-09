@@ -3,3 +3,12 @@ project_id = "uxcjewylcwcgmrnzdguu"
 
 [functions.get-exchange-rates]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.save-secret]
+verify_jwt = true
+
+[functions.test-webhook]
+verify_jwt = true

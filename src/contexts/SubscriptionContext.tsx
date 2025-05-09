@@ -92,13 +92,36 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [session]);
 
-  // Periodic check every 30 minutes if user is logged in
+  // Set up realtime subscription to subscribers table
+  useEffect(() => {
+    if (!user?.email) return;
+    
+    // Subscribe to changes in the subscribers table for this user's email
+    const channel = supabase
+      .channel('subscription-updates')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'subscribers',
+        filter: `email=eq.${user.email}`,
+      }, (payload) => {
+        console.log('Subscription updated via webhook:', payload);
+        checkSubscription();
+      })
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.email]);
+
+  // Fall back to periodic check every 30 minutes if user is logged in
   useEffect(() => {
     if (!user) return;
     
     const intervalId = setInterval(() => {
       checkSubscription();
-    }, 30 * 60 * 1000);
+    }, 30 * 60 * 1000); // 30 minutes
     
     return () => clearInterval(intervalId);
   }, [user]);
