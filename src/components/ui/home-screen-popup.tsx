@@ -51,7 +51,7 @@ export const HomeScreenPopup = () => {
           <img 
             src="/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png" 
             alt="CS Skin Vault" 
-            className="w-24 h-24 mb-4 rounded-xl"
+            className="w-16 h-16 mb-4 rounded-lg"
           />
           
           {isIOS ? (
@@ -92,3 +92,4 @@ export const HomeScreenPopup = () => {
     </Dialog>
   );
 };
+

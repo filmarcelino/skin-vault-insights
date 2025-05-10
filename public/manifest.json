@@ -11,15 +11,16 @@
   "icons": [
     {
       "src": "/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png",
-      "sizes": "192x192",
+      "sizes": "96x96",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
       "src": "/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png",
-      "sizes": "512x512",
+      "sizes": "144x144",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ]
 }
+
