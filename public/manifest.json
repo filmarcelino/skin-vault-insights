@@ -1,0 +1,25 @@
+
+{
+  "name": "CS Skin Vault",
+  "short_name": "Skin Vault",
+  "description": "Gerencie seu inventário de skins do CS2 com análises poderosas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1B1F23",
+  "theme_color": "#1B1F23",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

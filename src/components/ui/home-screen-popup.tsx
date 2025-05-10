@@ -26,8 +26,14 @@ export const HomeScreenPopup = () => {
     }
   }, [isMobile]);
 
-  // Detectar o sistema operacional - corrigindo o erro de TypeScript
+  // Detectar o sistema operacional
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  
+  // Limpar o localStorage para testar novamente (apenas para desenvolvimento)
+  const resetPopupState = () => {
+    localStorage.removeItem("homeScreenPopupShown");
+    setOpen(false);
+  };
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -45,14 +51,14 @@ export const HomeScreenPopup = () => {
           <img 
             src="/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png" 
             alt="CS Skin Vault" 
-            className="w-24 h-24 mb-4"
+            className="w-24 h-24 mb-4 rounded-xl"
           />
           
           {isIOS ? (
             <div className="space-y-4 text-sm">
               <p><strong>Para iOS:</strong></p>
               <ol className="list-decimal pl-5 space-y-2">
-                <li>Toque no ícone <span className="inline-flex items-center justify-center px-2 py-1 bg-gray-100 rounded">Compartilhar <span className="ml-1">↑</span></span> na barra inferior do Safari</li>
+                <li>Toque no ícone <span className="inline-flex items-center justify-center px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">Compartilhar <span className="ml-1">↑</span></span> na barra inferior do Safari</li>
                 <li>Deslize para cima e selecione <span className="font-semibold">Adicionar à Tela de Início</span></li>
                 <li>Confirme tocando em <span className="font-semibold">Adicionar</span> no canto superior direito</li>
               </ol>
@@ -61,7 +67,7 @@ export const HomeScreenPopup = () => {
             <div className="space-y-4 text-sm">
               <p><strong>Para Android:</strong></p>
               <ol className="list-decimal pl-5 space-y-2">
-                <li>Toque no ícone de menu <span className="inline-flex items-center justify-center px-2 py-1 bg-gray-100 rounded">⋮</span> no Chrome</li>
+                <li>Toque no ícone de menu <span className="inline-flex items-center justify-center px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">⋮</span> no Chrome</li>
                 <li>Selecione <span className="font-semibold">Adicionar à tela inicial</span> ou <span className="font-semibold">Instalar aplicativo</span></li>
                 <li>Confirme tocando em <span className="font-semibold">Adicionar</span> ou <span className="font-semibold">Instalar</span></li>
               </ol>
