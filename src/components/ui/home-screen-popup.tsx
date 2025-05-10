@@ -26,8 +26,8 @@ export const HomeScreenPopup = () => {
     }
   }, [isMobile]);
 
-  // Detectar o sistema operacional
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  // Detectar o sistema operacional - corrigindo o erro de TypeScript
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   
   return (
     <Dialog open={open} onOpenChange={setOpen}>
