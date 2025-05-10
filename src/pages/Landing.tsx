@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
+import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -25,6 +26,9 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Home Screen Popup */}
+      <HomeScreenPopup />
+      
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-[#1B1F23] via-[#2A2D30] to-[#1B1F23] text-white">
         <div className="container mx-auto px-4 py-16 md:py-24">
