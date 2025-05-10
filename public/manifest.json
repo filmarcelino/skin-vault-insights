@@ -5,8 +5,8 @@
   "description": "Gerencie seu inventário de skins do CS2 com análises poderosas",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1B1F23",
-  "theme_color": "#1B1F23",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -23,4 +23,3 @@
     }
   ]
 }
-
