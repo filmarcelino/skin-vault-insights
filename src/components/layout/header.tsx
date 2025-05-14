@@ -58,7 +58,7 @@ export function Header() {
                   className="hidden sm:flex"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span className="sr-only">Logout</span>
+                  <span className="sr-only">{t("auth.logout")}</span>
                 </Button>
               </>
             ) : (

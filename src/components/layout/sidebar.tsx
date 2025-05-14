@@ -10,7 +10,7 @@ import {
   Plus,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-
+import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -18,45 +18,47 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
+  const { t } = useLanguage();
+  
   const sidebarItems = [
     {
-      title: "Dashboard",
+      title: t("dashboard.title"),
       icon: LayoutDashboard,
       href: "/dashboard",
       variant: "default",
     },
     {
-      title: "Inventário",
+      title: t("inventory.title"),
       icon: Briefcase,
       href: "/inventory",
       variant: "ghost",
     },
     {
-      title: "Buscar",
+      title: t("search.title"),
       icon: Search,
       href: "/search",
       variant: "ghost",
     },
     {
-      title: "Análise",
+      title: t("analytics.title"),
       icon: BarChart3,
       href: "/analytics",
       variant: "ghost",
     },
     {
-      title: "Adicionar Skin",
+      title: t("inventory.add"),
       icon: Plus,
       href: "/add",
       variant: "ghost",
     },
     {
-      title: "Perfil",
+      title: t("profile.title"),
       icon: User,
       href: "/profile",
       variant: "ghost",
     },
     {
-      title: "Configurações",
+      title: t("settings.title"),
       icon: Settings,
       href: "/settings",
       variant: "ghost",
