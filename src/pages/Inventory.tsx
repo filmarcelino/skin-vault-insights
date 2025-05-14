@@ -7,7 +7,7 @@ import { SoldSkinsTable } from "@/components/inventory/SoldSkinsTable";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Grid, List, Ban, PackageOpen } from "lucide-react";
+import { PackageOpen, Ban } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { InventoryFilterBar } from "@/components/dashboard/InventoryFilterBar";
 import { useInventoryFilter } from "@/hooks/useInventoryFilter";

@@ -14,7 +14,8 @@ export const InventoryGrid = ({ items }: InventoryGridProps) => {
     handleEdit, 
     handleDuplicate, 
     handleRemove, 
-    handleSell 
+    handleSell,
+    handleViewDetails
   } = useInventoryActions();
 
   const toggleFavorite = (itemId: string) => {
@@ -39,14 +40,15 @@ export const InventoryGrid = ({ items }: InventoryGridProps) => {
         <SkinCard 
           key={item.inventoryId} 
           item={item}
-          onEdit={handleEdit}
-          onDuplicate={handleDuplicate}
-          onRemove={handleRemove}
+          onEdit={() => handleEdit(item)}
+          onDuplicate={() => handleDuplicate(item)}
+          onRemove={() => handleRemove(item.inventoryId)}
           onSell={handleSell}
           onToggleFavorite={toggleFavorite}
           isFavorite={favorites.includes(item.inventoryId)}
           showMetadata={true}
           className="w-full h-full"
+          onClick={() => handleViewDetails(item)}
         />
       ))}
     </div>

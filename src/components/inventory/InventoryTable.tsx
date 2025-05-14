@@ -15,7 +15,8 @@ export const InventoryTable = ({ items }: InventoryTableProps) => {
     handleEdit, 
     handleDuplicate, 
     handleRemove, 
-    handleSell 
+    handleSell,
+    handleViewDetails
   } = useInventoryActions();
 
   const toggleFavorite = (itemId: string) => {
@@ -40,13 +41,14 @@ export const InventoryTable = ({ items }: InventoryTableProps) => {
         <SkinListItem 
           key={item.inventoryId} 
           item={item}
-          onEdit={handleEdit}
-          onDuplicate={handleDuplicate}
-          onRemove={handleRemove}
+          onEdit={() => handleEdit(item)}
+          onDuplicate={() => handleDuplicate(item)}
+          onRemove={() => handleRemove(item.inventoryId)}
           onSell={handleSell}
           onToggleFavorite={toggleFavorite}
           isFavorite={favorites.includes(item.inventoryId)}
           showMetadata={true}
+          onClick={() => handleViewDetails(item)}
         />
       ))}
     </div>
