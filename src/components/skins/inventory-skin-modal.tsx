@@ -32,12 +32,13 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   const { t } = useLanguage();
   
   // Use item if provided, otherwise use skin, and provide a default if both are null
-  const skinData = (item || skin) ? (item || skin) : 
-    mode === 'add' ? defaultSkin : defaultInventoryItem;
+  const skinData = (item || skin) ? 
+    (item || skin) : 
+    (mode === 'add' ? defaultSkin : defaultInventoryItem);
   
   // Safely check for isInUserInventory with proper type casting
   const isInUserInventory = 'isInUserInventory' in skinData ? 
-    skinData.isInUserInventory === true : false;
+    Boolean(skinData.isInUserInventory) : false;
 
   const handleOpenChange = (newOpen: boolean) => {
     if (onOpenChange) {

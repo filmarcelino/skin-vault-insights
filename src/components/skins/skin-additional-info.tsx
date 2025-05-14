@@ -11,7 +11,10 @@ export const SkinAdditionalInfo = ({ skin, item }: SkinAdditionalInfoProps) => {
   const skinData = item || skin || {};
   
   // Safely access notes with a null check and type guard
-  const notes = skinData && 'notes' in skinData ? skinData.notes : null;
+  const notes = skinData && 'notes' in skinData ? 
+    // Ensure notes is a string for React to render
+    (typeof skinData.notes === 'string' ? skinData.notes : null) 
+    : null;
   
   return (
     <div className="space-y-6">

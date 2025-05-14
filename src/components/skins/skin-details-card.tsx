@@ -144,7 +144,7 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
   
   // Safely get image with fallback
   const skinImage = 'image' in skinData ? skinData.image : undefined;
-  const skinName = 'name' in skinData ? skinData.name : 'Unknown Skin';
+  const skinName = 'name' in skinData ? String(skinData.name) : 'Unknown Skin';
   const skinWeapon = 'weapon' in skinData ? skinData.weapon : undefined;
   
   // Check if the skin has StatTrak
