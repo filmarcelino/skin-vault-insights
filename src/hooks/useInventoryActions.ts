@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -63,6 +62,16 @@ export const useInventoryActions = () => {
 
   const handleAddToInventory = async (skin: Skin): Promise<InventoryItem | null> => {
     try {
+      if (!skin) {
+        console.error("Invalid skin data provided:", skin);
+        toast({
+          title: "Erro ao Adicionar",
+          description: "Dados da skin inválidos.",
+          variant: "destructive"
+        });
+        return null;
+      }
+
       const purchaseInfo = {
         purchasePrice: skin.price || 0,
         marketplace: "Steam Market",
@@ -73,10 +82,12 @@ export const useInventoryActions = () => {
       
       const newItem = await addSkin.mutateAsync({ skin, purchaseInfo });
       
-      toast({
-        title: "Skin Adicionada",
-        description: `${skin.name} foi adicionada ao inventário.`,
-      });
+      if (newItem) {
+        toast({
+          title: "Skin Adicionada",
+          description: `${skin.name || 'Nova skin'} foi adicionada ao inventário.`,
+        });
+      }
       
       invalidateInventory();
       return newItem;
@@ -146,6 +157,13 @@ export const useInventoryActions = () => {
   const invalidateTransactions = () => {
     // As transações geralmente são carregadas na página, então forçamos um reload
     // dos dados ao invalidar o cache
+    try {
+      const queryClient = require('@tanstack/react-query').queryClient;
+      queryClient?.invalidateQueries({ queryKey: ["transactions"] });
+    } catch (error) {
+      console.log("Failed to invalidate transactions cache:", error);
+      // Fallback - we don't need to do anything here as the page will reload on navigation
+    }
   };
 
   return {

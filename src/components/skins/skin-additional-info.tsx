@@ -16,7 +16,7 @@ export const SkinAdditionalInfo = ({ skin, item }: SkinAdditionalInfoProps) => {
       <div className="p-4 rounded-md border border-[#333] bg-[#221F26]/30">
         <h3 className="font-medium mb-2 text-[#8B5CF6]">Additional Information</h3>
         <p className="text-sm text-[#8A898C]">
-          {skinData.notes || "No additional notes for this skin."}
+          {skinData?.notes || "No additional notes for this skin."}
         </p>
       </div>
     </div>

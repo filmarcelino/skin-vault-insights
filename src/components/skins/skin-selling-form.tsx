@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +41,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
 
   // Calcular o lucro ou prejuízo (considerando as diferentes moedas)
   const calculateProfit = (): number => {
-    if (!soldPrice || !skinData.purchasePrice) return 0;
+    if (!soldPrice || !skinData?.purchasePrice) return 0;
     
     // Converter preço de venda para USD para comparação
     const soldPriceInUSD = soldCurrency === "USD" 
@@ -50,20 +49,20 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
       : convertPrice(parseFloat(soldPrice), soldCurrency);
     
     // Converter preço de compra para USD para comparação
-    const purchasePriceInUSD = skinData.currency === "USD" 
+    const purchasePriceInUSD = skinData?.currency === "USD" 
       ? skinData.purchasePrice 
-      : convertPrice(skinData.purchasePrice, skinData.currency || "USD");
+      : convertPrice(skinData.purchasePrice, skinData?.currency || "USD");
     
     return soldPriceInUSD - purchasePriceInUSD;
   };
 
   const profit = calculateProfit();
-  const profitPercentage = skinData.purchasePrice ? (profit / skinData.purchasePrice) * 100 : 0;
+  const profitPercentage = skinData?.purchasePrice ? (profit / skinData.purchasePrice) * 100 : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!soldPrice || !skinData.inventoryId) return;
+    if (!soldPrice || !skinData?.inventoryId) return;
     
     const sellData: SellData = {
       soldDate: soldDate.toISOString(),

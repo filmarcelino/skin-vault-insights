@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   fetchSkins, 
@@ -20,6 +21,7 @@ import { Skin, SkinFilter, InventoryItem, SellData } from "@/types/skin";
 export const INVENTORY_QUERY_KEY = "user-inventory";
 export const SKINS_QUERY_KEY = "skins";
 export const CATEGORIES_QUERY_KEY = "categories";
+export const TRANSACTIONS_QUERY_KEY = "transactions";
 
 export const useSkins = (filters?: SkinFilter) => {
   const result = useQuery({
@@ -75,10 +77,18 @@ export const useInventory = () => {
     queryKey: [INVENTORY_QUERY_KEY],
     queryFn: async () => {
       try {
+        console.log("Fetching inventory data...");
         const inventory = await getUserInventory();
         console.log("Loaded inventory:", inventory);
-        // Garantir que sempre retornamos um array
-        return Array.isArray(inventory) ? inventory : [];
+        // Ensure we always return an array
+        const validInventory = Array.isArray(inventory) ? inventory : [];
+        
+        // Log inventory items with isInUserInventory status
+        validInventory.forEach(item => {
+          console.log(`Item ${item.name || 'Unknown'} isInUserInventory:`, item.isInUserInventory);
+        });
+        
+        return validInventory;
       } catch (error) {
         console.error("Error in useInventory:", error);
         return [];
@@ -87,6 +97,7 @@ export const useInventory = () => {
     retry: 1,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    staleTime: 10000, // 10 seconds
   });
 };
 

@@ -30,8 +30,11 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   const [activeTab, setActiveTab] = useState("details");
   const { t } = useLanguage();
   
-  // Use item if provided, otherwise use skin
-  const skinData = item || skin;
+  // Use item if provided, otherwise use skin, and ensure it's never null or undefined
+  const skinData = item || skin || {};
+  
+  // Add explicit check for isInUserInventory to avoid the null access error
+  const isInUserInventory = skinData && skinData.isInUserInventory === true;
 
   const handleOpenChange = (newOpen: boolean) => {
     if (onOpenChange) {
@@ -56,7 +59,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
             {mode !== 'add' && (
               <TabsTrigger value="additional">{t('skins.additionalInfo')}</TabsTrigger>
             )}
-            {mode !== 'add' && skinData.isInUserInventory && (
+            {mode !== 'add' && isInUserInventory && (
               <TabsTrigger value="sell">{t('skins.sell')}</TabsTrigger>
             )}
           </TabsList>
@@ -69,10 +72,10 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
           </TabsContent>
           {mode !== 'add' && (
             <TabsContent value="additional">
-              <SkinAdditionalInfo item={skinData} skin={skinData} />
+              <SkinAdditionalInfo item={skinData} />
             </TabsContent>
           )}
-          {mode !== 'add' && skinData.isInUserInventory && (
+          {mode !== 'add' && isInUserInventory && (
             <TabsContent value="sell">
               <SkinSellingForm 
                 item={skinData} 

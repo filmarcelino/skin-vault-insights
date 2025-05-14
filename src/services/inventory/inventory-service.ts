@@ -93,15 +93,21 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
     
     console.log("Retrieved inventory data:", data);
     
-    // Map the data to InventoryItem objects and make sure to set isInUserInventory correctly
-    return Array.isArray(data) ? data.map(item => {
+    // Map the data to InventoryItem objects and ensure isInUserInventory is set correctly
+    const mappedItems = Array.isArray(data) ? data.map(item => {
       const mappedItem = mapSupabaseToInventoryItem(item);
-      // Ensure isInUserInventory is set correctly
+      console.log("Mapped item:", mappedItem);
+      
+      // Ensure isInUserInventory is set correctly (default to true if undefined)
       if (mappedItem) {
-        mappedItem.isInUserInventory = item.is_in_user_inventory !== false; // Default to true if undefined
+        mappedItem.isInUserInventory = item.is_in_user_inventory !== false;
+        console.log(`Item ${mappedItem.name} isInUserInventory:`, mappedItem.isInUserInventory);
       }
       return mappedItem;
     }).filter(Boolean) as InventoryItem[] : [];
+    
+    console.log("Final mapped items:", mappedItems);
+    return mappedItems;
   } catch (error) {
     console.error("Error getting inventory:", error);
     return [];
