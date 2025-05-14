@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { InsightsCard } from "@/components/dashboard/insights-card";
 import { InventoryFilterBar } from "@/components/dashboard/InventoryFilterBar";
 import { InventoryItem } from "@/types/skin";
+import { InventoryFilter } from "@/hooks/useInventoryFilter";
 
 interface InventorySectionProps {
   searchQuery: string;
@@ -42,6 +43,46 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
   inventoryStats,
   handleSkinClick,
 }) => {
+  // Create filters array for InventoryFilterBar
+  const filters: InventoryFilter[] = [
+    { id: "search", label: "Search", value: searchQuery },
+    { id: "weapon", label: "Weapon", value: weaponFilter },
+    { id: "rarity", label: "Rarity", value: rarityFilter },
+    { id: "sort", label: "Sort", value: sortMethod }
+  ];
+
+  // Update filter handler
+  const handleFilterChange = (filterId: string, value: string) => {
+    switch(filterId) {
+      case "search":
+        if (onSearchChange && value !== undefined) {
+          const event = { target: { value } } as React.ChangeEvent<HTMLInputElement>;
+          onSearchChange(event);
+        }
+        break;
+      case "weapon":
+        setWeaponFilter(value);
+        break;
+      case "rarity":
+        setRarityFilter(value);
+        break;
+      case "sort":
+        setSortMethod(value);
+        break;
+    }
+  };
+
+  // Clear filters handler
+  const handleClearFilters = () => {
+    if (onSearchChange) {
+      const event = { target: { value: '' } } as React.ChangeEvent<HTMLInputElement>;
+      onSearchChange(event);
+    }
+    setWeaponFilter('all');
+    setRarityFilter('all');
+    setSortMethod('price_desc');
+  };
+
   return (
     <div className="animate-fade-in" style={{ animationDelay: "0.5s" }}>
       <div className="flex flex-wrap items-center justify-between mb-4">
@@ -49,14 +90,9 @@ export const InventorySection: React.FC<InventorySectionProps> = ({
         
         <div className="w-full md:w-auto">
           <InventoryFilterBar 
-            searchQuery={searchQuery}
-            onSearchChange={onSearchChange}
-            weaponFilter={weaponFilter}
-            onWeaponFilterChange={setWeaponFilter}
-            rarityFilter={rarityFilter}
-            onRarityFilterChange={setRarityFilter}
-            sortMethod={sortMethod}
-            onSortMethodChange={setSortMethod}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
           />
         </div>
       </div>

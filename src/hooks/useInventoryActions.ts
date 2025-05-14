@@ -9,7 +9,6 @@ import {
   useInvalidateInventory 
 } from "@/hooks/use-skins";
 import { InventoryItem, Skin, SellData } from "@/types/skin";
-import { supabase } from "@/integrations/supabase/client";
 
 export const useInventoryActions = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -25,17 +24,17 @@ export const useInventoryActions = () => {
   const sellSkin = useSellSkin();
   const invalidateInventory = useInvalidateInventory();
 
-  const onEdit = (item: InventoryItem) => {
+  const handleEdit = (item: InventoryItem) => {
     setSelectedItem(item);
     setIsModalOpen(true);
   };
 
-  const onDuplicate = (item: InventoryItem) => {
+  const handleDuplicate = (item: InventoryItem) => {
     setSelectedItemForDuplicate(item);
     setDuplicateModalOpen(true);
   };
 
-  const onRemove = async (inventoryId: string) => {
+  const handleRemove = async (inventoryId: string) => {
     try {
       await removeSkin.mutateAsync(inventoryId);
       toast({
@@ -54,30 +53,9 @@ export const useInventoryActions = () => {
     }
   };
 
-  const onSell = (itemId: string, sellData: SellData) => {
-    sellSkin.mutate({ itemId, sellData: sellData });
-  };
-
-  const handleUpdate = async (item: InventoryItem) => {
-    try {
-      await updateSkin.mutateAsync(item);
-      toast({
-        title: "Skin Atualizada",
-        description: "Informações da skin atualizadas com sucesso.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao Atualizar",
-        description: "Falha ao atualizar as informações da skin.",
-      });
-    } finally {
-      invalidateInventory();
-    }
-  };
-
   const handleSell = (itemId: string, sellData: SellData) => {
-    onSell(itemId, sellData);
-    onClose();
+    sellSkin.mutate({ itemId, sellData: sellData });
+    handleClose();
     invalidateInventory();
     // Invalidamos as transações após uma venda para manter os dados atualizados
     invalidateTransactions();
@@ -113,7 +91,7 @@ export const useInventoryActions = () => {
     }
   };
 
-  const handleDuplicate = async (count: number) => {
+  const handleDuplicateMultiple = async (count: number) => {
     if (!selectedItemForDuplicate) return;
     
     try {
@@ -139,12 +117,12 @@ export const useInventoryActions = () => {
     }
   };
 
-  const onClose = () => {
+  const handleClose = () => {
     setIsModalOpen(false);
     setSelectedItem(null);
   };
 
-  const onViewDetails = (item: InventoryItem) => {
+  const handleViewDetails = (item: InventoryItem) => {
     setSelectedItem(item);
     setIsModalOpen(true);
   };
@@ -164,15 +142,13 @@ export const useInventoryActions = () => {
     setIsModalOpen,
     setDuplicateModalOpen,
     setDuplicateCount,
-    onEdit,
-    onDuplicate,
-    onRemove,
-    onSell,
-    handleUpdate,
+    handleEdit,
+    handleDuplicate,
+    handleRemove,
     handleSell,
     handleAddToInventory,
-    handleDuplicate,
-    onClose,
-    onViewDetails,
+    handleDuplicateMultiple,
+    handleClose,
+    handleViewDetails,
   };
 };

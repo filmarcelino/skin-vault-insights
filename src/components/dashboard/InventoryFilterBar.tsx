@@ -13,7 +13,7 @@ import { X } from "lucide-react";
 import { InventoryFilter } from "@/hooks/useInventoryFilter";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-interface InventoryFilterBarProps {
+export interface InventoryFilterBarProps {
   filters: InventoryFilter[];
   onFilterChange: (filterId: string, value: string) => void;
   onClearFilters: () => void;
@@ -27,11 +27,11 @@ export const InventoryFilterBar = ({
   const { weaponTypes, rarityTypes } = useFilteredCategories();
   const { t } = useLanguage();
   
-  // Find filters by ID
-  const searchFilter = filters.find(f => f.id === "search")?.value || "";
-  const weaponFilter = filters.find(f => f.id === "weapon")?.value || "all";
-  const rarityFilter = filters.find(f => f.id === "rarity")?.value || "all";
-  const sortMethod = filters.find(f => f.id === "sort")?.value || "price_desc";
+  // Find filters by ID, with fallbacks to prevent undefined errors
+  const searchFilter = filters?.find(f => f.id === "search")?.value || "";
+  const weaponFilter = filters?.find(f => f.id === "weapon")?.value || "all";
+  const rarityFilter = filters?.find(f => f.id === "rarity")?.value || "all";
+  const sortMethod = filters?.find(f => f.id === "sort")?.value || "price_desc";
   
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -80,7 +80,7 @@ export const InventoryFilterBar = ({
           </SelectContent>
         </Select>
         
-        {filters.some(f => f.value && f.value !== "all") && (
+        {filters && filters.some(f => f.value && f.value !== "all") && (
           <Button variant="outline" size="sm" onClick={onClearFilters} className="gap-1">
             <X className="h-4 w-4" />
             {t('filters.clear')}

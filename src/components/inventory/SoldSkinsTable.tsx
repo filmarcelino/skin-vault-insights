@@ -7,8 +7,9 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { InventoryItem } from "@/types/skin";
 
-interface SoldSkinsTableProps {
+export interface SoldSkinsTableProps {
   items: any[];
   isLoading?: boolean;
   onEdit?: (item: any) => void;
@@ -20,11 +21,11 @@ export const SoldSkinsTable = ({
   onEdit 
 }: SoldSkinsTableProps) => {
   const { formatPrice } = useCurrency();
-  const { handleEdit } = useInventoryActions();
+  const { handleEdit: defaultHandleEdit } = useInventoryActions();
   const { t } = useLanguage();
   
   // Use provided onEdit or fall back to default handleEdit from hook
-  const editHandler = onEdit || handleEdit;
+  const editHandler = onEdit || defaultHandleEdit;
 
   // Função para calcular o lucro percentual
   const calculateProfitPercentage = (soldPrice: number, purchasePrice: number) => {

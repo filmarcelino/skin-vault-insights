@@ -11,7 +11,12 @@ interface InventoryTableProps {
 export const InventoryTable = ({ items }: InventoryTableProps) => {
   // Estado para controlar itens favoritos
   const [favorites, setFavorites] = useState<string[]>([]);
-  const { handleEdit, handleDuplicate, handleRemove, handleSell } = useInventoryActions();
+  const { 
+    handleEdit, 
+    handleDuplicate, 
+    handleRemove, 
+    handleSell 
+  } = useInventoryActions();
 
   const toggleFavorite = (itemId: string) => {
     setFavorites(prev => 

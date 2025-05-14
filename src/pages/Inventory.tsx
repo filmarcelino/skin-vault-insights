@@ -15,6 +15,7 @@ import { useViewMode } from "@/hooks/useViewMode";
 import { useRealTimeInventory } from "@/hooks/useRealTimeInventory";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import { Link } from "react-router-dom";
 
 const Inventory = () => {
   const { viewMode, setViewMode, toggleViewMode } = useViewMode();
@@ -56,8 +57,9 @@ const Inventory = () => {
         </div>
       </div>
 
+      {/* Ensure filters prop is never undefined */}
       <InventoryFilterBar 
-        filters={inventoryFilters}
+        filters={inventoryFilters || []}
         onFilterChange={updateFilter}
         onClearFilters={clearFilters}
       />
@@ -125,8 +127,8 @@ const Inventory = () => {
                         {t('filters.clearAll')}
                       </Button>
                     ) : (
-                      <Button variant="default" onClick={() => window.location.href = "/search"}>
-                        {t('inventory.browseItems')}
+                      <Button variant="default" asChild>
+                        <Link to="/search">{t('inventory.browseItems')}</Link>
                       </Button>
                     )}
                   </CardContent>

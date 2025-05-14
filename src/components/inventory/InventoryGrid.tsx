@@ -10,7 +10,12 @@ interface InventoryGridProps {
 
 export const InventoryGrid = ({ items }: InventoryGridProps) => {
   const [favorites, setFavorites] = useState<string[]>([]);
-  const { handleEdit, handleDuplicate, handleRemove, handleSell } = useInventoryActions();
+  const { 
+    handleEdit, 
+    handleDuplicate, 
+    handleRemove, 
+    handleSell 
+  } = useInventoryActions();
 
   const toggleFavorite = (itemId: string) => {
     setFavorites(prev => 

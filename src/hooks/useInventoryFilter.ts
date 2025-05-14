@@ -52,11 +52,16 @@ export const useInventoryFilter = (initialInventory: InventoryItem[] = []) => {
 
   // Function to filter and sort the inventory
   const filterInventoryItems = (items: InventoryItem[]) => {
+    // Ensure we have items before filtering
+    if (!items || items.length === 0) {
+      return [];
+    }
+    
     // First filter
     let filtered = items.filter(item => {
       const matchesSearch = searchQuery.length < 3 || 
-        item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        item.weapon?.toLowerCase().includes(searchQuery.toLowerCase());
+        (item.name?.toLowerCase().includes(searchQuery.toLowerCase())) || 
+        (item.weapon?.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesWeapon = weaponFilter === "all" || item.weapon === weaponFilter;
       const matchesRarity = rarityFilter === "all" || item.rarity === rarityFilter;
@@ -72,13 +77,13 @@ export const useInventoryFilter = (initialInventory: InventoryItem[] = []) => {
         case 'price_asc':
           return (a.currentPrice || a.price || 0) - (b.currentPrice || b.price || 0);
         case 'name_asc':
-          return a.name.localeCompare(b.name);
+          return (a.name || '').localeCompare(b.name || '');
         case 'name_desc':
-          return b.name.localeCompare(a.name);
+          return (b.name || '').localeCompare(a.name || '');
         case 'date_desc':
-          return new Date(b.acquiredDate).getTime() - new Date(a.acquiredDate).getTime();
+          return new Date(b.acquiredDate || 0).getTime() - new Date(a.acquiredDate || 0).getTime();
         case 'date_asc':
-          return new Date(a.acquiredDate).getTime() - new Date(b.acquiredDate).getTime();
+          return new Date(a.acquiredDate || 0).getTime() - new Date(b.acquiredDate || 0).getTime();
         case 'profit_desc':
           const profitA = a.currentPrice && a.purchasePrice ? (a.currentPrice - a.purchasePrice) / a.purchasePrice * 100 : 0;
           const profitB = b.currentPrice && b.purchasePrice ? (b.currentPrice - b.purchasePrice) / b.purchasePrice * 100 : 0;
@@ -95,7 +100,7 @@ export const useInventoryFilter = (initialInventory: InventoryItem[] = []) => {
 
   // Effect to update filtered inventory when filters change or inventory changes
   useEffect(() => {
-    if (initialInventory.length > 0) {
+    if (initialInventory && initialInventory.length > 0) {
       const filtered = filterInventoryItems(initialInventory);
       setFilteredInventory(filtered);
     } else {
