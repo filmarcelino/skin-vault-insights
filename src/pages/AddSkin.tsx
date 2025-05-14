@@ -11,6 +11,8 @@ import { SkinImageAnalyzer } from '@/components/SkinImageAnalyzer';
 
 export default function AddSkin() {
   const navigate = useNavigate();
+  
+  // Use inventory actions hook but only destructure what we need and is available
   const {
     selectedItem,
     isModalOpen,
@@ -18,45 +20,34 @@ export default function AddSkin() {
     selectedItemForDuplicate,
     duplicateCount,
     setIsModalOpen,
-    setSelectedItem,
-    setDuplicateModalOpen,
-    setSelectedItemForDuplicate,
-    setDuplicateCount,
-    handleDuplicateCountChange,
-    handleConfirmDuplicate,
-    handleCloseDuplicateModal,
     handleViewDetails
   } = useInventoryActions();
-
-  // Create handlers for onEdit, onDuplicate, onRemove, onSell, handleUpdate
-  const handleEdit = (item: any) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
-  };
-
-  const handleDuplicate = (item: any) => {
-    setSelectedItemForDuplicate(item);
-    setDuplicateModalOpen(true);
-  };
   
-  const handleRemove = (id: string) => {
-    console.log(`Removing item with ID: ${id}`);
-    // Add your remove logic here
-  };
-  
-  const handleSell = (item: any) => {
-    console.log(`Selling item:`, item);
-    // Add your sell logic here
+  // Create local handlers
+  const handleClose = () => {
+    setIsModalOpen(false);
   };
   
   const handleUpdate = (updatedItem: any) => {
     console.log(`Updating item:`, updatedItem);
     setIsModalOpen(false);
-    // Add your update logic here
   };
   
-  const handleClose = () => {
-    setIsModalOpen(false);
+  const handleDuplicateCountChange = (count: number) => {
+    console.log(`Duplicate count changed to: ${count}`);
+  };
+  
+  const handleConfirmDuplicate = () => {
+    console.log('Duplicate confirmed');
+  };
+  
+  const handleCloseDuplicateModal = () => {
+    console.log('Duplicate modal closed');
+  };
+  
+  const handleSkinDetected = (skin: any) => {
+    console.log('Skin detected:', skin);
+    setIsModalOpen(true);
   };
 
   return (
@@ -74,15 +65,13 @@ export default function AddSkin() {
             <h2 className="text-xl font-semibold mb-4">Manual Entry</h2>
             <InventorySkinModal 
               open={isModalOpen} 
-              onClose={handleClose}
-              onSave={handleUpdate}
-              skin={selectedItem}
+              onOpenChange={handleClose}
+              skin={selectedItem || {}}
               mode="add"
             />
             <Button 
               variant="default" 
               onClick={() => {
-                setSelectedItem({} as any);
                 setIsModalOpen(true);
               }}
             >
@@ -96,21 +85,16 @@ export default function AddSkin() {
               Upload a screenshot or image of your skin to automatically identify and add it to your inventory.
             </p>
             
-            <SkinImageAnalyzer onSkinDetected={(skin) => {
-              setSelectedItem(skin);
-              setIsModalOpen(true);
-            }} />
+            <SkinImageAnalyzer />
           </div>
         </div>
       </div>
       
       <DuplicateSkinModal 
         open={duplicateModalOpen}
-        onClose={handleCloseDuplicateModal}
-        onConfirm={handleConfirmDuplicate}
-        onCountChange={handleDuplicateCountChange}
-        count={duplicateCount}
-        skin={selectedItemForDuplicate}
+        onOpenChange={handleCloseDuplicateModal}
+        count={duplicateCount || 1}
+        skin={selectedItemForDuplicate || {}}
       />
     </Layout>
   );

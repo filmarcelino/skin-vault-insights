@@ -26,8 +26,7 @@ export function Header() {
       <div className="container flex h-14 items-center">
         <div className="flex flex-1 items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <Logo className="h-6 w-6" />
-            <span className="inline-block font-bold">CS Skin Vault</span>
+            <Logo variant="image-and-text" size="md" />
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSelector />

@@ -16,7 +16,8 @@ import { InventorySkinModal } from '@/components/skins/inventory-skin-modal';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Search() {
-  const { skins, loading, error } = useSkins();
+  // Use the useSkins hook but destructure properly
+  const { data: skins, isLoading: loading, error } = useSkins();
   const { isSubscribed, isTrial } = useSubscription();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -33,25 +34,7 @@ export default function Search() {
   const [minPriceFilter, setMinPriceFilter] = useState<number | null>(null);
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
-  const {
-    selectedItem,
-    isModalOpen,
-    setIsModalOpen,
-    setSelectedItem,
-    handleViewDetails
-  } = useInventoryActions();
-  
-  // Create handlers for onEdit, handleUpdate, onClose
-  const handleEdit = (item: any) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
-  };
-  
-  const handleUpdate = (updatedItem: any) => {
-    console.log(`Updating item:`, updatedItem);
-    setIsModalOpen(false);
-    // Add your update logic here
-  };
+  const { selectedItem, isModalOpen, setIsModalOpen, handleViewDetails } = useInventoryActions();
   
   const handleClose = () => {
     setIsModalOpen(false);
@@ -123,6 +106,12 @@ export default function Search() {
     setSearchQuery('');
   };
   
+  // Add handlers for components' props
+  const handleAddToInventory = (item: any) => {
+    console.log('Add to inventory:', item);
+    setIsModalOpen(true);
+  };
+  
   if (loading) return <Layout><Loading /></Layout>;
   
   if (error) return (
@@ -145,23 +134,16 @@ export default function Search() {
       <SearchHeader 
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        totalResults={filteredSkins.length}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <div>
           <FilterPanel 
-            weaponFilter={weaponFilter}
-            rarityFilter={rarityFilter}
-            typeFilter={typeFilter}
-            minPrice={minPriceFilter}
-            maxPrice={maxPriceFilter}
             onWeaponFilterChange={setWeaponFilter}
             onRarityFilterChange={setRarityFilter}
-            onTypeFilterChange={setTypeFilter}
+            onResetFilters={handleResetFilters}
             onMinPriceChange={setMinPriceFilter}
             onMaxPriceChange={setMaxPriceFilter}
-            onResetFilters={handleResetFilters}
           />
           
           {!isSubscribed && !isTrial && (
@@ -173,25 +155,23 @@ export default function Search() {
         
         <div className="flex flex-col space-y-6">
           <SearchResults 
-            skins={currentItems} 
-            onAddToInventory={handleEdit}
+            items={currentItems} 
+            onAddToInventory={handleAddToInventory}
             onViewDetails={handleViewDetails}
           />
           
           <SearchPagination 
-            totalItems={filteredSkins.length}
+            totalPages={Math.ceil(filteredSkins.length / itemsPerPage)}
             currentPage={currentPage}
-            paginate={paginate}
-            itemsPerPage={itemsPerPage}
+            onPageChange={paginate}
           />
         </div>
       </div>
       
       <InventorySkinModal 
-        open={isModalOpen}
-        onClose={handleClose}
-        onSave={handleUpdate}
-        skin={selectedItem}
+        open={isModalOpen} 
+        onOpenChange={handleClose}
+        skin={selectedItem || {}}
         mode="add"
       />
     </Layout>

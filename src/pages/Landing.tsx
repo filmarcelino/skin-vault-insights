@@ -1,8 +1,10 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/sonner";
 import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
+import { Logo } from "@/components/ui/logo";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -27,6 +29,21 @@ const Landing = () => {
     <div className="min-h-screen flex flex-col">
       {/* Home Screen Popup */}
       <HomeScreenPopup />
+      
+      {/* Header with Logo */}
+      <header className="bg-[#1B1F23] border-b border-[#2A2D30] p-4">
+        <div className="container mx-auto flex items-center justify-between">
+          <Link to="/">
+            <Logo variant="image-and-text" size="lg" />
+          </Link>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/auth')}
+          >
+            Login
+          </Button>
+        </div>
+      </header>
       
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-[#1B1F23] via-[#2A2D30] to-[#1B1F23] text-white">

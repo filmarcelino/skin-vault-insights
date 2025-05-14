@@ -7,15 +7,13 @@ interface SearchHeaderProps {
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   currentTab?: "inventory" | "allSkins";
   onTabChange?: (value: string) => void;
-  totalResults?: number;
 }
 
 export const SearchHeader = ({
   searchQuery,
   onSearchChange,
   currentTab = "allSkins",
-  onTabChange,
-  totalResults
+  onTabChange
 }: SearchHeaderProps) => {
   return (
     <div className="mb-6 flex flex-col sm:flex-row gap-4">
@@ -33,11 +31,6 @@ export const SearchHeader = ({
               <TabsTrigger value="allSkins">Todas as Skins</TabsTrigger>
             </TabsList>
           </Tabs>
-        )}
-        {totalResults !== undefined && (
-          <div className="text-sm text-muted-foreground">
-            {totalResults} {totalResults === 1 ? "result" : "results"}
-          </div>
         )}
       </div>
     </div>
