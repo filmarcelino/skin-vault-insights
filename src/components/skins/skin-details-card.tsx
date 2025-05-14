@@ -16,15 +16,15 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
   // Use item if it exists, otherwise use skin
   const skinData = item || skin || {};
   
-  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(skinData.tradeLockUntil);
-  const acquiredDate = formatDate(skinData.acquiredDate);
+  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(skinData.tradeLockUntil || '');
+  const acquiredDate = formatDate(skinData.acquiredDate || '');
   const { formatPrice, formatWithCurrency } = useCurrency();
   
   const originalCurrency = skinData.currency || "USD";
   const purchaseCurrency = CURRENCIES.find(c => c.code === originalCurrency) || CURRENCIES[0];
   
   const getBackgroundStyle = () => {
-    if (!item.rarity) return {};
+    if (!skinData.rarity) return {};
     
     const metallicColors: Record<string, { main: string, dark: string, accent: string }> = {
       'Consumer Grade': { 
@@ -114,10 +114,10 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
       },
     };
 
-    const colorSet = metallicColors[item.rarity] || { 
-      main: getRarityColor(item.rarity), 
-      dark: getRarityColor(item.rarity),
-      accent: getRarityColor(item.rarity)
+    const colorSet = metallicColors[skinData.rarity] || { 
+      main: getRarityColor(skinData.rarity), 
+      dark: getRarityColor(skinData.rarity),
+      accent: getRarityColor(skinData.rarity)
     };
     
     return {
@@ -140,7 +140,7 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
             <div className="absolute inset-0 bg-black/20 rounded-lg transform -rotate-3 blur-md"></div>
             <img 
               src={skinData.image} 
-              alt={skinData.name} 
+              alt={skinData.name || 'Skin'} 
               className="max-h-[20rem] max-w-full object-contain transform transition-all hover:scale-105 relative z-10"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
@@ -163,7 +163,7 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
             {skinData.isStatTrak && (
               <span className="text-[#CF6A32] font-bold">StatTrak™ </span>
             )}
-            {skinData.weapon ? `${skinData.weapon} | ${skinData.name}` : skinData.name}
+            {skinData.weapon ? `${skinData.weapon} | ${skinData.name}` : (skinData.name || 'Unknown Skin')}
           </h3>
         </div>
         

@@ -69,7 +69,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
           </TabsContent>
           {mode !== 'add' && (
             <TabsContent value="additional">
-              <SkinAdditionalInfo item={skinData} />
+              <SkinAdditionalInfo item={skinData} skin={skinData} />
             </TabsContent>
           )}
           {mode !== 'add' && skinData.isInUserInventory && (

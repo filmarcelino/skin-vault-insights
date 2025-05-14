@@ -101,7 +101,7 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
         mappedItem.isInUserInventory = item.is_in_user_inventory !== false; // Default to true if undefined
       }
       return mappedItem;
-    }).filter(Boolean) : [];
+    }).filter(Boolean) as InventoryItem[] : [];
   } catch (error) {
     console.error("Error getting inventory:", error);
     return [];

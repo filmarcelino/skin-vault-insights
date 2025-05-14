@@ -2,13 +2,13 @@
 import { InventoryItem } from "@/types/skin";
 
 interface SkinAdditionalInfoProps {
-  skin: InventoryItem;
+  skin?: InventoryItem;
   item?: InventoryItem; // Adding item as optional to maintain backward compatibility
 }
 
 export const SkinAdditionalInfo = ({ skin, item }: SkinAdditionalInfoProps) => {
   // Use item if it exists, otherwise use skin
-  const skinData = item || skin;
+  const skinData = item || skin || {};
   
   return (
     <div className="space-y-6">
