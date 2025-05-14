@@ -6,15 +6,21 @@ import { getRarityColor, getRarityColorClass, getTradeLockStatus, formatDate } f
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 
 interface SkinDetailsCardProps {
-  item: InventoryItem;
+  skin?: InventoryItem;
+  item?: InventoryItem;
+  mode?: 'add' | 'view' | 'edit'; 
+  onAddToInventory?: (skin: any) => Promise<InventoryItem | null>;
 }
 
-export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
-  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(item.tradeLockUntil);
-  const acquiredDate = formatDate(item.acquiredDate);
+export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDetailsCardProps) => {
+  // Use item if it exists, otherwise use skin
+  const skinData = item || skin || {};
+  
+  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(skinData.tradeLockUntil);
+  const acquiredDate = formatDate(skinData.acquiredDate);
   const { formatPrice, formatWithCurrency } = useCurrency();
   
-  const originalCurrency = item.currency || "USD";
+  const originalCurrency = skinData.currency || "USD";
   const purchaseCurrency = CURRENCIES.find(c => c.code === originalCurrency) || CURRENCIES[0];
   
   const getBackgroundStyle = () => {
@@ -129,12 +135,12 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/50 opacity-80 pointer-events-none rounded-xl"></div>
       
       <div className="w-full md:w-1/3 flex items-center justify-center relative z-10">
-        {item.image ? (
+        {skinData.image ? (
           <div className="relative p-4">
             <div className="absolute inset-0 bg-black/20 rounded-lg transform -rotate-3 blur-md"></div>
             <img 
-              src={item.image} 
-              alt={item.name} 
+              src={skinData.image} 
+              alt={skinData.name} 
               className="max-h-[20rem] max-w-full object-contain transform transition-all hover:scale-105 relative z-10"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
@@ -154,10 +160,10 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
       <div className="w-full md:w-2/3 flex flex-col justify-center relative z-10">
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-xl font-bold text-white">
-            {item.isStatTrak && (
+            {skinData.isStatTrak && (
               <span className="text-[#CF6A32] font-bold">StatTrak™ </span>
             )}
-            {item.weapon ? `${item.weapon} | ${item.name}` : item.name}
+            {skinData.weapon ? `${skinData.weapon} | ${skinData.name}` : skinData.name}
           </h3>
         </div>
         
@@ -178,24 +184,24 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-white/90">
-            {item.rarity && (
+            {skinData.rarity && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <div className="min-w-3 h-3 rounded-full mr-2" 
-                  style={{ backgroundColor: getRarityColor(item.rarity) }}></div>
-                <span className="font-medium mr-1">Rarity:</span> <span className="break-words">{item.rarity}</span>
+                  style={{ backgroundColor: getRarityColor(skinData.rarity) }}></div>
+                <span className="font-medium mr-1">Rarity:</span> <span className="break-words">{skinData.rarity}</span>
               </div>
             )}
             
-            {item.wear && (
+            {skinData.wear && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <Tag className="min-w-3 h-3 mr-2 shrink-0" />
-                <span className="font-medium mr-1">Wear:</span> <span className="break-words">{item.wear}</span>
+                <span className="font-medium mr-1">Wear:</span> <span className="break-words">{skinData.wear}</span>
               </div>
             )}
             
-            {item.floatValue !== undefined && (
+            {skinData.floatValue !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <span className="font-medium mr-1">Float:</span> <span className="break-words">{item.floatValue.toFixed(8)}</span>
+                <span className="font-medium mr-1">Float:</span> <span className="break-words">{skinData.floatValue.toFixed(8)}</span>
               </div>
             )}
             
@@ -204,28 +210,28 @@ export const SkinDetailsCard = ({ item }: SkinDetailsCardProps) => {
               <span className="font-medium mr-1">Acquired:</span> <span className="break-words">{acquiredDate}</span>
             </div>
             
-            {item.purchasePrice !== undefined && (
+            {skinData.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <DollarSign className="min-w-3 h-3 mr-2 shrink-0" />
-                <span className="font-medium mr-1">Purchase:</span> <span className="break-words">{purchaseCurrency.symbol}{item.purchasePrice.toFixed(2)} {purchaseCurrency.code}</span>
+                <span className="font-medium mr-1">Purchase:</span> <span className="break-words">{purchaseCurrency.symbol}{skinData.purchasePrice.toFixed(2)} {purchaseCurrency.code}</span>
               </div>
             )}
             
-            {item.currentPrice !== undefined && item.purchasePrice !== undefined && (
+            {skinData.currentPrice !== undefined && skinData.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <TrendingUp className="min-w-3 h-3 mr-2 shrink-0" />
-                <span className="font-medium mr-1">Current:</span> <span className="break-words">{formatPrice(item.currentPrice)}
-                {item.currentPrice > item.purchasePrice && (
+                <span className="font-medium mr-1">Current:</span> <span className="break-words">{formatPrice(skinData.currentPrice)}
+                {skinData.currentPrice > skinData.purchasePrice && (
                   <span className="ml-1 text-green-400 text-xs">
-                    (+{formatPrice(item.currentPrice - item.purchasePrice)})
+                    (+{formatPrice(skinData.currentPrice - skinData.purchasePrice)})
                   </span>
                 )}</span>
               </div>
             )}
             
-            {item.marketplace && (
+            {skinData.marketplace && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <span className="font-medium mr-1">Source:</span> <span className="break-words">{item.marketplace}</span>
+                <span className="font-medium mr-1">Source:</span> <span className="break-words">{skinData.marketplace}</span>
               </div>
             )}
           </div>

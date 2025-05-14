@@ -62,21 +62,22 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
           </TabsList>
           <TabsContent value="details">
             <SkinDetailsCard 
-              skin={skinData} 
+              item={skinData} 
               mode={mode} 
               onAddToInventory={onAddToInventory} 
             />
           </TabsContent>
           {mode !== 'add' && (
             <TabsContent value="additional">
-              <SkinAdditionalInfo skin={skinData} />
+              <SkinAdditionalInfo item={skinData} />
             </TabsContent>
           )}
           {mode !== 'add' && skinData.isInUserInventory && (
             <TabsContent value="sell">
               <SkinSellingForm 
-                skin={skinData} 
+                item={skinData} 
                 onSellSkin={onSellSkin} 
+                onCancel={() => setActiveTab("details")}
               />
             </TabsContent>
           )}

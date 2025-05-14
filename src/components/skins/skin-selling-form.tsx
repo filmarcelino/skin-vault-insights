@@ -12,9 +12,10 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 
 interface SkinSellingFormProps {
-  item: InventoryItem;
-  onSell: (itemId: string, sellData: SellData) => void;
-  onCancel: () => void;
+  item?: InventoryItem;
+  skin?: InventoryItem;
+  onSellSkin?: (itemId: string, sellData: SellData) => void;
+  onCancel?: () => void;
 }
 
 const MARKETPLACE_OPTIONS = [
@@ -26,20 +27,22 @@ const MARKETPLACE_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
-export function SkinSellingForm({ item, onSell, onCancel }: SkinSellingFormProps) {
+export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = () => {} }: SkinSellingFormProps) {
+  // Use item if it exists, otherwise use skin
+  const skinData = item || skin || {};
   const { currency, formatPrice, convertPrice } = useCurrency();
   
   // Estado para o formulário
   const [soldDate, setSoldDate] = useState<Date>(new Date());
   const [soldPrice, setSoldPrice] = useState<string>("");
-  const [soldCurrency, setSoldCurrency] = useState<string>(currency.code); // Agora armazenamos a moeda de venda
+  const [soldCurrency, setSoldCurrency] = useState<string>(currency.code);
   const [soldMarketplace, setSoldMarketplace] = useState<string>("steam");
   const [soldFeePercentage, setSoldFeePercentage] = useState<string>("13");
   const [soldNotes, setSoldNotes] = useState<string>("");
 
   // Calcular o lucro ou prejuízo (considerando as diferentes moedas)
   const calculateProfit = (): number => {
-    if (!soldPrice || !item.purchasePrice) return 0;
+    if (!soldPrice || !skinData.purchasePrice) return 0;
     
     // Converter preço de venda para USD para comparação
     const soldPriceInUSD = soldCurrency === "USD" 
@@ -47,20 +50,20 @@ export function SkinSellingForm({ item, onSell, onCancel }: SkinSellingFormProps
       : convertPrice(parseFloat(soldPrice), soldCurrency);
     
     // Converter preço de compra para USD para comparação
-    const purchasePriceInUSD = item.currency === "USD" 
-      ? item.purchasePrice 
-      : convertPrice(item.purchasePrice, item.currency || "USD");
+    const purchasePriceInUSD = skinData.currency === "USD" 
+      ? skinData.purchasePrice 
+      : convertPrice(skinData.purchasePrice, skinData.currency || "USD");
     
     return soldPriceInUSD - purchasePriceInUSD;
   };
 
   const profit = calculateProfit();
-  const profitPercentage = item.purchasePrice ? (profit / item.purchasePrice) * 100 : 0;
+  const profitPercentage = skinData.purchasePrice ? (profit / skinData.purchasePrice) * 100 : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!soldPrice || !item.inventoryId) return;
+    if (!soldPrice || !skinData.inventoryId) return;
     
     const sellData: SellData = {
       soldDate: soldDate.toISOString(),
@@ -69,10 +72,10 @@ export function SkinSellingForm({ item, onSell, onCancel }: SkinSellingFormProps
       soldFeePercentage: parseFloat(soldFeePercentage || "0"),
       soldNotes,
       profit,
-      soldCurrency // Incluindo moeda na venda
+      soldCurrency
     };
     
-    onSell(item.inventoryId, sellData);
+    onSellSkin(skinData.inventoryId, sellData);
   };
 
   return (
