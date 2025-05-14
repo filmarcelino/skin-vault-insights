@@ -8,76 +8,84 @@ import {
   SelectItem 
 } from "@/components/ui/select";
 import { useFilteredCategories } from "@/hooks/useCategories";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import { InventoryFilter } from "@/hooks/useInventoryFilter";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface InventoryFilterBarProps {
-  searchQuery: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  weaponFilter: string;
-  onWeaponFilterChange: (value: string) => void;
-  rarityFilter: string;
-  onRarityFilterChange: (value: string) => void;
-  sortMethod: string;
-  onSortMethodChange: (value: string) => void;
+  filters: InventoryFilter[];
+  onFilterChange: (filterId: string, value: string) => void;
+  onClearFilters: () => void;
 }
 
 export const InventoryFilterBar = ({
-  searchQuery,
-  onSearchChange,
-  weaponFilter,
-  onWeaponFilterChange,
-  rarityFilter,
-  onRarityFilterChange,
-  sortMethod,
-  onSortMethodChange
+  filters,
+  onFilterChange,
+  onClearFilters
 }: InventoryFilterBarProps) => {
   const { weaponTypes, rarityTypes } = useFilteredCategories();
+  const { t } = useLanguage();
+  
+  // Find filters by ID
+  const searchFilter = filters.find(f => f.id === "search")?.value || "";
+  const weaponFilter = filters.find(f => f.id === "weapon")?.value || "all";
+  const rarityFilter = filters.find(f => f.id === "rarity")?.value || "all";
+  const sortMethod = filters.find(f => f.id === "sort")?.value || "price_desc";
   
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-4">
       <Search 
-        placeholder="Buscar skin..." 
-        value={searchQuery}
-        onChange={onSearchChange}
+        placeholder={t('inventory.searchPlaceholder')}
+        value={searchFilter}
+        onChange={(e) => onFilterChange("search", e.target.value)}
         className="flex-1"
       />
       <div className="flex flex-wrap gap-2">
-        <Select value={weaponFilter} onValueChange={onWeaponFilterChange}>
+        <Select value={weaponFilter} onValueChange={(value) => onFilterChange("weapon", value)}>
           <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Tipo de Arma" />
+            <SelectValue placeholder={t('filters.weaponType')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas Armas</SelectItem>
+            <SelectItem value="all">{t('filters.allWeapons')}</SelectItem>
             {weaponTypes.map(weapon => (
               <SelectItem key={weapon} value={weapon}>{weapon}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         
-        <Select value={rarityFilter} onValueChange={onRarityFilterChange}>
+        <Select value={rarityFilter} onValueChange={(value) => onFilterChange("rarity", value)}>
           <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Raridade" />
+            <SelectValue placeholder={t('filters.rarity')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas Raridades</SelectItem>
+            <SelectItem value="all">{t('filters.allRarities')}</SelectItem>
             {rarityTypes.map(rarity => (
               <SelectItem key={rarity} value={rarity}>{rarity}</SelectItem>
             ))}
           </SelectContent>
         </Select>
         
-        <Select value={sortMethod} onValueChange={onSortMethodChange}>
+        <Select value={sortMethod} onValueChange={(value) => onFilterChange("sort", value)}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Ordenar por" />
+            <SelectValue placeholder={t('filters.sortBy')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="price_desc">Maior Valor</SelectItem>
-            <SelectItem value="price_asc">Menor Valor</SelectItem>
-            <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
-            <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
-            <SelectItem value="date_desc">Mais Recente</SelectItem>
-            <SelectItem value="date_asc">Mais Antigo</SelectItem>
+            <SelectItem value="price_desc">{t('filters.highestValue')}</SelectItem>
+            <SelectItem value="price_asc">{t('filters.lowestValue')}</SelectItem>
+            <SelectItem value="name_asc">{t('filters.nameAZ')}</SelectItem>
+            <SelectItem value="name_desc">{t('filters.nameZA')}</SelectItem>
+            <SelectItem value="date_desc">{t('filters.newest')}</SelectItem>
+            <SelectItem value="date_asc">{t('filters.oldest')}</SelectItem>
           </SelectContent>
         </Select>
+        
+        {filters.some(f => f.value && f.value !== "all") && (
+          <Button variant="outline" size="sm" onClick={onClearFilters} className="gap-1">
+            <X className="h-4 w-4" />
+            {t('filters.clear')}
+          </Button>
+        )}
       </div>
     </div>
   );

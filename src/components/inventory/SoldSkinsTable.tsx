@@ -5,15 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useInventoryActions } from "@/hooks/useInventoryActions";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SoldSkinsTableProps {
   items: any[];
-  isLoading: boolean;
-  onEdit: (item: any) => void;
+  isLoading?: boolean;
+  onEdit?: (item: any) => void;
 }
 
-export const SoldSkinsTable = ({ items, isLoading, onEdit }: SoldSkinsTableProps) => {
+export const SoldSkinsTable = ({ 
+  items, 
+  isLoading = false, 
+  onEdit 
+}: SoldSkinsTableProps) => {
   const { formatPrice } = useCurrency();
+  const { handleEdit } = useInventoryActions();
+  const { t } = useLanguage();
+  
+  // Use provided onEdit or fall back to default handleEdit from hook
+  const editHandler = onEdit || handleEdit;
 
   // Função para calcular o lucro percentual
   const calculateProfitPercentage = (soldPrice: number, purchasePrice: number) => {
@@ -46,7 +57,7 @@ export const SoldSkinsTable = ({ items, isLoading, onEdit }: SoldSkinsTableProps
   if (items.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        Nenhum item vendido encontrado.
+        {t('inventory.noSoldItems')}
       </div>
     );
   }
@@ -56,13 +67,13 @@ export const SoldSkinsTable = ({ items, isLoading, onEdit }: SoldSkinsTableProps
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[300px]">Skin</TableHead>
-            <TableHead>Data da Venda</TableHead>
-            <TableHead className="text-right">Valor de Compra</TableHead>
-            <TableHead className="text-right">Valor Vendido</TableHead>
-            <TableHead className="text-right">Lucro/Prejuízo</TableHead>
-            <TableHead className="text-right">Notas</TableHead>
-            <TableHead className="w-[100px]">Ações</TableHead>
+            <TableHead className="w-[300px]">{t('inventory.skin')}</TableHead>
+            <TableHead>{t('inventory.soldDate')}</TableHead>
+            <TableHead className="text-right">{t('inventory.purchaseValue')}</TableHead>
+            <TableHead className="text-right">{t('inventory.soldValue')}</TableHead>
+            <TableHead className="text-right">{t('inventory.profitLoss')}</TableHead>
+            <TableHead className="text-right">{t('inventory.notes')}</TableHead>
+            <TableHead className="w-[100px]">{t('inventory.actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -87,7 +98,7 @@ export const SoldSkinsTable = ({ items, isLoading, onEdit }: SoldSkinsTableProps
                 {item.notes || '-'}
               </TableCell>
               <TableCell>
-                <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
+                <Button variant="ghost" size="icon" onClick={() => editHandler(item)}>
                   <Edit className="h-4 w-4" />
                 </Button>
               </TableCell>

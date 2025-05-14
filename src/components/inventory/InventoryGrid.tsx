@@ -2,26 +2,15 @@
 import { useState } from "react";
 import { InventoryItem } from "@/types/skin";
 import { SkinCard } from "@/components/inventory/SkinCard";
+import { useInventoryActions } from "@/hooks/useInventoryActions";
 
 interface InventoryGridProps {
-  isLoading: boolean;
-  inventory: InventoryItem[];
-  onEdit: (item: InventoryItem) => void;
-  onDuplicate: (item: InventoryItem) => void;
-  onRemove: (inventoryId: string) => void;
-  onSell: (itemId: string, sellData: any) => void;
+  items: InventoryItem[];
 }
 
-export const InventoryGrid = ({
-  isLoading,
-  inventory,
-  onEdit,
-  onDuplicate,
-  onRemove,
-  onSell,
-}: InventoryGridProps) => {
-  // Estado para controlar itens favoritos
+export const InventoryGrid = ({ items }: InventoryGridProps) => {
   const [favorites, setFavorites] = useState<string[]>([]);
+  const { handleEdit, handleDuplicate, handleRemove, handleSell } = useInventoryActions();
 
   const toggleFavorite = (itemId: string) => {
     setFavorites(prev => 
@@ -31,32 +20,24 @@ export const InventoryGrid = ({
     );
   };
 
-  if (isLoading) {
+  if (items.length === 0) {
     return (
       <div className="flex justify-center items-center p-8 h-64 text-muted-foreground">
-        Carregando inventário...
-      </div>
-    );
-  }
-
-  if (inventory.length === 0) {
-    return (
-      <div className="flex justify-center items-center p-8 h-64 text-muted-foreground">
-        Nenhuma skin encontrada.
+        No skins found.
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mt-4">
-      {inventory.map((item) => (
+      {items.map((item) => (
         <SkinCard 
           key={item.inventoryId} 
           item={item}
-          onEdit={onEdit}
-          onDuplicate={onDuplicate}
-          onRemove={onRemove}
-          onSell={onSell}
+          onEdit={handleEdit}
+          onDuplicate={handleDuplicate}
+          onRemove={handleRemove}
+          onSell={handleSell}
           onToggleFavorite={toggleFavorite}
           isFavorite={favorites.includes(item.inventoryId)}
           showMetadata={true}

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useInventory } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryGrid } from "@/components/inventory/InventoryGrid";
@@ -14,17 +14,25 @@ import { useInventoryFilter } from "@/hooks/useInventoryFilter";
 import { useViewMode } from "@/hooks/useViewMode";
 import { useRealTimeInventory } from "@/hooks/useRealTimeInventory";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { ViewToggle } from "@/components/ui/view-toggle";
 
 const Inventory = () => {
-  const { viewMode, toggleViewMode } = useViewMode();
+  const { viewMode, setViewMode, toggleViewMode } = useViewMode();
   const [activeTab, setActiveTab] = useState("current");
-  const { inventoryFilters, filterInventoryItems, clearFilters, updateFilter } = useInventoryFilter();
   const { data: inventory, isLoading, error } = useInventory();
   const { t } = useLanguage();
   
   // Enable real-time inventory updates
   useRealTimeInventory();
 
+  // Initialize the inventory filter hook with the inventory data
+  const { 
+    inventoryFilters, 
+    filterInventoryItems, 
+    clearFilters, 
+    updateFilter 
+  } = useInventoryFilter(inventory || []);
+  
   // Filter inventory items based on current filters
   const filteredItems = inventory ? filterInventoryItems(inventory) : [];
   
@@ -44,9 +52,7 @@ const Inventory = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={toggleViewMode} size="icon" variant="outline">
-            {viewMode === 'grid' ? <List size={18} /> : <Grid size={18} />}
-          </Button>
+          <ViewToggle view={viewMode} onChange={setViewMode} />
         </div>
       </div>
 
@@ -119,7 +125,7 @@ const Inventory = () => {
                         {t('filters.clearAll')}
                       </Button>
                     ) : (
-                      <Button as="a" href="/search">
+                      <Button variant="default" onClick={() => window.location.href = "/search"}>
                         {t('inventory.browseItems')}
                       </Button>
                     )}
@@ -130,7 +136,10 @@ const Inventory = () => {
           )}
         </TabsContent>
         <TabsContent value="sold">
-          <SoldSkinsTable items={inventory?.filter(item => !item.is_in_user_inventory) || []} />
+          <SoldSkinsTable 
+            items={inventory?.filter(item => !item.is_in_user_inventory) || []} 
+            isLoading={isLoading}
+          />
         </TabsContent>
       </Tabs>
     </div>

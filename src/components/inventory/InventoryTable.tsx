@@ -2,26 +2,16 @@
 import { useState } from "react";
 import { InventoryItem } from "@/types/skin";
 import { SkinListItem } from "./SkinListItem";
+import { useInventoryActions } from "@/hooks/useInventoryActions";
 
 interface InventoryTableProps {
-  isLoading: boolean;
-  inventory: InventoryItem[];
-  onEdit: (item: InventoryItem) => void;
-  onDuplicate: (item: InventoryItem) => void;
-  onRemove: (inventoryId: string) => void;
-  onSell: (itemId: string, sellData: any) => void;
+  items: InventoryItem[];
 }
 
-export const InventoryTable = ({
-  isLoading,
-  inventory,
-  onEdit,
-  onDuplicate,
-  onRemove,
-  onSell,
-}: InventoryTableProps) => {
+export const InventoryTable = ({ items }: InventoryTableProps) => {
   // Estado para controlar itens favoritos
   const [favorites, setFavorites] = useState<string[]>([]);
+  const { handleEdit, handleDuplicate, handleRemove, handleSell } = useInventoryActions();
 
   const toggleFavorite = (itemId: string) => {
     setFavorites(prev => 
@@ -31,32 +21,24 @@ export const InventoryTable = ({
     );
   };
 
-  if (isLoading) {
+  if (items.length === 0) {
     return (
       <div className="flex justify-center items-center p-8 h-64 text-muted-foreground">
-        Carregando inventário...
-      </div>
-    );
-  }
-
-  if (inventory.length === 0) {
-    return (
-      <div className="flex justify-center items-center p-8 h-64 text-muted-foreground">
-        Nenhuma skin encontrada.
+        No skins found.
       </div>
     );
   }
 
   return (
     <div className="space-y-2 mt-4 w-full">
-      {inventory.map((item) => (
+      {items.map((item) => (
         <SkinListItem 
           key={item.inventoryId} 
           item={item}
-          onEdit={onEdit}
-          onDuplicate={onDuplicate}
-          onRemove={onRemove}
-          onSell={onSell}
+          onEdit={handleEdit}
+          onDuplicate={handleDuplicate}
+          onRemove={handleRemove}
+          onSell={handleSell}
           onToggleFavorite={toggleFavorite}
           isFavorite={favorites.includes(item.inventoryId)}
           showMetadata={true}
