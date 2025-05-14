@@ -8,6 +8,8 @@ import { Layout } from "@/components/layout/layout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
 import Index from "./pages/Index";
 import Inventory from "./pages/Inventory";
 import Analytics from "./pages/Analytics";
@@ -38,67 +40,70 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <CurrencyProvider>
-            <SubscriptionProvider>
-              <div className="min-h-screen bg-background text-foreground antialiased">
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<Landing />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    
-                    {/* Protected routes */}
-                    <Route path="/dashboard" element={
-                      <RequireAuth>
-                        <Layout><Index /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/inventory" element={
-                      <RequireAuth>
-                        <Layout><Inventory /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/add" element={
-                      <RequireAuth>
-                        <Layout><AddSkin /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/search" element={
-                      <RequireAuth>
-                        <Layout><SearchPage /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/analytics" element={
-                      <RequireAuth>
-                        <Layout><Analytics /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/profile" element={
-                      <RequireAuth>
-                        <Layout><Profile /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/settings" element={
-                      <RequireAuth>
-                        <Layout><Settings /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="/subscription" element={
-                      <RequireAuth>
-                        <Layout><Subscription /></Layout>
-                      </RequireAuth>
-                    } />
-                    <Route path="*" element={<Layout><NotFound /></Layout>} />
-                  </Routes>
-                </BrowserRouter>
-              </div>
-            </SubscriptionProvider>
-          </CurrencyProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <CurrencyProvider>
+              <SubscriptionProvider>
+                <div className="min-h-screen bg-background text-foreground antialiased">
+                  <Toaster />
+                  <Sonner />
+                  <HomeScreenPopup />
+                  <BrowserRouter>
+                    <Routes>
+                      {/* Public routes */}
+                      <Route path="/" element={<Landing />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+                      
+                      {/* Protected routes */}
+                      <Route path="/dashboard" element={
+                        <RequireAuth>
+                          <Layout><Index /></Layout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/inventory" element={
+                        <RequireAuth>
+                          <Layout><Inventory /></Layout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/add" element={
+                        <RequireAuth>
+                          <Layout><AddSkin /></Layout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/search" element={
+                        <RequireAuth>
+                          <Layout><SearchPage /></Layout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/analytics" element={
+                        <RequireAuth>
+                          <Layout><Analytics /></Layout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/profile" element={
+                        <RequireAuth>
+                          <Layout><Profile /></Layout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/settings" element={
+                        <RequireAuth>
+                          <Layout><Settings /></Layout>
+                        </RequireAuth>
+                      } />
+                      <Route path="/subscription" element={
+                        <RequireAuth>
+                          <Layout><Subscription /></Layout>
+                        </RequireAuth>
+                      } />
+                      <Route path="*" element={<Layout><NotFound /></Layout>} />
+                    </Routes>
+                  </BrowserRouter>
+                </div>
+              </SubscriptionProvider>
+            </CurrencyProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

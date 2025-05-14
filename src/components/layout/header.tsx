@@ -1,116 +1,76 @@
 
-import { FC } from "react";
-import { Link } from "react-router-dom";
-import { Logo } from "@/components/ui/logo";
-import { ArrowRight, User, LogOut, Crown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CurrencySelector } from "@/components/ui/currency-selector";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { MobileNav } from "@/components/ui/mobile-nav";
+import { LanguageSelector } from "@/components/ui/language-selector";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Bell, User, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
-export const Header: FC = () => {
-  const { user, profile, signOut } = useAuth();
-
-  const getInitials = (name?: string) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
+export function Header() {
+  const { user, signOut } = useAuth();
+  const { isSubscribed, isTrial, trialDaysRemaining } = useSubscription();
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
   };
   
-  const userInitials = profile ? getInitials(profile.username || profile.full_name) : "U";
-  const displayName = profile?.username || profile?.full_name || user?.email || "User";
-
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center px-4 md:px-6">
-        <div className="flex items-center gap-2 md:ml-16">
-          <Logo size="sm" variant="text-only" className="hidden md:block" />
-        </div>
-        
-        <div className="ml-auto flex items-center gap-4">
-          <CurrencySelector />
-          
-          {user && (
-            <Button variant="ghost" size="sm" asChild className="hidden md:flex items-center gap-1">
-              <Link to="/subscription" className="text-primary">
-                <Crown className="h-4 w-4 mr-1" />
-                <span>Premium</span>
-              </Link>
-            </Button>
-          )}
-          
-          <Link 
-            to="https://clutch.studio" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden md:inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Clutch Studio's <ArrowRight className="h-3.5 w-3.5" />
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="flex flex-1 items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <Logo className="h-6 w-6" />
+            <span className="inline-block font-bold">CS Skin Vault</span>
           </Link>
-          
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar>
-                    <AvatarImage src={profile?.avatar_url} />
-                    <AvatarFallback>{userInitials}</AvatarFallback>
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            {user ? (
+              <>
+                {/* Subscription Badge */}
+                {isSubscribed && (
+                  <span className="hidden sm:inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-green-500/20 text-green-500 border-green-500/20">
+                    {t("subscription.premium")}
+                  </span>
+                )}
+                {isTrial && (
+                  <span className="hidden sm:inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-blue-500/20 text-blue-500 border-blue-500/20">
+                    {t("subscription.trial")}: {trialDaysRemaining} {t("subscription.days")}
+                  </span>
+                )}
+                <Link to="/profile">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.user_metadata?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
                   </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 bg-popover border-border" align="end" forceMount>
-                <DropdownMenuLabel>
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{displayName}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {user.email}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="cursor-pointer w-full">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/subscription" className="cursor-pointer w-full">
-                    <Crown className="mr-2 h-4 w-4" />
-                    <span>Premium Subscription</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => signOut()}
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLogout}
+                  className="hidden sm:flex"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button asChild size="sm">
-              <Link to="/auth">
-                Login
-              </Link>
-            </Button>
-          )}
+                  <LogOut className="h-4 w-4" />
+                  <span className="sr-only">Logout</span>
+                </Button>
+              </>
+            ) : (
+              <Button variant="secondary" onClick={() => navigate("/auth")}>
+                {t("auth.login")}
+              </Button>
+            )}
+            <MobileNav />
+          </div>
         </div>
       </div>
     </header>
   );
-};
+}
