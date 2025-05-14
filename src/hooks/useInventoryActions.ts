@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -12,6 +13,7 @@ import { InventoryItem, Skin, SellData } from "@/types/skin";
 export const useInventoryActions = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
   const [selectedItemForDuplicate, setSelectedItemForDuplicate] = useState<InventoryItem | null>(null);
   const [duplicateCount, setDuplicateCount] = useState(1);
@@ -27,6 +29,8 @@ export const useInventoryActions = () => {
     setSelectedItem(item);
     setIsModalOpen(true);
   };
+
+  const handleEditItem = handleEdit; // Alias for compatibility
 
   const handleDuplicate = (item: InventoryItem) => {
     setSelectedItemForDuplicate(item);
@@ -52,7 +56,9 @@ export const useInventoryActions = () => {
     }
   };
 
-  const handleSell = (itemId: string, sellData: SellData) => {
+  const handleDeleteItem = handleRemove; // Alias for compatibility
+
+  const handleMarkAsSold = (itemId: string, sellData: SellData) => {
     sellSkin.mutate({ itemId, sellData: sellData });
     handleClose();
     invalidateInventory();
@@ -148,9 +154,14 @@ export const useInventoryActions = () => {
     setSelectedItem(null);
   };
 
+  const handleCloseDetail = () => {
+    setIsDetailModalOpen(false);
+    setSelectedItem(null);
+  };
+
   const handleViewDetails = (item: InventoryItem) => {
     setSelectedItem(item);
-    setIsModalOpen(true);
+    setIsDetailModalOpen(true);
   };
   
   // Função para invalidar manualmente o cache de transações
@@ -169,21 +180,27 @@ export const useInventoryActions = () => {
   return {
     selectedItem,
     isModalOpen,
+    isDetailModalOpen,
     duplicateModalOpen,
     selectedItemForDuplicate,
     duplicateCount,
     setIsModalOpen,
+    setIsDetailModalOpen,
     setDuplicateModalOpen,
     setDuplicateCount,
     setSelectedItem,
     setSelectedItemForDuplicate,
     handleEdit,
+    handleEditItem,
     handleDuplicate,
     handleRemove,
-    handleSell,
+    handleDeleteItem,
+    handleMarkAsSold,
+    handleSell: handleMarkAsSold,
     handleAddToInventory,
     handleDuplicateMultiple,
     handleClose,
+    handleCloseDetail,
     handleViewDetails,
     handleDuplicateCountChange,
     handleConfirmDuplicate,

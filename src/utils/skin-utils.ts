@@ -1,4 +1,3 @@
-
 import { SkinWear } from "@/types/skin";
 
 // Get the color class for rarity styling
@@ -115,6 +114,12 @@ export const calculateProfit = (soldPrice: string, feePercentage: string, purcha
 export const formatDate = (dateString?: string) => {
   if (!dateString) return "Unknown";
   return new Date(dateString).toLocaleDateString();
+};
+
+// Get current date as formatted string
+export const getCurrentDateAsString = (): string => {
+  const now = new Date();
+  return now.toISOString();
 };
 
 // List of marketplace options for selling skins

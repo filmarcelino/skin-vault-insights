@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   fetchSkins, 
@@ -9,11 +8,11 @@ import {
   fetchCategories
 } from "@/services/api";
 import { 
-  getUserInventory, 
+  fetchUserInventory, 
   addSkinToInventory,
-  removeSkinFromInventory,
+  removeInventoryItem,
   updateInventoryItem,
-  sellSkin as sellSkinService
+  markItemAsSold
 } from "@/services/inventory";
 import { Skin, SkinFilter, InventoryItem, SellData } from "@/types/skin";
 
@@ -30,7 +29,7 @@ export const useSkins = (filters?: SkinFilter) => {
       try {
         // Se queremos apenas o inventário do usuário, buscamos do Supabase
         if (filters?.onlyUserInventory) {
-          const inventory = await getUserInventory();
+          const inventory = await fetchUserInventory();
           console.log("Retrieved inventory in useSkins hook:", inventory);
           return Array.isArray(inventory) ? inventory : [];
         }
@@ -78,7 +77,7 @@ export const useInventory = () => {
     queryFn: async () => {
       try {
         console.log("Fetching inventory data...");
-        const inventory = await getUserInventory();
+        const inventory = await fetchUserInventory();
         console.log("Loaded inventory:", inventory);
         // Ensure we always return an array
         const validInventory = Array.isArray(inventory) ? inventory : [];
@@ -133,7 +132,7 @@ export const useSellSkin = () => {
   
   return useMutation({
     mutationFn: (data: {itemId: string, sellData: SellData}) => 
-      sellSkinService(data.itemId, data.sellData),
+      markItemAsSold(data.itemId, data.sellData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
     },
@@ -144,7 +143,8 @@ export const useUpdateSkin = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: updateInventoryItem,
+    mutationFn: (data: {itemId: string, updates: Partial<InventoryItem>}) => 
+      updateInventoryItem(data.itemId, data.updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
     },
@@ -155,7 +155,7 @@ export const useRemoveSkin = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: removeSkinFromInventory,
+    mutationFn: removeInventoryItem,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
     },

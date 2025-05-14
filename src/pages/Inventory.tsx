@@ -10,7 +10,6 @@ import { InventoryFilterBar } from "@/components/dashboard/InventoryFilterBar";
 import { InventoryGrid } from "@/components/inventory/InventoryGrid";
 import { useInventoryFilter } from "@/hooks/useInventoryFilter";
 import { useViewMode } from "@/hooks/useViewMode";
-import { ViewToggle } from "@/components/ui/view-toggle";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
@@ -20,24 +19,30 @@ import { Skin } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { fetchSoldItems } from "@/services/inventory/inventory-service";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Inventory() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<string>("current");
-  const { viewMode, setViewMode } = useViewMode("inventory", "grid");
+  const { viewMode, setViewMode } = useViewMode("inventory");
   
   const { 
     data: inventory, 
-    soldItems,
     isLoading, 
     error, 
     isFetching 
   } = useInventory();
   
+  // Fetch sold items separately
+  const { data: soldItems = [] } = useQuery({
+    queryKey: ["sold-items"],
+    queryFn: fetchSoldItems
+  });
+  
   const { 
-    filteredItems, 
     searchQuery, 
     setSearchQuery, 
     weaponFilter, 
@@ -46,9 +51,11 @@ export default function Inventory() {
     setRarityFilter, 
     sortMethod, 
     setSortMethod,
-    sortDirection,
-    setSortDirection
+    filterItems
   } = useInventoryFilter(inventory || []);
+  
+  // Apply filters to get the filtered items
+  const filteredItems = filterItems(inventory || []);
   
   const { 
     selectedItem, 
@@ -128,8 +135,6 @@ export default function Inventory() {
         
         <div className="mt-4">
           <InventoryFilterBar 
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             weaponFilter={weaponFilter}
@@ -138,8 +143,6 @@ export default function Inventory() {
             onRarityFilterChange={setRarityFilter}
             sortMethod={sortMethod}
             onSortMethodChange={setSortMethod}
-            sortDirection={sortDirection}
-            onSortDirectionChange={setSortDirection}
           />
         </div>
         
@@ -168,7 +171,6 @@ export default function Inventory() {
           ) : viewMode === 'grid' ? (
             <InventoryGrid 
               items={filteredItems}
-              onViewDetails={handleViewDetails}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
               onSell={handleMarkAsSold}
@@ -177,7 +179,6 @@ export default function Inventory() {
           ) : (
             <InventoryTable 
               items={filteredItems}
-              onViewDetails={handleViewDetails}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
               onSell={handleMarkAsSold}

@@ -1,4 +1,3 @@
-
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -12,7 +11,7 @@ export const fetchUserInventory = async (): Promise<InventoryItem[]> => {
     return [];
   }
   
-  console.log("Fetching user inventory");
+  console.log("Fetching inventory for user:", session.user.id);
   
   try {
     const { data: inventoryData, error } = await supabase
@@ -31,6 +30,7 @@ export const fetchUserInventory = async (): Promise<InventoryItem[]> => {
     
     // Map the Supabase data to our InventoryItem type
     const inventoryItems = inventoryData.map(mapSupabaseToInventoryItem);
+    console.log("Final mapped items:", inventoryItems);
     
     return inventoryItems;
   } catch (error) {
@@ -65,28 +65,29 @@ export const fetchSoldItems = async (): Promise<InventoryItem[]> => {
     console.log(`Found ${transactionsData?.length || 0} sold items`);
     
     // Map the transactions to inventory items
-    const soldItems = transactionsData.map((tx: any) => {
-      return {
-        id: tx.transaction_id || tx.id,
-        skin_id: tx.skin_id,
-        name: tx.skin_name,
-        weapon: tx.weapon_name,
-        image: tx.image_url,
-        rarity: tx.rarity,
-        price: parseFloat(tx.price) || 0,
-        purchase_price: parseFloat(tx.purchase_price) || 0,
-        acquired_date: tx.purchase_date || tx.date,
-        user_id: tx.user_id,
-        is_in_user_inventory: false,
-        float_value: tx.float_value,
-        is_stat_trak: tx.is_stat_trak,
-        condition: tx.condition,
-        marketplace: tx.marketplace,
-        notes: tx.notes,
-        date_sold: tx.date,
-        profit: parseFloat(tx.price) - parseFloat(tx.purchase_price)
-      };
-    });
+    const soldItems: InventoryItem[] = transactionsData.map((tx: any) => ({
+      id: tx.transaction_id || tx.id,
+      inventoryId: tx.item_id || tx.id, // Add this for compatibility
+      skin_id: tx.skin_id,
+      name: tx.skin_name,
+      weapon: tx.weapon_name,
+      image: tx.image_url,
+      rarity: tx.rarity,
+      price: parseFloat(tx.price) || 0,
+      purchase_price: parseFloat(tx.purchase_price) || 0,
+      acquiredDate: tx.purchase_date || tx.date, // Add this for compatibility
+      acquired_date: tx.purchase_date || tx.date,
+      user_id: tx.user_id,
+      isInUserInventory: false, // Add this for compatibility
+      is_in_user_inventory: false,
+      float_value: tx.float_value,
+      is_stat_trak: tx.is_stat_trak,
+      condition: tx.condition,
+      marketplace: tx.marketplace,
+      notes: tx.notes,
+      date_sold: tx.date,
+      profit: parseFloat(tx.price) - parseFloat(tx.purchase_price)
+    }));
     
     return soldItems;
   } catch (error) {
@@ -119,8 +120,11 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: any): Promise
     
     const itemData = {
       skin_id: skin.id || `custom_${Date.now()}`,
+      name: skin.name || "Unknown Skin", // Add this for compatibility with DB column
       skin_name: skin.name || "Unknown Skin",
+      weapon: skin.weapon || "Unknown Weapon", // Add this for compatibility with DB column
       weapon_name: skin.weapon || "Unknown Weapon",
+      image: skin.image || null, // Add this for compatibility with DB column
       image_url: skin.image || null,
       price: purchaseInfo.purchasePrice || 0,
       purchase_price: purchaseInfo.purchasePrice || 0,
@@ -131,12 +135,15 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: any): Promise
       float_value: purchaseInfo.floatValue || null,
       condition: purchaseInfo.condition || null,
       acquired_date: purchaseInfo.purchaseDate || now,
+      acquiredDate: purchaseInfo.purchaseDate || now, // For compatibility
       user_id: userId,
       is_in_user_inventory: true,
+      isInUserInventory: true, // For compatibility
+      inventory_id: `inv_${Date.now()}`, // Required by Supabase
       marketplace: purchaseInfo.marketplace || null,
       notes: purchaseInfo.notes || null,
       fee_percentage: purchaseInfo.feePercentage || 0,
-      currency: purchaseInfo.currency || "USD"
+      currency_code: purchaseInfo.currency || "USD" // Match expected column name
     };
     
     const { data, error } = await supabase

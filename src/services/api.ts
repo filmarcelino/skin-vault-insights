@@ -5,7 +5,7 @@ import {
   getLocalSkins, 
   getLocalSkinById 
 } from "./local-data";
-import { getUserInventory } from "@/services/inventory";
+import { fetchUserInventory } from "@/services/inventory";
 
 // Base API URL for CS:GO API from GitHub
 const API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/";
@@ -140,7 +140,7 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
   
   // If we only want user inventory skins, return them directly
   if (filters?.onlyUserInventory) {
-    return getUserInventory();
+    return fetchUserInventory();
   }
   
   // Try to load from custom JSON first
