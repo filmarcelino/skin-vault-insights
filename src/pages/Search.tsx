@@ -1,186 +1,200 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useSkins } from "@/hooks/use-skins";
-import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
-import { useToast } from "@/hooks/use-toast";
-import { addSkinToInventory } from "@/services/inventory";
-import { Skin, InventoryItem } from "@/types/skin";
-import { useFilteredCategories } from "@/hooks/useCategories";
-import { useInventoryActions } from "@/hooks/useInventoryActions";
+import React, { useEffect, useState } from 'react';
+import { Layout } from '@/components/layout/layout';
+import { SearchHeader } from '@/components/search/SearchHeader'; 
+import { SearchResults } from '@/components/search/SearchResults';
+import { FilterPanel } from '@/components/search/FilterPanel';
+import { SearchPagination } from '@/components/search/SearchPagination';
+import { PremiumCTA } from '@/components/search/PremiumCTA';
+import { useSkins } from '@/hooks/use-skins';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { RarityType, SkinType, Skin, WeaponType } from '@/types/skin';
+import { Loading } from '@/components/ui/loading';
+import { skin_details } from '@/components/skins/skin-detail-modal';
+import { useNavigate } from 'react-router-dom';
+import { useInventoryActions } from '@/hooks/useInventoryActions';
+import { InventorySkinModal } from '@/components/skins/inventory-skin-modal';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-// Import components
-import { SearchHeader } from "@/components/search/SearchHeader";
-import { FilterPanel } from "@/components/search/FilterPanel";
-import { PremiumCTA } from "@/components/search/PremiumCTA";
-import { SearchResults } from "@/components/search/SearchResults";
-import { SearchPagination } from "@/components/search/SearchPagination";
-
-const itemsPerPageOptions = [10, 25, 50, 100];
-
-export default function SearchPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSkin, setSelectedSkin] = useState<Skin | InventoryItem | null>(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [currentTab, setCurrentTab] = useState<"inventory" | "allSkins">("inventory");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [weaponFilter, setWeaponFilter] = useState("all");
-  const [rarityFilter, setRarityFilter] = useState("all");
-  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
-  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
-  const { toast } = useToast();
+export default function Search() {
+  const { skins, loading, error } = useSkins();
+  const { isSubscribed, isTrial } = useSubscription();
   const navigate = useNavigate();
-
-  // Hooks para gerenciar ações de inventário
-  const inventoryActions = useInventoryActions();
-
-  // Custom hook for filtered categories
-  const { weaponTypes, rarityTypes } = useFilteredCategories();
+  const { t } = useLanguage();
   
-  // Fetch skins data
-  const { data: skins, isLoading: isSkinsLoading, error: skinsError } = useSkins({
-    search: searchQuery.length > 2 ? searchQuery : undefined,
-    onlyUserInventory: currentTab === "inventory",
-    weapon: weaponFilter !== "all" ? weaponFilter : undefined,
-    rarity: rarityFilter !== "all" ? rarityFilter : undefined,
-    minPrice: minPrice,
-    maxPrice: maxPrice
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [filteredSkins, setFilteredSkins] = useState<Skin[]>([]);
+  
+  // Filters
+  const [weaponFilter, setWeaponFilter] = useState<WeaponType | ''>('');
+  const [rarityFilter, setRarityFilter] = useState<RarityType | ''>('');
+  const [typeFilter, setTypeFilter] = useState<SkinType | ''>('');
+  const [minPriceFilter, setMinPriceFilter] = useState<number | null>(null);
+  const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
+
+  const {
+    selectedItem,
+    isModalOpen,
+    setIsModalOpen,
+    setSelectedItem,
+    handleViewDetails
+  } = useInventoryActions();
+  
+  // Create handlers for onEdit, handleUpdate, onClose
+  const handleEdit = (item: any) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+  
+  const handleUpdate = (updatedItem: any) => {
+    console.log(`Updating item:`, updatedItem);
+    setIsModalOpen(false);
+    // Add your update logic here
+  };
+  
+  const handleClose = () => {
+    setIsModalOpen(false);
+  };
+  
+  // Apply filters
+  useEffect(() => {
+    if (loading || !skins) return;
+    
+    let results = [...skins];
+    
+    // Apply search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(skin => 
+        skin.name.toLowerCase().includes(query) || 
+        skin.weapon?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply weapon filter
+    if (weaponFilter) {
+      results = results.filter(skin => skin.weapon === weaponFilter);
+    }
+    
+    // Apply rarity filter
+    if (rarityFilter) {
+      results = results.filter(skin => skin.rarity === rarityFilter);
+    }
+    
+    // Apply type filter
+    if (typeFilter) {
+      results = results.filter(skin => skin.type === typeFilter);
+    }
+    
+    // Apply price filters
+    if (minPriceFilter !== null) {
+      results = results.filter(skin => (skin.price || 0) >= (minPriceFilter || 0));
+    }
+    
+    if (maxPriceFilter !== null) {
+      results = results.filter(skin => (skin.price || 0) <= (maxPriceFilter || 0));
+    }
+    
+    setFilteredSkins(results);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [skins, searchQuery, weaponFilter, rarityFilter, typeFilter, minPriceFilter, maxPriceFilter, loading]);
   
   // Calculate pagination
-  const totalItems = skins?.length || 0;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const paginatedSkins = skins?.slice(
-    (currentPage - 1) * itemsPerPage, 
-    currentPage * itemsPerPage
-  ) || [];
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredSkins.slice(indexOfFirstItem, indexOfLastItem);
   
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, currentTab, weaponFilter, rarityFilter, minPrice, maxPrice, itemsPerPage]);
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
   
+  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
-
-  const handleSkinClick = (skin: Skin | InventoryItem) => {
-    // Verificar se é um item de inventário ou uma skin normal
-    if ('inventoryId' in skin) {
-      // É um item de inventário, abrir com as funcionalidades de edição
-      inventoryActions.onEdit(skin as InventoryItem);
-    } else {
-      // É uma skin normal, abrir para adicionar ao inventário
-      setSelectedSkin(skin);
-      setDetailModalOpen(true);
-    }
+  
+  // Reset all filters
+  const handleResetFilters = () => {
+    setWeaponFilter('');
+    setRarityFilter('');
+    setTypeFilter('');
+    setMinPriceFilter(null);
+    setMaxPriceFilter(null);
+    setSearchQuery('');
   };
-
-  const handleTabChange = (value: string) => {
-    setCurrentTab(value as "inventory" | "allSkins");
-  };
-
-  const handleAddToInventory = async (skin: Skin) => {
-    try {
-      const newItem = await addSkinToInventory(skin, {
-        purchasePrice: skin.price || 0,
-        marketplace: "Steam Market",
-        feePercentage: 13,
-        notes: "Adicionada pela pesquisa"
-      });
-      
-      toast({
-        title: "Skin Adicionada",
-        description: `${skin.weapon || ""} | ${skin.name} foi adicionada ao inventário.`,
-      });
-      
-      return newItem;
-    } catch (err) {
-      console.error("Erro ao adicionar skin:", err);
-      toast({
-        title: "Erro",
-        description: "Falha ao adicionar skin ao inventário",
-        variant: "destructive"
-      });
-      return null;
-    }
-  };
-
-  const handlePriceFilterChange = (min?: number, max?: number) => {
-    setMinPrice(min);
-    setMaxPrice(max);
-  };
-
+  
+  if (loading) return <Layout><Loading /></Layout>;
+  
+  if (error) return (
+    <Layout>
+      <div className="text-center p-6">
+        <h2 className="text-xl font-bold text-red-500">{t("errors.loadingError")}</h2>
+        <p className="text-muted-foreground">{t("errors.tryAgain")}</p>
+        <button 
+          className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
+          onClick={() => window.location.reload()}
+        >
+          {t("common.refresh")}
+        </button>
+      </div>
+    </Layout>
+  );
+  
   return (
-    <>
+    <Layout>
       <SearchHeader 
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
-        currentTab={currentTab}
-        onTabChange={handleTabChange}
+        totalResults={filteredSkins.length}
       />
 
-      <FilterPanel
-        weaponFilter={weaponFilter}
-        rarityFilter={rarityFilter}
-        setWeaponFilter={setWeaponFilter}
-        setRarityFilter={setRarityFilter}
-        weaponTypes={weaponTypes}
-        rarityTypes={rarityTypes}
-        itemsPerPage={itemsPerPage}
-        setItemsPerPage={setItemsPerPage}
-        itemsPerPageOptions={itemsPerPageOptions}
-        currentTab={currentTab}
-        onPriceFilterChange={handlePriceFilterChange}
-        minPrice={minPrice}
-        maxPrice={maxPrice}
-      />
-      
-      <PremiumCTA />
-
-      {skinsError && (
-        <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400">
-          Erro ao carregar dados das skins. Por favor, tente novamente mais tarde.
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+        <div>
+          <FilterPanel 
+            weaponFilter={weaponFilter}
+            rarityFilter={rarityFilter}
+            typeFilter={typeFilter}
+            minPrice={minPriceFilter}
+            maxPrice={maxPriceFilter}
+            onWeaponFilterChange={setWeaponFilter}
+            onRarityFilterChange={setRarityFilter}
+            onTypeFilterChange={setTypeFilter}
+            onMinPriceChange={setMinPriceFilter}
+            onMaxPriceChange={setMaxPriceFilter}
+            onResetFilters={handleResetFilters}
+          />
+          
+          {!isSubscribed && !isTrial && (
+            <div className="mt-6">
+              <PremiumCTA />
+            </div>
+          )}
         </div>
-      )}
-
-      <SearchResults
-        isLoading={isSkinsLoading}
-        paginatedSkins={paginatedSkins}
-        itemsPerPage={itemsPerPage}
-        searchQuery={searchQuery}
-        weaponFilter={weaponFilter}
-        rarityFilter={rarityFilter}
-        currentTab={currentTab}
-        totalItems={totalItems}
-        handleSkinClick={handleSkinClick}
-      />
+        
+        <div className="flex flex-col space-y-6">
+          <SearchResults 
+            skins={currentItems} 
+            onAddToInventory={handleEdit}
+            onViewDetails={handleViewDetails}
+          />
+          
+          <SearchPagination 
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredSkins.length}
+            currentPage={currentPage}
+            paginate={paginate}
+          />
+        </div>
+      </div>
       
-      <SearchPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        setCurrentPage={setCurrentPage}
-        show={totalPages > 1}
+      <InventorySkinModal 
+        isOpen={isModalOpen}
+        onClose={handleClose}
+        onSave={handleUpdate}
+        skin={selectedItem}
+        mode="add"
       />
-
-      {/* Modal para adicionar nova skin */}
-      <InventorySkinModal
-        item={selectedSkin as InventoryItem}
-        open={detailModalOpen}
-        onOpenChange={setDetailModalOpen}
-        onAddToInventory={handleAddToInventory}
-      />
-
-      {/* Modal para editar item existente */}
-      <InventorySkinModal
-        item={inventoryActions.selectedItem}
-        open={inventoryActions.isModalOpen}
-        onOpenChange={inventoryActions.setIsModalOpen}
-        onSellSkin={inventoryActions.handleSell}
-        onUpdateSkin={inventoryActions.handleUpdate}
-        onClose={inventoryActions.onClose}
-      />
-    </>
+    </Layout>
   );
 }

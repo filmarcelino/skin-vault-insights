@@ -53,7 +53,7 @@ export const HomeScreenPopup = () => {
         
         <div className="flex flex-col items-center p-4">
           <img 
-            src="/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png" 
+            src="/lovable-uploads/24f8851e-1368-4d88-9a6f-58906ab20007.png" 
             alt="CS Skin Vault" 
             className="w-16 h-16 mb-4 rounded-lg bg-black"
           />
