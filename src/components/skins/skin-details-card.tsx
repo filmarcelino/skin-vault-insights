@@ -143,10 +143,10 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
     };
   };
   
-  // Safely get image with fallback
-  const skinImage = 'image' in skinData ? skinData.image : undefined;
-  const skinName = safeString('name' in skinData ? skinData.name : 'Unknown Skin');
-  const skinWeapon = 'weapon' in skinData ? skinData.weapon : undefined;
+  // Safely get image with fallback - using safeString to ensure we get a string
+  const skinImage = 'image' in skinData ? safeString(skinData.image) : '';
+  const skinName = 'name' in skinData ? safeString(skinData.name) : 'Unknown Skin';
+  const skinWeapon = 'weapon' in skinData ? safeString(skinData.weapon) : '';
   
   // Check if the skin has StatTrak
   const isStatTrak = 'isStatTrak' in skinData ? safeBoolean(skinData.isStatTrak) : false;
@@ -188,7 +188,7 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
               <span className="text-[#CF6A32] font-bold">StatTrak™ </span>
             )}
             {skinWeapon ? 
-              `${safeString(skinWeapon)} | ${skinName}` : 
+              `${skinWeapon} | ${skinName}` : 
               skinName
             }
           </h3>
