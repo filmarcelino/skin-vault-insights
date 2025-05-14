@@ -3,7 +3,7 @@ import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
 import { addTransaction } from "./transactions-service";
-import { safeBoolean, safeString } from ".";
+import { safeBoolean, safeString } from "@/utils/safe-type-utils";
 
 // Helper function to safely get properties from potentially null objects
 const getSkinProperty = <T>(data: any | null, property: string, defaultValue: T): T => {
@@ -145,8 +145,19 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       return null;
     }
     
-    if (!skin || !skin.name) {
-      console.error("Invalid skin data:", skin);
+    // Fix for the TypeScript error - Check if skin is null or undefined first
+    if (!skin) {
+      console.error("Invalid skin data: skin is null or undefined");
+      return null;
+    }
+    
+    // Now check for the name property with a type guard
+    const skinName = typeof skin === 'object' && skin !== null && 'name' in skin && typeof skin.name === 'string' 
+      ? skin.name 
+      : "";
+      
+    if (!skinName) {
+      console.error("Invalid skin data: name property is missing or invalid", skin);
       return null;
     }
     
@@ -160,7 +171,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       inventory_id: inventoryId,
       user_id: session.user.id,
       weapon: skin.weapon || "Unknown",
-      name: skin.name,
+      name: skinName,
       wear: skin.wear,
       rarity: skin.rarity,
       image: skin.image,
@@ -197,7 +208,7 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       type: 'add',
       itemId: inventoryId,
       weaponName: skin.weapon || "Unknown",
-      skinName: skin.name,
+      skinName: skinName,
       date: new Date().toISOString(),
       price: purchaseInfo.purchasePrice || 0,
       notes: purchaseInfo.notes || "",
