@@ -18,6 +18,7 @@ interface SkinListItemProps {
   onToggleFavorite?: (itemId: string) => void;
   showMetadata?: boolean;
   onClick?: () => void;
+  className?: string; // Added className prop
 }
 
 export const SkinListItem = ({
@@ -30,6 +31,7 @@ export const SkinListItem = ({
   onToggleFavorite,
   showMetadata = false,
   onClick,
+  className = "", // Added default value
 }: SkinListItemProps) => {
   const { formatPrice } = useCurrency();
   const { isLocked, daysLeft } = getTradeLockStatus(item.tradeLockUntil);
