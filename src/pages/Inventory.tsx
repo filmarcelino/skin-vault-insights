@@ -16,12 +16,14 @@ import { useRealTimeInventory } from "@/hooks/useRealTimeInventory";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Inventory = () => {
   const { viewMode, setViewMode, toggleViewMode } = useViewMode();
   const [activeTab, setActiveTab] = useState("current");
   const { data: inventory, isLoading, error } = useInventory();
   const { t } = useLanguage();
+  const { toast } = useToast();
   
   // Enable real-time inventory updates
   useRealTimeInventory();
@@ -40,6 +42,16 @@ const Inventory = () => {
   // Count items for badges
   const currentCount = inventory?.filter(item => item.is_in_user_inventory).length || 0;
   const soldCount = inventory?.filter(item => !item.is_in_user_inventory).length || 0;
+
+  // Show toast if there's an error
+  if (error && !isLoading) {
+    toast({
+      title: t('errors.loadFailed'),
+      description: t('errors.tryAgain'),
+      variant: "destructive"
+    });
+    console.error("Inventory loading error:", error);
+  }
 
   return (
     <div className="space-y-6">
@@ -103,6 +115,14 @@ const Inventory = () => {
                 <CardTitle>{t('errors.loadFailed')}</CardTitle>
                 <CardDescription>{t('errors.tryAgain')}</CardDescription>
               </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground mb-4">
+                  {t('inventory.noItems')}
+                </div>
+                <Button onClick={() => window.location.reload()} variant="outline">
+                  {t('common.refresh')}
+                </Button>
+              </CardContent>
             </Card>
           ) : (
             <>

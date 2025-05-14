@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Search } from "@/components/ui/search";
 import { useSkins } from "@/hooks/use-skins";
@@ -32,7 +31,7 @@ interface IndexProps {
 const Index = ({ activeTab = "inventory" }: IndexProps) => {
   const [debugInfo, setDebugInfo] = useState<string>("");
   const [selectedSkin, setSelectedSkin] = useState<any>(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<"inventory" | "search">(activeTab);
   const [userInventory, setUserInventory] = useState<InventoryItem[]>([]);
   const [transactions, setTransactions] = useState([]);
@@ -186,7 +185,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     };
     
     setSelectedSkin(inventorySkin);
-    setDetailModalOpen(true);
+    setIsModalOpen(true);
   };
 
   const handleAddToInventory = async (skin: Skin) => {
@@ -236,7 +235,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
         description: `The skin was successfully marked as sold for $${sellData.soldPrice}.`,
       });
       
-      setDetailModalOpen(false);
+      setIsModalOpen(false);
     } catch (err) {
       toast({
         title: "Error",
@@ -320,9 +319,10 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
       />
 
       <InventorySkinModal
-        item={selectedSkin}
-        open={detailModalOpen}
-        onOpenChange={setDetailModalOpen}
+        open={isModalOpen} 
+        onOpenChange={setIsModalOpen}
+        skin={selectedSkin}
+        item={selectedSkin} // Add this line to fix the error
         onSellSkin={handleSellSkin}
         onAddToInventory={handleAddToInventory}
       />
