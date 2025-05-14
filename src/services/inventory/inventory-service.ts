@@ -1,4 +1,3 @@
-
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -95,15 +94,20 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
     
     // Map the data to InventoryItem objects and ensure isInUserInventory is set correctly
     const mappedItems = Array.isArray(data) ? data.map(item => {
-      const mappedItem = mapSupabaseToInventoryItem(item);
-      console.log("Mapped item:", mappedItem);
-      
-      // Ensure isInUserInventory is set correctly (default to true if undefined)
-      if (mappedItem) {
-        mappedItem.isInUserInventory = item.is_in_user_inventory !== false;
-        console.log(`Item ${mappedItem.name} isInUserInventory:`, mappedItem.isInUserInventory);
+      try {
+        const mappedItem = mapSupabaseToInventoryItem(item);
+        
+        // Ensure isInUserInventory is set correctly (default to true if undefined)
+        if (mappedItem) {
+          // Convert any value to a boolean to avoid type issues
+          mappedItem.isInUserInventory = item.is_in_user_inventory !== false;
+          console.log(`Item ${mappedItem.name || 'unknown'} isInUserInventory:`, mappedItem.isInUserInventory);
+        }
+        return mappedItem;
+      } catch (err) {
+        console.error("Error mapping inventory item:", err);
+        return null;
       }
-      return mappedItem;
     }).filter(Boolean) as InventoryItem[] : [];
     
     console.log("Final mapped items:", mappedItems);
@@ -163,7 +167,8 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       collection_name: skin.collection?.name,
       float_value: skin.floatValue || 0,
       acquired_date: new Date().toISOString(),
-      currency_code: purchaseInfo.currency || "USD"
+      currency_code: purchaseInfo.currency || "USD",
+      is_in_user_inventory: true // Explicitly set this to true for new items
     };
     
     const { data, error } = await supabase
@@ -193,7 +198,13 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
       console.warn("Failed to record transaction for added skin");
     }
     
-    return mapSupabaseToInventoryItem(data);
+    const mappedItem = mapSupabaseToInventoryItem(data);
+    if (mappedItem) {
+      // Ensure isInUserInventory is set correctly
+      mappedItem.isInUserInventory = true;
+    }
+    
+    return mappedItem;
   } catch (error) {
     console.error("Error adding skin to inventory:", error);
     return null;

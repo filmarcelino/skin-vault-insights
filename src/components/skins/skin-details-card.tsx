@@ -1,3 +1,4 @@
+
 import { InventoryItem } from "@/types/skin";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Info, Tag, Calendar, DollarSign, TrendingUp } from "lucide-react";
@@ -5,25 +6,30 @@ import { getRarityColor, getRarityColorClass, getTradeLockStatus, formatDate } f
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 
 interface SkinDetailsCardProps {
-  skin?: InventoryItem;
-  item?: InventoryItem;
+  skin?: InventoryItem | null;
+  item?: InventoryItem | null;
   mode?: 'add' | 'view' | 'edit'; 
   onAddToInventory?: (skin: any) => Promise<InventoryItem | null>;
 }
 
 export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDetailsCardProps) => {
-  // Use item if it exists, otherwise use skin
+  // Use item if it exists, otherwise use skin, and ensure a default object if both are null
   const skinData = item || skin || {};
   
-  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(skinData?.tradeLockUntil || '');
-  const acquiredDate = formatDate(skinData?.acquiredDate || '');
+  // Safely access properties with null checks and defaults
+  const tradeLockUntil = skinData && 'tradeLockUntil' in skinData ? skinData.tradeLockUntil : '';
+  const acquiredDate = skinData && 'acquiredDate' in skinData ? skinData.acquiredDate : '';
+  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(tradeLockUntil);
+  const formattedAcquiredDate = formatDate(acquiredDate);
   const { formatPrice, formatWithCurrency } = useCurrency();
   
-  const originalCurrency = skinData?.currency || "USD";
+  const originalCurrency = skinData && 'currency' in skinData ? skinData.currency : "USD";
   const purchaseCurrency = CURRENCIES.find(c => c.code === originalCurrency) || CURRENCIES[0];
   
   const getBackgroundStyle = () => {
-    if (!skinData?.rarity) return {};
+    // Safely check if rarity property exists
+    const skinRarity = skinData && 'rarity' in skinData ? skinData.rarity : '';
+    if (!skinRarity) return {};
     
     const metallicColors: Record<string, { main: string, dark: string, accent: string }> = {
       'Consumer Grade': { 
@@ -113,10 +119,10 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
       },
     };
 
-    const colorSet = metallicColors[skinData.rarity] || { 
-      main: getRarityColor(skinData.rarity || ''), 
-      dark: getRarityColor(skinData.rarity || ''),
-      accent: getRarityColor(skinData.rarity || '')
+    const colorSet = metallicColors[skinRarity] || { 
+      main: getRarityColor(skinRarity), 
+      dark: getRarityColor(skinRarity),
+      accent: getRarityColor(skinRarity)
     };
     
     return {
@@ -126,6 +132,14 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
     };
   };
   
+  // Safely get image with fallback
+  const skinImage = skinData && 'image' in skinData ? skinData.image : undefined;
+  const skinName = skinData && 'name' in skinData ? skinData.name : 'Unknown Skin';
+  const skinWeapon = skinData && 'weapon' in skinData ? skinData.weapon : undefined;
+  
+  // Check if the skin has StatTrak
+  const isStatTrak = skinData && 'isStatTrak' in skinData ? skinData.isStatTrak : false;
+  
   return (
     <div 
       className="flex flex-col md:flex-row gap-6 p-5 rounded-xl mb-2 transition-all"
@@ -134,12 +148,12 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/50 opacity-80 pointer-events-none rounded-xl"></div>
       
       <div className="w-full md:w-1/3 flex items-center justify-center relative z-10">
-        {skinData?.image ? (
+        {skinImage ? (
           <div className="relative p-4">
             <div className="absolute inset-0 bg-black/20 rounded-lg transform -rotate-3 blur-md"></div>
             <img 
-              src={skinData.image} 
-              alt={skinData?.name || 'Skin'} 
+              src={skinImage} 
+              alt={skinName} 
               className="max-h-[20rem] max-w-full object-contain transform transition-all hover:scale-105 relative z-10"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
@@ -159,10 +173,10 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
       <div className="w-full md:w-2/3 flex flex-col justify-center relative z-10">
         <div className="flex items-center gap-2 mb-2">
           <h3 className="text-xl font-bold text-white">
-            {skinData?.isStatTrak && (
+            {isStatTrak && (
               <span className="text-[#CF6A32] font-bold">StatTrak™ </span>
             )}
-            {skinData?.weapon ? `${skinData.weapon} | ${skinData.name}` : (skinData?.name || 'Unknown Skin')}
+            {skinWeapon ? `${skinWeapon} | ${skinName}` : skinName}
           </h3>
         </div>
         
@@ -183,7 +197,7 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-white/90">
-            {skinData?.rarity && (
+            {skinData && 'rarity' in skinData && skinData.rarity && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <div className="min-w-3 h-3 rounded-full mr-2" 
                   style={{ backgroundColor: getRarityColor(skinData.rarity) }}></div>
@@ -191,14 +205,14 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
               </div>
             )}
             
-            {skinData?.wear && (
+            {skinData && 'wear' in skinData && skinData.wear && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <Tag className="min-w-3 h-3 mr-2 shrink-0" />
                 <span className="font-medium mr-1">Wear:</span> <span className="break-words">{skinData.wear}</span>
               </div>
             )}
             
-            {skinData?.floatValue !== undefined && (
+            {skinData && 'floatValue' in skinData && skinData.floatValue !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <span className="font-medium mr-1">Float:</span> <span className="break-words">{skinData.floatValue.toFixed(8)}</span>
               </div>
@@ -206,17 +220,18 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
             
             <div className="flex items-center bg-black/20 p-2 rounded-md">
               <Calendar className="min-w-3 h-3 mr-2 shrink-0" />
-              <span className="font-medium mr-1">Acquired:</span> <span className="break-words">{acquiredDate}</span>
+              <span className="font-medium mr-1">Acquired:</span> <span className="break-words">{formattedAcquiredDate}</span>
             </div>
             
-            {skinData?.purchasePrice !== undefined && (
+            {skinData && 'purchasePrice' in skinData && skinData.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <DollarSign className="min-w-3 h-3 mr-2 shrink-0" />
                 <span className="font-medium mr-1">Purchase:</span> <span className="break-words">{purchaseCurrency.symbol}{skinData.purchasePrice.toFixed(2)} {purchaseCurrency.code}</span>
               </div>
             )}
             
-            {skinData?.currentPrice !== undefined && skinData?.purchasePrice !== undefined && (
+            {skinData && 'currentPrice' in skinData && skinData.currentPrice !== undefined && 
+             skinData && 'purchasePrice' in skinData && skinData.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <TrendingUp className="min-w-3 h-3 mr-2 shrink-0" />
                 <span className="font-medium mr-1">Current:</span> <span className="break-words">{formatPrice(skinData.currentPrice)}
@@ -228,7 +243,7 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
               </div>
             )}
             
-            {skinData?.marketplace && (
+            {skinData && 'marketplace' in skinData && skinData.marketplace && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <span className="font-medium mr-1">Source:</span> <span className="break-words">{skinData.marketplace}</span>
               </div>

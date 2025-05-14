@@ -11,36 +11,43 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  skin?: InventoryItem | Skin | any;
+  skin?: InventoryItem | Skin | null;
   mode?: 'view' | 'edit' | 'add';
   onSellSkin?: (itemId: string, sellData: SellData) => Promise<void>;
   onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
-  item?: any; // Adding this prop to handle the error
+  item?: InventoryItem | Skin | null; // Added type definition
 }
 
 export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   open,
   onOpenChange,
-  skin = {},
+  skin = null,
   mode = 'view',
   onSellSkin,
   onAddToInventory,
-  item, // We'll use either item or skin
+  item = null, // Initialize with null
 }) => {
   const [activeTab, setActiveTab] = useState("details");
   const { t } = useLanguage();
   
-  // Use item if provided, otherwise use skin, and ensure it's never null or undefined
+  // Use item if provided, otherwise use skin, ensure it's never undefined
   const skinData = item || skin || {};
   
-  // Add explicit check for isInUserInventory to avoid the null access error
-  const isInUserInventory = skinData && skinData.isInUserInventory === true;
+  // Add explicit null check for isInUserInventory
+  const isInUserInventory = skinData && 
+    typeof skinData === 'object' && 
+    'isInUserInventory' in skinData ? 
+    skinData.isInUserInventory === true : false;
 
   const handleOpenChange = (newOpen: boolean) => {
     if (onOpenChange) {
       onOpenChange(newOpen);
     }
   };
+
+  // Add extra safety check - if there's no valid data, don't render tabs that need data
+  const canShowAdditionalInfo = mode !== 'add' && skinData && Object.keys(skinData).length > 0;
+  const canShowSellTab = mode !== 'add' && isInUserInventory;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -56,13 +63,14 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="details">{t('skins.details')}</TabsTrigger>
-            {mode !== 'add' && (
+            {canShowAdditionalInfo && (
               <TabsTrigger value="additional">{t('skins.additionalInfo')}</TabsTrigger>
             )}
-            {mode !== 'add' && isInUserInventory && (
+            {canShowSellTab && (
               <TabsTrigger value="sell">{t('skins.sell')}</TabsTrigger>
             )}
           </TabsList>
+          
           <TabsContent value="details">
             <SkinDetailsCard 
               item={skinData} 
@@ -70,12 +78,14 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
               onAddToInventory={onAddToInventory} 
             />
           </TabsContent>
-          {mode !== 'add' && (
+          
+          {canShowAdditionalInfo && (
             <TabsContent value="additional">
               <SkinAdditionalInfo item={skinData} />
             </TabsContent>
           )}
-          {mode !== 'add' && isInUserInventory && (
+          
+          {canShowSellTab && (
             <TabsContent value="sell">
               <SkinSellingForm 
                 item={skinData} 

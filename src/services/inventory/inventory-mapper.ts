@@ -5,7 +5,7 @@ export const mapSupabaseToInventoryItem = (item: any): InventoryItem | null => {
   if (!item) return null;
   
   try {
-    return {
+    const mappedItem: InventoryItem = {
       id: item.skin_id || '',
       inventoryId: item.inventory_id || '',
       name: item.name || '',
@@ -29,8 +29,13 @@ export const mapSupabaseToInventoryItem = (item: any): InventoryItem | null => {
         id: item.collection_id,
         name: item.collection_name
       } : undefined,
-      isInUserInventory: true
+      // This is the critical property - make sure it's always defined
+      isInUserInventory: item.is_in_user_inventory !== false // Convert any value to a valid boolean, default to true
     };
+    
+    console.log(`Mapped item ${mappedItem.name} with isInUserInventory:`, mappedItem.isInUserInventory);
+    
+    return mappedItem;
   } catch (error) {
     console.error("Error mapping inventory item:", error);
     return null;
