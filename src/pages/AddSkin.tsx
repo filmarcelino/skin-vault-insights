@@ -20,29 +20,15 @@ export default function AddSkin() {
     selectedItemForDuplicate,
     duplicateCount,
     setIsModalOpen,
-    handleViewDetails
+    handleViewDetails,
+    handleCloseDuplicateModal,
+    handleConfirmDuplicate,
+    handleDuplicateCountChange
   } = useInventoryActions();
   
   // Create local handlers
   const handleClose = () => {
     setIsModalOpen(false);
-  };
-  
-  const handleUpdate = (updatedItem: any) => {
-    console.log(`Updating item:`, updatedItem);
-    setIsModalOpen(false);
-  };
-  
-  const handleDuplicateCountChange = (count: number) => {
-    console.log(`Duplicate count changed to: ${count}`);
-  };
-  
-  const handleConfirmDuplicate = () => {
-    console.log('Duplicate confirmed');
-  };
-  
-  const handleCloseDuplicateModal = () => {
-    console.log('Duplicate modal closed');
   };
   
   const handleSkinDetected = (skin: any) => {
@@ -93,8 +79,9 @@ export default function AddSkin() {
       <DuplicateSkinModal 
         open={duplicateModalOpen}
         onOpenChange={handleCloseDuplicateModal}
-        count={duplicateCount || 1}
         skin={selectedItemForDuplicate || {}}
+        count={duplicateCount || 1}
+        onDuplicate={handleConfirmDuplicate}
       />
     </Layout>
   );

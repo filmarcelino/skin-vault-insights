@@ -139,6 +139,10 @@ export default function Search() {
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         <div>
           <FilterPanel 
+            weaponFilter={weaponFilter}
+            rarityFilter={rarityFilter}
+            minPrice={minPriceFilter}
+            maxPrice={maxPriceFilter}
             onWeaponFilterChange={setWeaponFilter}
             onRarityFilterChange={setRarityFilter}
             onResetFilters={handleResetFilters}
@@ -158,6 +162,7 @@ export default function Search() {
             items={currentItems} 
             onAddToInventory={handleAddToInventory}
             onViewDetails={handleViewDetails}
+            totalItems={filteredSkins.length}
           />
           
           <SearchPagination 

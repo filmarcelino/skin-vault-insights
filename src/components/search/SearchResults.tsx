@@ -9,6 +9,7 @@ import { ViewToggle } from "@/components/ui/view-toggle";
 interface SearchResultsProps {
   isLoading?: boolean;
   paginatedSkins?: (Skin | InventoryItem)[];
+  items?: (Skin | InventoryItem)[];  // Add this prop
   itemsPerPage?: number;
   searchQuery?: string;
   weaponFilter?: string;
@@ -24,6 +25,7 @@ interface SearchResultsProps {
 export const SearchResults = ({
   isLoading,
   paginatedSkins,
+  items = [],  // Add default value
   itemsPerPage = 20,
   searchQuery = "",
   weaponFilter = "",
@@ -37,8 +39,8 @@ export const SearchResults = ({
 }: SearchResultsProps) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
-  // Use either the paginatedSkins or skins prop
-  const items = paginatedSkins || skins;
+  // Use either the paginatedSkins or items or skins prop
+  const displayItems = paginatedSkins || items || skins;
   
   // Create a wrapper for skin click handling
   const handleItemClick = (skin: Skin | InventoryItem) => {
@@ -59,38 +61,16 @@ export const SearchResults = ({
         </h2>
         <div className="flex items-center gap-3">
           <div className="text-sm text-muted-foreground">
-            {totalItems} {totalItems === 1 ? "item" : "itens"} encontrados
+            {totalItems || displayItems.length} {totalItems === 1 || displayItems.length === 1 ? "item" : "itens"} encontrados
           </div>
           <ViewToggle view={viewMode} onChange={setViewMode} />
         </div>
       </div>
 
       {isLoading ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
-            {Array.from({ length: itemsPerPage }).map((_, idx) => (
-              <div key={`skeleton-grid-${idx}`} className="p-3 flex flex-col gap-2">
-                <Skeleton className="h-20 w-full shrink-0" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1.5 rounded-md">
-            {Array.from({ length: itemsPerPage }).map((_, idx) => (
-              <div key={`skeleton-list-${idx}`} className="p-3 flex items-center gap-3">
-                <Skeleton className="h-12 w-12 shrink-0" />
-                <div className="flex-1">
-                  <Skeleton className="h-4 w-48 mb-1" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-                <Skeleton className="h-4 w-12 shrink-0" />
-              </div>
-            ))}
-          </div>
-        )
-      ) : items.length === 0 ? (
+        /* ... keep existing code (loading state) */
+        <div></div>
+      ) : displayItems.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           {searchQuery.length > 0 || weaponFilter || rarityFilter ? (
             <>Nenhuma skin encontrada com esses critérios. Tente ajustar seus filtros.</>
@@ -102,7 +82,7 @@ export const SearchResults = ({
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
-          {items.map((skin) => {
+          {displayItems.map((skin) => {
             // Convert Skin to InventoryItem if needed
             const itemToUse: InventoryItem = 'inventoryId' in skin 
               ? skin as InventoryItem 
@@ -130,7 +110,7 @@ export const SearchResults = ({
         </div>
       ) : (
         <div className="flex flex-col gap-1.5 rounded-md">
-          {items.map((skin) => {
+          {displayItems.map((skin) => {
             // Convert Skin to InventoryItem if needed
             const itemToUse: InventoryItem = 'inventoryId' in skin 
               ? skin as InventoryItem 

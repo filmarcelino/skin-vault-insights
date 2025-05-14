@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -17,33 +16,41 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 interface DuplicateSkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDuplicate: (count: number) => void;
-  selectedItem: InventoryItem | null;
+  skin: InventoryItem | any;
+  count?: number;
+  onDuplicate?: (count: number) => void;
+  selectedItem?: InventoryItem | null;
 }
 
 export const DuplicateSkinModal = ({
   open,
   onOpenChange,
+  skin,
+  count: externalCount = 1,
   onDuplicate,
-  selectedItem,
+  selectedItem
 }: DuplicateSkinModalProps) => {
-  const [duplicateCount, setDuplicateCount] = useState(1);
+  // Use either selectedItem or skin prop for compatibility
+  const itemToUse = selectedItem || skin;
+  const [duplicateCount, setDuplicateCount] = useState(externalCount);
   const { formatPrice } = useCurrency();
   
   // Reset count when modal opens with new item
   useEffect(() => {
     if (open) {
-      setDuplicateCount(1);
+      setDuplicateCount(externalCount);
     }
-  }, [open, selectedItem]);
+  }, [open, itemToUse, externalCount]);
 
   const handleDuplicate = () => {
-    onDuplicate(duplicateCount);
+    if (onDuplicate) {
+      onDuplicate(duplicateCount);
+    }
   };
 
   // Função para gerar o gradiente de cor baseado na raridade
   const getBackgroundGradient = () => {
-    if (!selectedItem?.rarity) return {};
+    if (!itemToUse?.rarity) return {};
     
     const rarityGradients: Record<string, string> = {
       'Consumer Grade': 'linear-gradient(135deg, #8E9196 0%, #6a6d71 100%)',
@@ -65,7 +72,7 @@ export const DuplicateSkinModal = ({
     };
 
     return {
-      background: rarityGradients[selectedItem.rarity] || 'linear-gradient(135deg, #8E9196 0%, #6a6d71 100%)',
+      background: rarityGradients[itemToUse.rarity] || 'linear-gradient(135deg, #8E9196 0%, #6a6d71 100%)',
     };
   };
 
@@ -79,39 +86,39 @@ export const DuplicateSkinModal = ({
           </DialogTitle>
         </DialogHeader>
         
-        {selectedItem && (
+        {itemToUse && (
           <div className="py-4 space-y-4">
             <div className="flex items-center gap-4">
               <div 
                 className="h-24 w-24 flex-shrink-0 rounded-md overflow-hidden p-3"
                 style={getBackgroundGradient()}
               >
-                {selectedItem.image && (
+                {itemToUse.image && (
                   <img 
-                    src={selectedItem.image} 
-                    alt={selectedItem.name} 
+                    src={itemToUse.image} 
+                    alt={itemToUse.name} 
                     className="h-full w-full object-contain"
                   />
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-white text-lg">{selectedItem.name}</h3>
-                <p className="text-sm text-gray-300">{selectedItem.weapon}</p>
+                <h3 className="font-medium text-white text-lg">{itemToUse.name}</h3>
+                <p className="text-sm text-gray-300">{itemToUse.weapon}</p>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {selectedItem.wear && (
+                  {itemToUse.wear && (
                     <span className="text-xs bg-white/10 px-2 py-0.5 rounded">
-                      {selectedItem.wear}
+                      {itemToUse.wear}
                     </span>
                   )}
-                  {selectedItem.floatValue !== undefined && (
+                  {itemToUse.floatValue !== undefined && (
                     <span className="text-xs bg-white/10 px-2 py-0.5 rounded">
-                      Float: {selectedItem.floatValue.toFixed(4)}
+                      Float: {itemToUse.floatValue.toFixed(4)}
                     </span>
                   )}
                 </div>
-                {selectedItem.currentPrice !== undefined && (
+                {itemToUse.currentPrice !== undefined && (
                   <p className="text-sm font-semibold text-green-400 mt-2">
-                    {formatPrice(selectedItem.currentPrice)}
+                    {formatPrice(itemToUse.currentPrice)}
                   </p>
                 )}
               </div>
@@ -151,16 +158,16 @@ export const DuplicateSkinModal = ({
                 </Button>
               </div>
 
-              {selectedItem.currentPrice !== undefined && (
+              {itemToUse.currentPrice !== undefined && (
                 <div className="mt-4">
                   <div className="bg-white/5 border border-white/10 rounded-lg p-3">
                     <div className="flex justify-between items-center text-sm text-gray-300">
                       <span>Preço por unidade:</span>
-                      <span>{formatPrice(selectedItem.currentPrice)}</span>
+                      <span>{formatPrice(itemToUse.currentPrice)}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm font-semibold text-white mt-2">
                       <span>Valor total:</span>
-                      <span className="text-green-400">{formatPrice(selectedItem.currentPrice * duplicateCount)}</span>
+                      <span className="text-green-400">{formatPrice(itemToUse.currentPrice * duplicateCount)}</span>
                     </div>
                   </div>
                 </div>

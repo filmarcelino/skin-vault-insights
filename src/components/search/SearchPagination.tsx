@@ -12,6 +12,7 @@ interface SearchPaginationProps {
   currentPage: number;
   totalPages?: number;
   setCurrentPage?: (page: number) => void;
+  onPageChange?: (pageNumber: number) => void;  // Add this prop
   show?: boolean;
   itemsPerPage?: number;
   totalItems?: number;
@@ -22,6 +23,7 @@ export const SearchPagination = ({
   currentPage,
   totalPages: propTotalPages,
   setCurrentPage,
+  onPageChange,
   show = true,
   itemsPerPage,
   totalItems,
@@ -36,6 +38,8 @@ export const SearchPagination = ({
   const changePage = (page: number) => {
     if (setCurrentPage) {
       setCurrentPage(page);
+    } else if (onPageChange) {
+      onPageChange(page);
     } else if (paginate) {
       paginate(page);
     }

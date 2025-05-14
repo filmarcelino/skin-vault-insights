@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { InventoryItem, SellData, Skin } from "@/types/skin";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -26,10 +25,11 @@ import { Input } from "../ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { useForm } from "react-hook-form";
 
-interface InventorySkinModalProps {
-  item: InventoryItem | null;
+export interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  skin?: InventoryItem | Skin | any;
+  mode?: string;
   onSellSkin?: (itemId: string, sellData: SellData) => void;
   onUpdateSkin?: (item: InventoryItem) => Promise<void>;
   onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
@@ -37,14 +37,17 @@ interface InventorySkinModalProps {
 }
 
 export function InventorySkinModal({
-  item,
   open,
   onOpenChange,
+  skin,
+  mode = "view",
   onSellSkin,
   onUpdateSkin,
   onAddToInventory,
   onClose
 }: InventorySkinModalProps) {
+  // Convert the skin prop to item for compatibility with existing code
+  const item = skin || null;
   const [activeTab, setActiveTab] = useState("details");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [removalType, setRemovalType] = useState<'remove' | 'sell'>('remove');

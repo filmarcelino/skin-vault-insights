@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +12,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Update the interface to include the typeFilter prop
 interface FilterPanelProps {
-  weaponFilter: string;
-  rarityFilter: string;
+  weaponFilter?: string;
+  rarityFilter?: string;
   typeFilter?: string;
-  minPrice: number | null;
-  maxPrice: number | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
   onWeaponFilterChange: (value: string) => void;
   onRarityFilterChange: (value: string) => void;
   onTypeFilterChange?: (value: string) => void;
@@ -29,11 +27,11 @@ interface FilterPanelProps {
 }
 
 export const FilterPanel = ({
-  weaponFilter,
-  rarityFilter,
+  weaponFilter = "",
+  rarityFilter = "",
   typeFilter = "",
-  minPrice,
-  maxPrice,
+  minPrice = null,
+  maxPrice = null,
   onWeaponFilterChange,
   onRarityFilterChange,
   onTypeFilterChange,
