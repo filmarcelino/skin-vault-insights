@@ -1,16 +1,16 @@
 
-import { InventoryItem } from "@/types/skin";
+import { InventoryItem, Skin } from "@/types/skin";
 
 interface SkinAdditionalInfoProps {
-  skin?: InventoryItem | null;
-  item?: InventoryItem | null; // Adding item as optional to maintain backward compatibility
+  skin?: InventoryItem | Skin | null;
+  item?: InventoryItem | Skin | null;
 }
 
 export const SkinAdditionalInfo = ({ skin, item }: SkinAdditionalInfoProps) => {
-  // Use item if it exists, otherwise use skin, and ensure a default object if both are null
+  // Use item if it exists, otherwise use skin
   const skinData = item || skin || {};
   
-  // Safely access notes with a null check
+  // Safely access notes with a null check and type guard
   const notes = skinData && 'notes' in skinData ? skinData.notes : null;
   
   return (

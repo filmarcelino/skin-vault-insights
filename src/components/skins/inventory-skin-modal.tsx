@@ -1,21 +1,22 @@
 
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Skin, InventoryItem, SellData } from "@/types/skin";
+import { Skin, InventoryItem } from "@/types/skin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SkinDetailsCard } from "./skin-details-card";
 import { SkinSellingForm } from "./skin-selling-form";
 import { SkinAdditionalInfo } from "./skin-additional-info";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { defaultSkin, defaultInventoryItem } from "@/utils/default-objects";
 
 export interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   skin?: InventoryItem | Skin | null;
   mode?: 'view' | 'edit' | 'add';
-  onSellSkin?: (itemId: string, sellData: SellData) => Promise<void>;
+  onSellSkin?: (itemId: string, sellData: any) => Promise<void>;
   onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
-  item?: InventoryItem | Skin | null; // Added type definition
+  item?: InventoryItem | Skin | null;
 }
 
 export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
@@ -25,18 +26,17 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   mode = 'view',
   onSellSkin,
   onAddToInventory,
-  item = null, // Initialize with null
+  item = null,
 }) => {
   const [activeTab, setActiveTab] = useState("details");
   const { t } = useLanguage();
   
-  // Use item if provided, otherwise use skin, ensure it's never undefined
-  const skinData = item || skin || {};
+  // Use item if provided, otherwise use skin, and provide a default if both are null
+  const skinData = (item || skin) ? (item || skin) : 
+    mode === 'add' ? defaultSkin : defaultInventoryItem;
   
-  // Add explicit null check for isInUserInventory
-  const isInUserInventory = skinData && 
-    typeof skinData === 'object' && 
-    'isInUserInventory' in skinData ? 
+  // Safely check for isInUserInventory with proper type casting
+  const isInUserInventory = 'isInUserInventory' in skinData ? 
     skinData.isInUserInventory === true : false;
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -88,7 +88,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
           {canShowSellTab && (
             <TabsContent value="sell">
               <SkinSellingForm 
-                item={skinData} 
+                item={skinData as InventoryItem} 
                 onSellSkin={onSellSkin} 
                 onCancel={() => setActiveTab("details")}
               />

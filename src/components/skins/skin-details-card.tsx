@@ -1,34 +1,43 @@
 
-import { InventoryItem } from "@/types/skin";
+import { InventoryItem, Skin } from "@/types/skin";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Info, Tag, Calendar, DollarSign, TrendingUp } from "lucide-react";
 import { getRarityColor, getRarityColorClass, getTradeLockStatus, formatDate } from "@/utils/skin-utils";
 import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 
 interface SkinDetailsCardProps {
-  skin?: InventoryItem | null;
-  item?: InventoryItem | null;
+  skin?: InventoryItem | Skin | null;
+  item?: InventoryItem | Skin | null;
   mode?: 'add' | 'view' | 'edit'; 
-  onAddToInventory?: (skin: any) => Promise<InventoryItem | null>;
+  onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
 }
 
 export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDetailsCardProps) => {
-  // Use item if it exists, otherwise use skin, and ensure a default object if both are null
+  // Use item if it exists, otherwise use skin, ensure it's never null
   const skinData = item || skin || {};
   
-  // Safely access properties with null checks and defaults
-  const tradeLockUntil = skinData && 'tradeLockUntil' in skinData ? skinData.tradeLockUntil : '';
-  const acquiredDate = skinData && 'acquiredDate' in skinData ? skinData.acquiredDate : '';
-  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(tradeLockUntil);
-  const formattedAcquiredDate = formatDate(acquiredDate);
+  // Safely access properties with type guards
+  const tradeLockUntil = 'tradeLockUntil' in skinData ? skinData.tradeLockUntil : '';
+  const acquiredDate = 'acquiredDate' in skinData ? skinData.acquiredDate : '';
+  
+  // Only call getTradeLockStatus if tradeLockUntil is a string
+  const { isLocked, daysLeft, tradeLockDate } = getTradeLockStatus(
+    typeof tradeLockUntil === 'string' ? tradeLockUntil : ''
+  );
+  
+  // Only call formatDate if acquiredDate is a string
+  const formattedAcquiredDate = formatDate(
+    typeof acquiredDate === 'string' ? acquiredDate : ''
+  );
+  
   const { formatPrice, formatWithCurrency } = useCurrency();
   
-  const originalCurrency = skinData && 'currency' in skinData ? skinData.currency : "USD";
+  const originalCurrency = 'currency' in skinData ? skinData.currency : "USD";
   const purchaseCurrency = CURRENCIES.find(c => c.code === originalCurrency) || CURRENCIES[0];
   
   const getBackgroundStyle = () => {
     // Safely check if rarity property exists
-    const skinRarity = skinData && 'rarity' in skinData ? skinData.rarity : '';
+    const skinRarity = 'rarity' in skinData ? skinData.rarity : '';
     if (!skinRarity) return {};
     
     const metallicColors: Record<string, { main: string, dark: string, accent: string }> = {
@@ -119,10 +128,11 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
       },
     };
 
-    const colorSet = metallicColors[skinRarity] || { 
-      main: getRarityColor(skinRarity), 
-      dark: getRarityColor(skinRarity),
-      accent: getRarityColor(skinRarity)
+    const skinRarityStr = typeof skinRarity === 'string' ? skinRarity : '';
+    const colorSet = metallicColors[skinRarityStr] || { 
+      main: getRarityColor(skinRarityStr), 
+      dark: getRarityColor(skinRarityStr),
+      accent: getRarityColor(skinRarityStr)
     };
     
     return {
@@ -133,12 +143,12 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
   };
   
   // Safely get image with fallback
-  const skinImage = skinData && 'image' in skinData ? skinData.image : undefined;
-  const skinName = skinData && 'name' in skinData ? skinData.name : 'Unknown Skin';
-  const skinWeapon = skinData && 'weapon' in skinData ? skinData.weapon : undefined;
+  const skinImage = 'image' in skinData ? skinData.image : undefined;
+  const skinName = 'name' in skinData ? skinData.name : 'Unknown Skin';
+  const skinWeapon = 'weapon' in skinData ? skinData.weapon : undefined;
   
   // Check if the skin has StatTrak
-  const isStatTrak = skinData && 'isStatTrak' in skinData ? skinData.isStatTrak : false;
+  const isStatTrak = 'isStatTrak' in skinData ? skinData.isStatTrak === true : false;
   
   return (
     <div 
@@ -153,7 +163,7 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
             <div className="absolute inset-0 bg-black/20 rounded-lg transform -rotate-3 blur-md"></div>
             <img 
               src={skinImage} 
-              alt={skinName} 
+              alt={typeof skinName === 'string' ? skinName : 'Skin'}
               className="max-h-[20rem] max-w-full object-contain transform transition-all hover:scale-105 relative z-10"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = '/placeholder.svg';
@@ -176,7 +186,10 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
             {isStatTrak && (
               <span className="text-[#CF6A32] font-bold">StatTrak™ </span>
             )}
-            {skinWeapon ? `${skinWeapon} | ${skinName}` : skinName}
+            {skinWeapon ? 
+              `${typeof skinWeapon === 'string' ? skinWeapon : ''} | ${typeof skinName === 'string' ? skinName : ''}` : 
+              typeof skinName === 'string' ? skinName : 'Unknown Skin'
+            }
           </h3>
         </div>
         
@@ -200,21 +213,27 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
             {skinData && 'rarity' in skinData && skinData.rarity && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <div className="min-w-3 h-3 rounded-full mr-2" 
-                  style={{ backgroundColor: getRarityColor(skinData.rarity) }}></div>
-                <span className="font-medium mr-1">Rarity:</span> <span className="break-words">{skinData.rarity}</span>
+                  style={{ backgroundColor: getRarityColor(typeof skinData.rarity === 'string' ? skinData.rarity : '') }}></div>
+                <span className="font-medium mr-1">Rarity:</span> <span className="break-words">
+                  {typeof skinData.rarity === 'string' ? skinData.rarity : ''}
+                </span>
               </div>
             )}
             
             {skinData && 'wear' in skinData && skinData.wear && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <Tag className="min-w-3 h-3 mr-2 shrink-0" />
-                <span className="font-medium mr-1">Wear:</span> <span className="break-words">{skinData.wear}</span>
+                <span className="font-medium mr-1">Wear:</span> <span className="break-words">
+                  {typeof skinData.wear === 'string' ? skinData.wear : ''}
+                </span>
               </div>
             )}
             
             {skinData && 'floatValue' in skinData && skinData.floatValue !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <span className="font-medium mr-1">Float:</span> <span className="break-words">{skinData.floatValue.toFixed(8)}</span>
+                <span className="font-medium mr-1">Float:</span> <span className="break-words">
+                  {typeof skinData.floatValue === 'number' ? skinData.floatValue.toFixed(8) : '0.00000000'}
+                </span>
               </div>
             )}
             
@@ -226,7 +245,11 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
             {skinData && 'purchasePrice' in skinData && skinData.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <DollarSign className="min-w-3 h-3 mr-2 shrink-0" />
-                <span className="font-medium mr-1">Purchase:</span> <span className="break-words">{purchaseCurrency.symbol}{skinData.purchasePrice.toFixed(2)} {purchaseCurrency.code}</span>
+                <span className="font-medium mr-1">Purchase:</span> <span className="break-words">
+                  {purchaseCurrency.symbol}
+                  {typeof skinData.purchasePrice === 'number' ? skinData.purchasePrice.toFixed(2) : '0.00'} 
+                  {purchaseCurrency.code}
+                </span>
               </div>
             )}
             
@@ -234,18 +257,23 @@ export const SkinDetailsCard = ({ skin, item, mode, onAddToInventory }: SkinDeta
              skinData && 'purchasePrice' in skinData && skinData.purchasePrice !== undefined && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
                 <TrendingUp className="min-w-3 h-3 mr-2 shrink-0" />
-                <span className="font-medium mr-1">Current:</span> <span className="break-words">{formatPrice(skinData.currentPrice)}
-                {skinData.currentPrice > skinData.purchasePrice && (
-                  <span className="ml-1 text-green-400 text-xs">
-                    (+{formatPrice(skinData.currentPrice - skinData.purchasePrice)})
-                  </span>
-                )}</span>
+                <span className="font-medium mr-1">Current:</span> <span className="break-words">
+                  {typeof skinData.currentPrice === 'number' ? formatPrice(skinData.currentPrice) : '0.00'}
+                  {typeof skinData.currentPrice === 'number' && typeof skinData.purchasePrice === 'number' && 
+                   skinData.currentPrice > skinData.purchasePrice && (
+                    <span className="ml-1 text-green-400 text-xs">
+                      (+{formatPrice(skinData.currentPrice - skinData.purchasePrice)})
+                    </span>
+                  )}
+                </span>
               </div>
             )}
             
             {skinData && 'marketplace' in skinData && skinData.marketplace && (
               <div className="flex items-center bg-black/20 p-2 rounded-md">
-                <span className="font-medium mr-1">Source:</span> <span className="break-words">{skinData.marketplace}</span>
+                <span className="font-medium mr-1">Source:</span> <span className="break-words">
+                  {typeof skinData.marketplace === 'string' ? skinData.marketplace : ''}
+                </span>
               </div>
             )}
           </div>

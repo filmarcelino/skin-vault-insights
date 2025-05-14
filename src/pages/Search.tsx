@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useInventoryActions } from '@/hooks/useInventoryActions';
 import { InventorySkinModal } from '@/components/skins/inventory-skin-modal';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { defaultSkin } from '@/utils/default-objects';
 
 export default function Search() {
   // Use the useSkins hook but destructure properly
@@ -176,7 +177,7 @@ export default function Search() {
       <InventorySkinModal 
         open={isModalOpen} 
         onOpenChange={handleClose}
-        skin={selectedItem || {}}
+        skin={selectedItem || defaultSkin as Skin}
         mode="add"
       />
     </Layout>

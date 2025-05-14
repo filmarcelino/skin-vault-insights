@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SkinImageAnalyzer } from '@/components/SkinImageAnalyzer';
+import { defaultSkin } from '@/utils/default-objects';
+import { Skin } from '@/types/skin';
 
 export default function AddSkin() {
   const navigate = useNavigate();
@@ -52,7 +54,7 @@ export default function AddSkin() {
             <InventorySkinModal 
               open={isModalOpen} 
               onOpenChange={handleClose}
-              skin={selectedItem || {}}
+              skin={selectedItem || defaultSkin}
               mode="add"
             />
             <Button 
@@ -79,7 +81,7 @@ export default function AddSkin() {
       <DuplicateSkinModal 
         open={duplicateModalOpen}
         onOpenChange={handleCloseDuplicateModal}
-        skin={selectedItemForDuplicate || {}}
+        skin={selectedItemForDuplicate || defaultSkin as Skin}
         count={duplicateCount || 1}
         onDuplicate={handleConfirmDuplicate}
       />

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +28,8 @@ const MARKETPLACE_OPTIONS = [
 ];
 
 export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = () => {} }: SkinSellingFormProps) {
-  // Use item if it exists, otherwise use skin, and ensure a default object if both are null
-  const skinData = item || skin || {};
+  // Use item if it exists, otherwise use skin, ensure it's never null
+  const skinData = item || skin || {} as InventoryItem;
   const { currency, formatPrice, convertPrice } = useCurrency();
   
   // Estado para o formulário
@@ -41,13 +42,15 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
 
   // Calcular o lucro ou prejuízo (considerando as diferentes moedas)
   const calculateProfit = (): number => {
-    // Safely check if purchasePrice exists
-    const purchasePrice = skinData && 'purchasePrice' in skinData ? skinData.purchasePrice : 0;
+    // Safely check if purchasePrice exists with type guard
+    const purchasePrice = 'purchasePrice' in skinData ? 
+      typeof skinData.purchasePrice === 'number' ? skinData.purchasePrice : 0 : 0;
     
     if (!soldPrice || !purchasePrice) return 0;
     
-    // Safely get currency with default
-    const skinCurrency = skinData && 'currency' in skinData ? skinData.currency : "USD";
+    // Safely get currency with type guard
+    const skinCurrency = 'currency' in skinData ? 
+      typeof skinData.currency === 'string' ? skinData.currency : "USD" : "USD";
     
     // Converter preço de venda para USD para comparação
     const soldPriceInUSD = soldCurrency === "USD" 
@@ -57,20 +60,23 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
     // Converter preço de compra para USD para comparação
     const purchasePriceInUSD = skinCurrency === "USD" 
       ? purchasePrice 
-      : convertPrice(purchasePrice, skinCurrency || "USD");
+      : convertPrice(purchasePrice, skinCurrency);
     
     return soldPriceInUSD - purchasePriceInUSD;
   };
 
   const profit = calculateProfit();
-  const purchasePrice = skinData && 'purchasePrice' in skinData ? skinData.purchasePrice : 0;
+  const purchasePrice = 'purchasePrice' in skinData ? 
+    typeof skinData.purchasePrice === 'number' ? skinData.purchasePrice : 0 : 0;
+    
   const profitPercentage = purchasePrice ? (profit / purchasePrice) * 100 : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Safely check if inventoryId exists
-    const inventoryId = skinData && 'inventoryId' in skinData ? skinData.inventoryId : '';
+    // Safely check if inventoryId exists with type guard
+    const inventoryId = 'inventoryId' in skinData ? 
+      typeof skinData.inventoryId === 'string' ? skinData.inventoryId : '' : '';
     
     if (!soldPrice || !inventoryId) return;
     
