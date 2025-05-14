@@ -7,29 +7,49 @@ import { SkinCard } from "@/components/inventory/SkinCard";
 import { ViewToggle } from "@/components/ui/view-toggle";
 
 interface SearchResultsProps {
-  isLoading: boolean;
-  paginatedSkins: (Skin | InventoryItem)[];
-  itemsPerPage: number;
-  searchQuery: string;
-  weaponFilter: string;
-  rarityFilter: string;
-  currentTab: "inventory" | "allSkins";
-  totalItems: number;
-  handleSkinClick: (skin: Skin | InventoryItem) => void;
+  isLoading?: boolean;
+  paginatedSkins?: (Skin | InventoryItem)[];
+  itemsPerPage?: number;
+  searchQuery?: string;
+  weaponFilter?: string;
+  rarityFilter?: string;
+  currentTab?: "inventory" | "allSkins";
+  totalItems?: number;
+  handleSkinClick?: (skin: Skin | InventoryItem) => void;
+  skins?: Skin[] | InventoryItem[];
+  onAddToInventory?: (item: any) => void;
+  onViewDetails?: (item: InventoryItem) => void;
 }
 
 export const SearchResults = ({
   isLoading,
   paginatedSkins,
-  itemsPerPage,
-  searchQuery,
-  weaponFilter,
-  rarityFilter,
-  currentTab,
-  totalItems,
-  handleSkinClick
+  itemsPerPage = 20,
+  searchQuery = "",
+  weaponFilter = "",
+  rarityFilter = "",
+  currentTab = "allSkins",
+  totalItems = 0,
+  handleSkinClick,
+  skins = [],
+  onAddToInventory,
+  onViewDetails
 }: SearchResultsProps) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Use either the paginatedSkins or skins prop
+  const items = paginatedSkins || skins;
+  
+  // Create a wrapper for skin click handling
+  const handleItemClick = (skin: Skin | InventoryItem) => {
+    if (handleSkinClick) {
+      handleSkinClick(skin);
+    } else if (onViewDetails && 'inventoryId' in skin) {
+      onViewDetails(skin as InventoryItem);
+    } else if (onAddToInventory) {
+      onAddToInventory(skin);
+    }
+  };
 
   return (
     <div className="mt-4">
@@ -70,7 +90,7 @@ export const SearchResults = ({
             ))}
           </div>
         )
-      ) : paginatedSkins.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           {searchQuery.length > 0 || weaponFilter || rarityFilter ? (
             <>Nenhuma skin encontrada com esses critérios. Tente ajustar seus filtros.</>
@@ -82,7 +102,7 @@ export const SearchResults = ({
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
-          {paginatedSkins.map((skin) => {
+          {items.map((skin) => {
             // Convert Skin to InventoryItem if needed
             const itemToUse: InventoryItem = 'inventoryId' in skin 
               ? skin as InventoryItem 
@@ -102,7 +122,7 @@ export const SearchResults = ({
                 key={itemToUse.inventoryId}
                 item={itemToUse}
                 showMetadata={true}
-                onClick={() => handleSkinClick(skin)}
+                onClick={() => handleItemClick(skin)}
                 className="animate-fade-in h-full"
               />
             );
@@ -110,7 +130,7 @@ export const SearchResults = ({
         </div>
       ) : (
         <div className="flex flex-col gap-1.5 rounded-md">
-          {paginatedSkins.map((skin) => {
+          {items.map((skin) => {
             // Convert Skin to InventoryItem if needed
             const itemToUse: InventoryItem = 'inventoryId' in skin 
               ? skin as InventoryItem 
@@ -130,7 +150,7 @@ export const SearchResults = ({
                 key={itemToUse.inventoryId}
                 item={itemToUse}
                 showMetadata={true}
-                onClick={() => handleSkinClick(skin)}
+                onClick={() => handleItemClick(skin)}
                 className="animate-fade-in"
               />
             );

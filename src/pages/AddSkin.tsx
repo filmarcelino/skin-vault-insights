@@ -73,7 +73,7 @@ export default function AddSkin() {
           <div className="cs-card p-4">
             <h2 className="text-xl font-semibold mb-4">Manual Entry</h2>
             <InventorySkinModal 
-              isOpen={isModalOpen} 
+              open={isModalOpen} 
               onClose={handleClose}
               onSave={handleUpdate}
               skin={selectedItem}
@@ -99,13 +99,13 @@ export default function AddSkin() {
             <SkinImageAnalyzer onSkinDetected={(skin) => {
               setSelectedItem(skin);
               setIsModalOpen(true);
-            }}/>
+            }} />
           </div>
         </div>
       </div>
       
       <DuplicateSkinModal 
-        isOpen={duplicateModalOpen}
+        open={duplicateModalOpen}
         onClose={handleCloseDuplicateModal}
         onConfirm={handleConfirmDuplicate}
         onCountChange={handleDuplicateCountChange}

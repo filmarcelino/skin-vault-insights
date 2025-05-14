@@ -22,7 +22,7 @@ export const SKINS_QUERY_KEY = "skins";
 export const CATEGORIES_QUERY_KEY = "categories";
 
 export const useSkins = (filters?: SkinFilter) => {
-  return useQuery({
+  const result = useQuery({
     queryKey: filters?.onlyUserInventory ? [INVENTORY_QUERY_KEY] : [SKINS_QUERY_KEY, filters],
     queryFn: async () => {
       try {
@@ -42,6 +42,14 @@ export const useSkins = (filters?: SkinFilter) => {
     },
     retry: 1,
   });
+
+  // Add these properties to make it compatible with the code that uses this hook
+  return {
+    ...result,
+    skins: result.data || [],
+    loading: result.isLoading,
+    error: result.error
+  };
 };
 
 export const useCategories = () => {

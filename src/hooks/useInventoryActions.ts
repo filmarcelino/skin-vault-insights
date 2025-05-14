@@ -117,6 +117,21 @@ export const useInventoryActions = () => {
     }
   };
 
+  // Add these missing functions
+  const handleDuplicateCountChange = (count: number) => {
+    setDuplicateCount(count);
+  };
+
+  const handleConfirmDuplicate = () => {
+    handleDuplicateMultiple(duplicateCount);
+  };
+
+  const handleCloseDuplicateModal = () => {
+    setDuplicateModalOpen(false);
+    setDuplicateCount(1);
+    setSelectedItemForDuplicate(null);
+  };
+
   const handleClose = () => {
     setIsModalOpen(false);
     setSelectedItem(null);
@@ -142,6 +157,8 @@ export const useInventoryActions = () => {
     setIsModalOpen,
     setDuplicateModalOpen,
     setDuplicateCount,
+    setSelectedItem,
+    setSelectedItemForDuplicate,
     handleEdit,
     handleDuplicate,
     handleRemove,
@@ -150,5 +167,8 @@ export const useInventoryActions = () => {
     handleDuplicateMultiple,
     handleClose,
     handleViewDetails,
+    handleDuplicateCountChange,
+    handleConfirmDuplicate,
+    handleCloseDuplicateModal
   };
 };

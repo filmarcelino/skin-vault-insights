@@ -27,7 +27,12 @@ export interface Skin {
     description?: string;
     image?: string;
   }[];
+  type?: SkinType; // Added this field
 }
+
+export type WeaponType = string;
+export type RarityType = string;
+export type SkinType = string;
 
 export interface InventoryItem extends Skin {
   inventoryId: string;

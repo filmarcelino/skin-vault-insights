@@ -10,18 +10,36 @@ import {
 
 interface SearchPaginationProps {
   currentPage: number;
-  totalPages: number;
-  setCurrentPage: (page: number) => void;
-  show: boolean;
+  totalPages?: number;
+  setCurrentPage?: (page: number) => void;
+  show?: boolean;
+  itemsPerPage?: number;
+  totalItems?: number;
+  paginate?: (pageNumber: number) => void;
 }
 
 export const SearchPagination = ({
   currentPage,
-  totalPages,
+  totalPages: propTotalPages,
   setCurrentPage,
-  show
+  show = true,
+  itemsPerPage,
+  totalItems,
+  paginate
 }: SearchPaginationProps) => {
   if (!show) return null;
+  
+  // Calculate totalPages if not provided directly
+  const totalPages = propTotalPages || (itemsPerPage && totalItems ? Math.ceil(totalItems / itemsPerPage) : 1);
+  
+  // Use the appropriate page changing function
+  const changePage = (page: number) => {
+    if (setCurrentPage) {
+      setCurrentPage(page);
+    } else if (paginate) {
+      paginate(page);
+    }
+  };
 
   // Display up to 5 page numbers, with ellipsis if needed
   const pageNumbers: (number | string)[] = [];
@@ -55,7 +73,7 @@ export const SearchPagination = ({
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious 
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            onClick={() => changePage(Math.max(1, currentPage - 1))}
             className={`cursor-pointer ${currentPage === 1 ? "pointer-events-none opacity-50" : ""}`}
           />
         </PaginationItem>
@@ -65,7 +83,7 @@ export const SearchPagination = ({
             {typeof page === "number" ? (
               <PaginationLink
                 isActive={page === currentPage}
-                onClick={() => setCurrentPage(page)}
+                onClick={() => changePage(page)}
                 className="cursor-pointer"
               >
                 {page}
@@ -78,7 +96,7 @@ export const SearchPagination = ({
         
         <PaginationItem>
           <PaginationNext 
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            onClick={() => changePage(Math.min(totalPages, currentPage + 1))}
             className={`cursor-pointer ${currentPage === totalPages ? "pointer-events-none opacity-50" : ""}`}
           />
         </PaginationItem>

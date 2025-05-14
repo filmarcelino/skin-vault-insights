@@ -1,175 +1,169 @@
 
-import { Filter, Sliders } from "lucide-react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
+// Update the interface to include the typeFilter prop
 interface FilterPanelProps {
   weaponFilter: string;
   rarityFilter: string;
-  setWeaponFilter: (value: string) => void;
-  setRarityFilter: (value: string) => void;
-  weaponTypes: string[];
-  rarityTypes: string[];
-  itemsPerPage?: number;
-  setItemsPerPage?: (value: number) => void;
-  itemsPerPageOptions?: number[];
-  currentTab: "inventory" | "allSkins";
-  onPriceFilterChange?: (min?: number, max?: number) => void;
-  minPrice?: number;
-  maxPrice?: number;
+  typeFilter?: string;
+  minPrice: number | null;
+  maxPrice: number | null;
+  onWeaponFilterChange: (value: string) => void;
+  onRarityFilterChange: (value: string) => void;
+  onTypeFilterChange?: (value: string) => void;
+  onMinPriceChange: (value: number | null) => void;
+  onMaxPriceChange: (value: number | null) => void;
+  onResetFilters: () => void;
 }
 
 export const FilterPanel = ({
   weaponFilter,
   rarityFilter,
-  setWeaponFilter,
-  setRarityFilter,
-  weaponTypes,
-  rarityTypes,
-  itemsPerPage,
-  setItemsPerPage,
-  itemsPerPageOptions = [10, 25, 50, 100],
-  currentTab,
-  onPriceFilterChange,
+  typeFilter = "",
   minPrice,
-  maxPrice
+  maxPrice,
+  onWeaponFilterChange,
+  onRarityFilterChange,
+  onTypeFilterChange,
+  onMinPriceChange,
+  onMaxPriceChange,
+  onResetFilters
 }: FilterPanelProps) => {
-  const [minPriceInput, setMinPriceInput] = useState<string>(minPrice?.toString() || '');
-  const [maxPriceInput, setMaxPriceInput] = useState<string>(maxPrice?.toString() || '');
-  const [isPricePopoverOpen, setIsPricePopoverOpen] = useState(false);
+  // Add the weapon and rarity options
+  const weapons = [
+    { value: "", label: "All Weapons" },
+    { value: "AK-47", label: "AK-47" },
+    { value: "AWP", label: "AWP" },
+    { value: "M4A4", label: "M4A4" },
+    { value: "M4A1-S", label: "M4A1-S" },
+    { value: "Desert Eagle", label: "Desert Eagle" },
+    { value: "USP-S", label: "USP-S" },
+    { value: "Glock-18", label: "Glock-18" },
+    // Add more weapons as needed
+  ];
 
-  // Atualizar inputs quando os props mudarem
-  useEffect(() => {
-    setMinPriceInput(minPrice?.toString() || '');
-    setMaxPriceInput(maxPrice?.toString() || '');
-  }, [minPrice, maxPrice]);
+  const rarities = [
+    { value: "", label: "All Rarities" },
+    { value: "Consumer Grade", label: "Consumer Grade" },
+    { value: "Industrial Grade", label: "Industrial Grade" },
+    { value: "Mil-Spec", label: "Mil-Spec" },
+    { value: "Restricted", label: "Restricted" },
+    { value: "Classified", label: "Classified" },
+    { value: "Covert", label: "Covert" },
+    { value: "Contraband", label: "Contraband" },
+  ];
 
-  const handleApplyPriceFilter = () => {
-    if (onPriceFilterChange) {
-      const min = minPriceInput ? Number(minPriceInput) : undefined;
-      const max = maxPriceInput ? Number(maxPriceInput) : undefined;
-      onPriceFilterChange(min, max);
-      setIsPricePopoverOpen(false);
-    }
-  };
-
-  const handleClearPriceFilter = () => {
-    setMinPriceInput('');
-    setMaxPriceInput('');
-    if (onPriceFilterChange) {
-      onPriceFilterChange(undefined, undefined);
-    }
-    setIsPricePopoverOpen(false);
-  };
+  const types = [
+    { value: "", label: "All Types" },
+    { value: "Normal", label: "Normal" },
+    { value: "StatTrak", label: "StatTrak" },
+    { value: "Souvenir", label: "Souvenir" },
+  ];
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 mb-4">
-      <div className="flex flex-wrap gap-2 items-center flex-1">
-        <Select value={weaponFilter} onValueChange={setWeaponFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Tipo de Arma" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas Armas</SelectItem>
-            {weaponTypes.map(weapon => (
-              <SelectItem key={weapon} value={weapon}>{weapon}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Select value={rarityFilter} onValueChange={setRarityFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Raridade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas Raridades</SelectItem>
-            {rarityTypes.map(rarity => (
-              <SelectItem key={rarity} value={rarity}>{rarity}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="cs-card p-4 space-y-4">
+      <h2 className="text-lg font-semibold">Filters</h2>
+      <Separator />
 
-        <Popover open={isPricePopoverOpen} onOpenChange={setIsPricePopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className={`h-10 w-10 ${(minPrice !== undefined || maxPrice !== undefined) ? 'border-primary' : ''}`}
-            >
-              <Sliders className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium leading-none">Filtro de Preço</h4>
-                <p className="text-sm text-muted-foreground">
-                  Defina um intervalo de preço para filtrar as skins.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="grid gap-1.5">
-                  <Label htmlFor="minPrice">Preço Mínimo</Label>
-                  <Input
-                    id="minPrice"
-                    type="number"
-                    placeholder="Min"
-                    value={minPriceInput}
-                    onChange={e => setMinPriceInput(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="maxPrice">Preço Máximo</Label>
-                  <Input
-                    id="maxPrice"
-                    type="number"
-                    placeholder="Max"
-                    value={maxPriceInput}
-                    onChange={e => setMaxPriceInput(e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" size="sm" onClick={handleClearPriceFilter}>
-                  Limpar
-                </Button>
-                <Button size="sm" onClick={handleApplyPriceFilter}>
-                  Aplicar
-                </Button>
-              </div>
+      <ScrollArea className="h-[calc(100vh-300px)]">
+        <div className="space-y-6 pr-4">
+          <div className="space-y-3">
+            <Label>Weapon</Label>
+            <Select value={weaponFilter} onValueChange={onWeaponFilterChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select weapon" />
+              </SelectTrigger>
+              <SelectContent>
+                {weapons.map((weapon) => (
+                  <SelectItem key={weapon.value} value={weapon.value}>
+                    {weapon.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Rarity</Label>
+            <Select value={rarityFilter} onValueChange={onRarityFilterChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select rarity" />
+              </SelectTrigger>
+              <SelectContent>
+                {rarities.map((rarity) => (
+                  <SelectItem key={rarity.value} value={rarity.value}>
+                    {rarity.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {onTypeFilterChange && (
+            <div className="space-y-3">
+              <Label>Type</Label>
+              <Select 
+                value={typeFilter} 
+                onValueChange={onTypeFilterChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {types.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </PopoverContent>
-        </Popover>
+          )}
 
-        <Button variant="outline" size="icon" className="h-10 w-10">
-          <Filter className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      {currentTab === "allSkins" && setItemsPerPage && itemsPerPage && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Items por página:</span>
-          <Select 
-            value={itemsPerPage.toString()} 
-            onValueChange={(val) => setItemsPerPage(Number(val))}
+          <div className="space-y-3">
+            <Label>Price Range</Label>
+            <div className="flex gap-2 items-center">
+              <Input
+                type="number"
+                placeholder="Min"
+                value={minPrice === null ? "" : minPrice}
+                onChange={(e) => onMinPriceChange(e.target.value ? Number(e.target.value) : null)}
+                min="0"
+                className="w-full"
+              />
+              <span>to</span>
+              <Input
+                type="number"
+                placeholder="Max"
+                value={maxPrice === null ? "" : maxPrice}
+                onChange={(e) => onMaxPriceChange(e.target.value ? Number(e.target.value) : null)}
+                min="0"
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={onResetFilters}
           >
-            <SelectTrigger className="w-[80px]">
-              <SelectValue placeholder="25" />
-            </SelectTrigger>
-            <SelectContent>
-              {itemsPerPageOptions.map(option => (
-                <SelectItem key={option} value={option.toString()}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            Reset Filters
+          </Button>
         </div>
-      )}
+      </ScrollArea>
     </div>
   );
 };

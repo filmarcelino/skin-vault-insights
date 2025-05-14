@@ -8,9 +8,8 @@ import { SearchPagination } from '@/components/search/SearchPagination';
 import { PremiumCTA } from '@/components/search/PremiumCTA';
 import { useSkins } from '@/hooks/use-skins';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { RarityType, SkinType, Skin, WeaponType } from '@/types/skin';
+import { Skin } from '@/types/skin';
 import { Loading } from '@/components/ui/loading';
-import { skin_details } from '@/components/skins/skin-detail-modal';
 import { useNavigate } from 'react-router-dom';
 import { useInventoryActions } from '@/hooks/useInventoryActions';
 import { InventorySkinModal } from '@/components/skins/inventory-skin-modal';
@@ -28,9 +27,9 @@ export default function Search() {
   const [filteredSkins, setFilteredSkins] = useState<Skin[]>([]);
   
   // Filters
-  const [weaponFilter, setWeaponFilter] = useState<WeaponType | ''>('');
-  const [rarityFilter, setRarityFilter] = useState<RarityType | ''>('');
-  const [typeFilter, setTypeFilter] = useState<SkinType | ''>('');
+  const [weaponFilter, setWeaponFilter] = useState<string>('');
+  const [rarityFilter, setRarityFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
   const [minPriceFilter, setMinPriceFilter] = useState<number | null>(null);
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
@@ -180,16 +179,16 @@ export default function Search() {
           />
           
           <SearchPagination 
-            itemsPerPage={itemsPerPage}
             totalItems={filteredSkins.length}
             currentPage={currentPage}
             paginate={paginate}
+            itemsPerPage={itemsPerPage}
           />
         </div>
       </div>
       
       <InventorySkinModal 
-        isOpen={isModalOpen}
+        open={isModalOpen}
         onClose={handleClose}
         onSave={handleUpdate}
         skin={selectedItem}
