@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Search } from "@/components/ui/search";
 import { useSkins } from "@/hooks/use-skins";
@@ -5,11 +6,11 @@ import { InventoryItem, Skin, SellData } from "@/types/skin";
 import { useToast } from "@/hooks/use-toast";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { 
-  getUserInventory, 
+  fetchUserInventory, 
   getUserTransactions, 
   calculateInventoryValue, 
   findMostValuableSkin,
-  sellSkin,
+  markItemAsSold,
   addSkinToInventory
 } from "@/services/inventory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -76,7 +77,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     setIsLoading(true);
     try {
       console.log("Refreshing user data...");
-      const loadedInventory = await getUserInventory();
+      const loadedInventory = await fetchUserInventory();
       console.log("Loaded inventory:", loadedInventory);
       setUserInventory(loadedInventory || []);
       
@@ -221,7 +222,7 @@ const Index = ({ activeTab = "inventory" }: IndexProps) => {
     console.log("Selling skin:", itemId, sellData);
     
     try {
-      await sellSkin(itemId, {
+      await markItemAsSold(itemId, {
         soldPrice: sellData.soldPrice,
         soldMarketplace: sellData.soldMarketplace,
         soldFeePercentage: sellData.soldFeePercentage,

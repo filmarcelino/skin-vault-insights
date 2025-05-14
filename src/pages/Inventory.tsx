@@ -27,7 +27,7 @@ export default function Inventory() {
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<string>("current");
-  const { viewMode, setViewMode } = useViewMode("inventory");
+  const { viewMode, setViewMode } = useViewMode("grid"); // Changed from "inventory" to "grid"
   
   const { 
     data: inventory, 
@@ -51,11 +51,29 @@ export default function Inventory() {
     setRarityFilter, 
     sortMethod, 
     setSortMethod,
-    filterItems
+    updateFilter
   } = useInventoryFilter(inventory || []);
   
   // Apply filters to get the filtered items
-  const filteredItems = filterItems(inventory || []);
+  const filteredItems = inventory ? inventory.filter(item => {
+    // Apply search filter
+    if (searchQuery && !item.name?.toLowerCase().includes(searchQuery.toLowerCase()) && 
+        !item.weapon?.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    
+    // Apply weapon filter
+    if (weaponFilter !== "all" && item.weapon !== weaponFilter) {
+      return false;
+    }
+    
+    // Apply rarity filter
+    if (rarityFilter !== "all" && item.rarity !== rarityFilter) {
+      return false;
+    }
+    
+    return true;
+  }) : [];
   
   const { 
     selectedItem, 
@@ -104,6 +122,14 @@ export default function Inventory() {
     );
   }
   
+  // Create filters array for InventoryFilterBar
+  const filters = [
+    { id: "search", label: t("filters.search"), value: searchQuery },
+    { id: "weapon", label: t("filters.weapon"), value: weaponFilter },
+    { id: "rarity", label: t("filters.rarity"), value: rarityFilter },
+    { id: "sort", label: t("filters.sort"), value: sortMethod }
+  ];
+  
   return (
     <Layout>
       <div className="flex justify-between items-center mb-4">
@@ -135,14 +161,14 @@ export default function Inventory() {
         
         <div className="mt-4">
           <InventoryFilterBar 
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            weaponFilter={weaponFilter}
-            onWeaponFilterChange={setWeaponFilter}
-            rarityFilter={rarityFilter}
-            onRarityFilterChange={setRarityFilter}
-            sortMethod={sortMethod}
-            onSortMethodChange={setSortMethod}
+            filters={filters}
+            onFilterChange={updateFilter}
+            onClearFilters={() => {
+              setSearchQuery("");
+              setWeaponFilter("all");
+              setRarityFilter("all");
+              setSortMethod("price_desc");
+            }}
           />
         </div>
         
@@ -171,6 +197,7 @@ export default function Inventory() {
           ) : viewMode === 'grid' ? (
             <InventoryGrid 
               items={filteredItems}
+              onViewDetails={handleViewDetails}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
               onSell={handleMarkAsSold}
@@ -179,6 +206,7 @@ export default function Inventory() {
           ) : (
             <InventoryTable 
               items={filteredItems}
+              onViewDetails={handleViewDetails}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
               onSell={handleMarkAsSold}

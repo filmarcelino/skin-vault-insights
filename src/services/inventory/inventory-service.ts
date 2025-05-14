@@ -1,7 +1,10 @@
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
-import { getCurrentDateAsString } from "@/utils/skin-utils";
+
+export const getCurrentDateAsString = (): string => {
+  return new Date().toISOString();
+};
 
 export const fetchUserInventory = async (): Promise<InventoryItem[]> => {
   const { data: { session } } = await supabase.auth.getSession();
@@ -194,7 +197,6 @@ export const updateInventoryItem = async (
         current_price: updates.price, // Update current price too
         rarity: updates.rarity,
         float_value: updates.float_value,
-        condition: updates.condition,
         is_stat_trak: updates.is_stat_trak,
         marketplace: updates.marketplace,
         notes: updates.notes,
@@ -298,7 +300,7 @@ export const markItemAsSold = async (
       .from("inventory")
       .update({
         is_in_user_inventory: false,
-        date_sold: sellData.saleDate || getCurrentDateAsString(),
+        date_sold: sellData.soldDate || getCurrentDateAsString(),
       })
       .eq("id", itemId)
       .eq("user_id", session.user.id);
@@ -309,7 +311,7 @@ export const markItemAsSold = async (
     }
     
     // Log the sell transaction
-    await logTransaction(itemData, "sell", sellData.salePrice, sellData.saleDate);
+    await logTransaction(itemData, "sell", sellData.soldPrice, sellData.soldDate);
     
     console.log("Item marked as sold successfully");
     

@@ -10,8 +10,13 @@ import {
 import { useFilteredCategories } from "@/hooks/useCategories";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { InventoryFilter } from "@/hooks/useInventoryFilter";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+export interface InventoryFilter {
+  id: string;
+  label: string;
+  value: string;
+}
 
 export interface InventoryFilterBarProps {
   filters: InventoryFilter[];
