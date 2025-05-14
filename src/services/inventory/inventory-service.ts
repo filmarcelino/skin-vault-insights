@@ -1,7 +1,9 @@
+
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
 import { addTransaction } from "./transactions-service";
+import { safeBoolean, safeString } from ".";
 
 // Helper function to safely get properties from potentially null objects
 const getSkinProperty = <T>(data: any | null, property: string, defaultValue: T): T => {
@@ -95,13 +97,21 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
     // Map the data to InventoryItem objects and ensure isInUserInventory is set correctly
     const mappedItems = Array.isArray(data) ? data.map(item => {
       try {
+        // Check if is_in_user_inventory exists and explicitly set it
+        if ('is_in_user_inventory' in item) {
+          console.log(`Item ${item.name || 'unknown'} has is_in_user_inventory:`, item.is_in_user_inventory);
+        } else {
+          console.log(`Item ${item.name || 'unknown'} missing is_in_user_inventory field`);
+          // If missing, we'll set a default in mapSupabaseToInventoryItem
+        }
+        
         const mappedItem = mapSupabaseToInventoryItem(item);
         
-        // Ensure isInUserInventory is set correctly (default to true if undefined)
+        // Double-check that isInUserInventory is set correctly after mapping
         if (mappedItem) {
           // Convert any value to a boolean to avoid type issues
-          mappedItem.isInUserInventory = item.is_in_user_inventory !== false;
-          console.log(`Item ${mappedItem.name || 'unknown'} isInUserInventory:`, mappedItem.isInUserInventory);
+          mappedItem.isInUserInventory = safeBoolean(item.is_in_user_inventory !== false);
+          console.log(`Item ${mappedItem.name || 'unknown'} isInUserInventory set to:`, mappedItem.isInUserInventory);
         }
         return mappedItem;
       } catch (err) {

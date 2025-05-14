@@ -5,6 +5,11 @@ import { Skin, InventoryItem } from "@/types/skin";
 export const defaultSkin: Skin = {
   id: "",
   name: "",
+  weapon: "",
+  rarity: "",
+  wear: "",
+  image: "",
+  price: 0
 };
 
 // Default empty inventory item that satisfies the InventoryItem interface requirements
@@ -13,5 +18,15 @@ export const defaultInventoryItem: InventoryItem = {
   name: "",
   inventoryId: "",
   acquiredDate: new Date().toISOString(),
-  isInUserInventory: false
+  isInUserInventory: true,
+  weapon: "",
+  rarity: "",
+  wear: "",
+  image: "",
+  price: 0,
+  purchasePrice: 0,
+  currentPrice: 0,
+  currency: "USD",
+  isStatTrak: false,
+  tradeLockDays: 0
 };

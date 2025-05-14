@@ -31,12 +31,13 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   const [activeTab, setActiveTab] = useState("details");
   const { t } = useLanguage();
   
-  // Use item if provided, otherwise use skin, and provide a default if both are null
-  const skinData = (item || skin) ? 
-    (item || skin) : 
-    (mode === 'add' ? defaultSkin : defaultInventoryItem);
+  // Use item if provided, otherwise use skin, and ensure we always have a valid default
+  const skinData = item || skin || (mode === 'add' ? defaultSkin : defaultInventoryItem);
   
-  // Safely check for isInUserInventory with proper type casting
+  // Debug log to help identify issues
+  console.log("InventorySkinModal skinData:", skinData);
+  
+  // Safely check for isInUserInventory with better type handling
   const isInUserInventory = 'isInUserInventory' in skinData ? 
     Boolean(skinData.isInUserInventory) : false;
 
@@ -49,6 +50,14 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   // Add extra safety check - if there's no valid data, don't render tabs that need data
   const canShowAdditionalInfo = mode !== 'add' && skinData && Object.keys(skinData).length > 0;
   const canShowSellTab = mode !== 'add' && isInUserInventory;
+  
+  // Debug
+  console.log("Modal tabs state:", { 
+    canShowAdditionalInfo, 
+    canShowSellTab, 
+    isInUserInventory,
+    mode
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

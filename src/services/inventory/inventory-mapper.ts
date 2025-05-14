@@ -17,8 +17,8 @@ export const mapSupabaseToInventoryItem = (item: any): InventoryItem | null => {
       purchasePrice: item.purchase_price,
       currentPrice: item.current_price,
       acquiredDate: item.acquired_date || new Date().toISOString(),
-      isStatTrak: item.is_stat_trak || false,
-      tradeLockDays: item.trade_lock_days,
+      isStatTrak: Boolean(item.is_stat_trak),
+      tradeLockDays: item.trade_lock_days || 0,
       tradeLockUntil: item.trade_lock_until,
       marketplace: item.marketplace,
       feePercentage: item.fee_percentage,
@@ -29,8 +29,8 @@ export const mapSupabaseToInventoryItem = (item: any): InventoryItem | null => {
         id: item.collection_id,
         name: item.collection_name
       } : undefined,
-      // This is the critical property - make sure it's always defined
-      isInUserInventory: item.is_in_user_inventory !== false // Convert any value to a valid boolean, default to true
+      // Ensure isInUserInventory is always a boolean
+      isInUserInventory: item.is_in_user_inventory !== false
     };
     
     console.log(`Mapped item ${mappedItem.name} with isInUserInventory:`, mappedItem.isInUserInventory);

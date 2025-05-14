@@ -17,9 +17,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { ViewToggle } from "@/components/ui/view-toggle";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { debugInventoryItem } from "@/services/inventory";
 
 const Inventory = () => {
-  const { viewMode, setViewMode, toggleViewMode } = useViewMode();
+  const { viewMode, setViewMode } = useViewMode();
   const [activeTab, setActiveTab] = useState("current");
   const { data: inventory, isLoading, error } = useInventory();
   const { t } = useLanguage();
@@ -27,6 +28,14 @@ const Inventory = () => {
   
   // Enable real-time inventory updates
   useRealTimeInventory();
+
+  // Debug inventory data
+  console.log("Raw inventory data:", inventory);
+  if (inventory && inventory.length > 0) {
+    console.log("First item in inventory:", inventory[0]);
+    // Use helper function to debug inventory item properties
+    debugInventoryItem(inventory[0], "First inventory item");
+  }
 
   // Initialize the inventory filter hook with the inventory data
   const { 
@@ -36,12 +45,23 @@ const Inventory = () => {
     updateFilter 
   } = useInventoryFilter(inventory || []);
   
-  // Filter inventory items based on current filters
-  const filteredItems = inventory ? filterInventoryItems(inventory) : [];
+  // Ensure inventory items are valid before filtering
+  const validInventory = inventory?.filter(item => {
+    const isValid = item && typeof item === 'object' && 'inventoryId' in item;
+    if (!isValid) console.warn("Invalid inventory item detected:", item);
+    return isValid;
+  }) || [];
   
-  // Count items for badges
-  const currentCount = inventory?.filter(item => item.is_in_user_inventory).length || 0;
-  const soldCount = inventory?.filter(item => !item.is_in_user_inventory).length || 0;
+  // Filter inventory items based on current filters
+  const filteredItems = filterInventoryItems(validInventory);
+  
+  // Count items for badges - ensure safe type checking
+  const currentItems = validInventory.filter(item => item.isInUserInventory === true);
+  const soldItems = validInventory.filter(item => item.isInUserInventory === false);
+  
+  // Item counts
+  const currentCount = currentItems.length;
+  const soldCount = soldItems.length;
 
   // Show toast if there's an error
   if (error && !isLoading) {
@@ -127,11 +147,11 @@ const Inventory = () => {
           ) : (
             <>
               {viewMode === 'grid' ? (
-                <InventoryGrid items={filteredItems.filter(item => item.is_in_user_inventory)} />
+                <InventoryGrid items={currentItems} />
               ) : (
-                <InventoryTable items={filteredItems.filter(item => item.is_in_user_inventory)} />
+                <InventoryTable items={currentItems} />
               )}
-              {filteredItems.filter(item => item.is_in_user_inventory).length === 0 && (
+              {currentItems.length === 0 && (
                 <Card className="border-dashed">
                   <CardHeader>
                     <CardTitle>{t('inventory.noItems')}</CardTitle>
@@ -159,7 +179,7 @@ const Inventory = () => {
         </TabsContent>
         <TabsContent value="sold">
           <SoldSkinsTable 
-            items={inventory?.filter(item => !item.is_in_user_inventory) || []} 
+            items={soldItems} 
             isLoading={isLoading}
           />
         </TabsContent>
