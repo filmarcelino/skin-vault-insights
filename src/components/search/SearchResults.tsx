@@ -57,11 +57,11 @@ export const SearchResults = ({
     <div className="mt-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">
-          {currentTab === "inventory" ? "Meu Inventário" : "Todas as Skins"}
+          {currentTab === "inventory" ? "My Inventory" : "All Skins"}
         </h2>
         <div className="flex items-center gap-3">
           <div className="text-sm text-muted-foreground">
-            {totalItems || displayItems.length} {totalItems === 1 || displayItems.length === 1 ? "item" : "itens"} encontrados
+            {totalItems || displayItems.length} {totalItems === 1 || displayItems.length === 1 ? "item" : "items"} found
           </div>
           <ViewToggle view={viewMode} onChange={setViewMode} />
         </div>
@@ -73,11 +73,11 @@ export const SearchResults = ({
       ) : displayItems.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           {searchQuery.length > 0 || weaponFilter || rarityFilter ? (
-            <>Nenhuma skin encontrada com esses critérios. Tente ajustar seus filtros.</>
+            <>No skins found with these criteria. Try adjusting your filters.</>
           ) : currentTab === "inventory" ? (
-            <>Seu inventário está vazio.</>
+            <>Your inventory is empty.</>
           ) : (
-            <>Nenhuma skin disponível.</>
+            <>No skins available.</>
           )}
         </div>
       ) : viewMode === 'grid' ? (
@@ -139,4 +139,4 @@ export const SearchResults = ({
       )}
     </div>
   );
-};
+}

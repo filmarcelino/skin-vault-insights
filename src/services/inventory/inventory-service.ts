@@ -1,4 +1,3 @@
-
 import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -128,32 +127,22 @@ export const getUserInventory = async (): Promise<InventoryItem[]> => {
   }
 };
 
-export const addSkinToInventory = async (skin: Skin, purchaseInfo: {
-  purchasePrice: number;
-  marketplace: string;
-  feePercentage?: number;
-  notes?: string;
-  currency?: string;
-}): Promise<InventoryItem | null> => {
+export const addSkinToInventory = async (skin: Skin, purchaseInfo: any): Promise<InventoryItem | null> => {
   try {
-    console.log("Adding skin to inventory:", { skin, purchaseInfo });
-    
     const { data: { session } } = await supabase.auth.getSession();
-    
     if (!session) {
-      console.error("No user session found");
-      return null;
+      throw new Error("User not authenticated");
     }
     
-    // Fix for the TypeScript error - Check if skin is null or undefined first
-    if (!skin) {
-      console.error("Invalid skin data: skin is null or undefined");
+    // Add validation to check if skin is a valid object
+    if (!skin || typeof skin !== 'object') {
+      console.error("Invalid skin data provided:", skin);
       return null;
     }
     
     // Now check for the name property with a type guard
-    if (typeof skin !== 'object' || skin === null) {
-      console.error("Invalid skin data: not an object", skin);
+    if (!('name' in skin) || typeof skin.name !== 'string' || !skin.name) {
+      console.error("Invalid skin data: missing or invalid name property", skin);
       return null;
     }
     

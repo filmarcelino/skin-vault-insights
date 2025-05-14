@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useInventory } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -100,14 +99,14 @@ const Inventory = () => {
         <TabsList>
           <TabsTrigger value="current">
             <PackageOpen className="mr-2 h-4 w-4" />
-            {t('inventory.current')}
+            Current Inventory
             <span className="ml-2 bg-secondary rounded-full px-2 py-0.5 text-xs">
               {currentCount}
             </span>
           </TabsTrigger>
           <TabsTrigger value="sold">
             <Ban className="mr-2 h-4 w-4" />
-            {t('inventory.sold')}
+            Sold Skins
             <span className="ml-2 bg-secondary rounded-full px-2 py-0.5 text-xs">
               {soldCount}
             </span>
