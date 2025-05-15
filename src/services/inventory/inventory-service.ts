@@ -1,471 +1,210 @@
-import { supabase } from '@/integrations/supabase/client';
-import { InventoryItem, SellData } from '@/types/skin';
-import { v4 as uuidv4 } from 'uuid';
 
-// Convert DB data to InventoryItem
-const mapInventoryItem = (item: any): InventoryItem => {
-  return {
-    id: item.id,
-    inventoryId: item.inventory_id,
-    name: item.name,
-    weapon: item.weapon || "",
-    image: item.image || "",
-    rarity: item.rarity || "Unknown", // Make sure rarity is never undefined
-    price: item.price || 0,
-    purchasePrice: item.purchase_price || 0, // Required field
-    purchase_price: item.purchase_price,
-    acquiredDate: item.acquired_date || new Date().toISOString(),
-    acquired_date: item.acquired_date,
-    user_id: item.user_id,
-    isInUserInventory: true,
-    is_in_user_inventory: true,
-    tradeLockDays: item.trade_lock_days,
-    tradeLockUntil: item.trade_lock_until,
-    floatValue: item.float_value,
-    float_value: item.float_value,
-    isStatTrak: item.is_stat_trak,
-    is_stat_trak: item.is_stat_trak,
-    wear: item.wear || "",
-    condition: item.wear || "",
-    marketplace: item.marketplace,
-    fee_percentage: item.fee_percentage,
-    feePercentage: item.fee_percentage,
-    currency: item.currency_code,
-    currentPrice: item.current_price || item.price
-  };
-};
+import { supabase } from "@/integrations/supabase/client";
+import { formatDate } from "@/utils/format-utils";
+import { nanoid } from "nanoid";
+import { InventoryItem, SellData } from "@/types/skin";
+
+export async function addInventoryItem(item: InventoryItem) {
+  const user = supabase.auth.getUser();
+  const inventoryId = nanoid();
+
+  try {
+    // Prepare inventory item data
+    const inventoryData = {
+      inventory_id: inventoryId,
+      skin_id: item.id,
+      name: item.name,
+      weapon: item.weapon,
+      rarity: item.rarity,
+      image: item.image,
+      purchase_price: item.purchasePrice || 0,
+      acquired_date: item.acquiredDate || new Date().toISOString(),
+      user_id: (await user).data.user?.id,
+      is_in_user_inventory: true,
+      trade_lock_days: item.tradeLockDays || 0,
+      trade_lock_until: item.tradeLockUntil,
+      float_value: item.floatValue,
+      is_stat_trak: item.isStatTrak || false,
+      wear: item.wear,
+      notes: item.notes,
+      marketplace: item.marketplace,
+      fee_percentage: item.feePercentage
+    };
+
+    // Add item to inventory
+    const { data: addedItem, error } = await supabase
+      .from('inventory')
+      .insert(inventoryData)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    // Record transaction
+    await recordTransaction({
+      type: 'add',
+      itemId: inventoryId,
+      skinName: item.name,
+      weaponName: item.weapon,
+      price: item.purchasePrice || 0
+    });
+
+    return { data: addedItem, error: null };
+
+  } catch (error) {
+    console.error("Error adding inventory item:", error);
+    return { data: null, error };
+  }
+}
 
 export async function fetchSoldItems() {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-    
-    if (!userData?.user || !userData?.user.id) {
-      console.log("No authenticated user found");
-      return [];
-    }
-    
-    const userId = userData.user.id;
-    
-    // Fetch sold items from transactions table 
-    const { data: transactionsData, error: transactionsError } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('type', 'sell')
-      .order('date', { ascending: false });
-    
-    if (transactionsError) {
-      console.error('Error fetching sold items:', transactionsError);
-      return [];
-    }
-    
-    console.log("Raw sold items data from transactions:", transactionsData);
-    
-    // Early return if no transactions found
-    if (!transactionsData || !Array.isArray(transactionsData) || transactionsData.length === 0) {
-      return [];
-    }
-    
-    // Extract all unique item_ids for a batch query
-    const itemIds = transactionsData
-      .map(t => t.item_id)
-      .filter(Boolean);
-    
-    // If no valid item IDs, return early with basic data from transactions
-    if (itemIds.length === 0) {
-      return transactionsData.map(transaction => ({
-        id: transaction.id,
-        inventoryId: transaction.transaction_id,
-        name: transaction.skin_name || 'Unknown Skin',
-        weapon: transaction.weapon_name || 'Unknown Weapon',
-        image: '', // No image data available
-        rarity: 'Unknown',
-        price: transaction.price,
-        soldPrice: transaction.price,
-        soldDate: transaction.date,
-        soldMarketplace: transaction.marketplace || 'Unknown',
-        isInUserInventory: false,
-      }));
-    }
-    
-    // Get inventory data for these items (they might be in inventory with is_in_user_inventory = false)
-    const { data: inventoryItems } = await supabase
-      .from('inventory')
-      .select('*')
-      .in('inventory_id', itemIds);
-    
-    // Create a map for faster lookups
-    const inventoryMap = new Map();
-    if (inventoryItems && Array.isArray(inventoryItems)) {
-      inventoryItems.forEach(item => {
-        inventoryMap.set(item.inventory_id, item);
-      });
-    }
-    
-    // Map transaction data to the expected format for the UI
-    const mappedItems = transactionsData.map(transaction => {
-      // Get the related inventory item if available
-      const inventoryItem = inventoryMap.get(transaction.item_id) || {};
-      
-      // Combine transaction and inventory data, prioritizing inventory data when available
-      return {
-        id: transaction.id,
-        inventoryId: transaction.transaction_id || transaction.id,
-        name: inventoryItem.name || transaction.skin_name || 'Unknown Skin',
-        weapon: inventoryItem.weapon || transaction.weapon_name || 'Unknown Weapon',
-        image: inventoryItem.image || '',
-        rarity: inventoryItem.rarity || 'Unknown',
-        price: transaction.price || inventoryItem.price || 0,
-        purchasePrice: inventoryItem.purchase_price || 0,
-        acquiredDate: inventoryItem.acquired_date || transaction.date,
-        isInUserInventory: false,
-        tradeLockDays: inventoryItem.trade_lock_days || 0,
-        tradeLockUntil: inventoryItem.trade_lock_until || null,
-        profit: calculateProfit(transaction.price, inventoryItem.purchase_price || 0),
-        floatValue: inventoryItem.float_value || null,
-        isStatTrak: inventoryItem.is_stat_trak || false,
-        wear: inventoryItem.wear || 'Unknown',
-        // Sales specific data
-        soldPrice: transaction.price || 0,
-        soldDate: transaction.date,
-        soldMarketplace: 'Unknown', // Since marketplace doesn't exist in transaction
-        soldFeePercentage: inventoryItem.fee_percentage || 0,
-        marketplace: inventoryItem.marketplace || 'Unknown',
-        feePercentage: inventoryItem.fee_percentage || 0,
-        skin_id: inventoryItem.skin_id || '',
-        // Other required fields from InventoryItem interface
-        userId: transaction.user_id,
-        category: inventoryItem.category || '',
-        type: inventoryItem.type || '',
-      };
-    });
-    
-    return mappedItems;
-  } catch (error) {
-    console.error('Error in fetchSoldItems:', error);
-    return [];
-  }
-}
-
-// Calculate profit
-function calculateProfit(soldPrice: number, purchasePrice: number): number {
-  if (!soldPrice || !purchasePrice) return 0;
-  return soldPrice - purchasePrice;
-}
-
-export const fetchUserInventory = async () => {
-  try {
-    const { data: userData } = await supabase.auth.getUser();
-    
-    if (!userData?.user || !userData?.user.id) {
-      console.log("No authenticated user found");
-      return [];
-    }
-    
-    const userId = userData.user.id;
-    console.log("Fetching inventory for user:", userId);
-    
-    const { data, error } = await supabase
-      .from('inventory')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_in_user_inventory', true)
-      .order('acquired_date', { ascending: false });
-      
-    if (error) {
-      console.error("Error fetching inventory:", error);
-      return [];
-    }
-    
-    console.log(`Found ${data?.length || 0} items in inventory`);
-    
-    // Ensure all required properties are present and properly formatted
-    const inventory = data.map(item => ({
-      id: item.id,
-      inventoryId: item.id,
-      skin_id: item.skin_id,
-      name: item.name,
-      weapon: item.weapon || "",
-      image: item.image || "",
-      rarity: item.rarity || "Unknown", // Make sure rarity is never undefined
-      price: item.price || 0,
-      purchasePrice: item.purchase_price || 0, // Required field
-      purchase_price: item.purchase_price,
-      acquiredDate: item.acquired_date || new Date().toISOString(),
-      acquired_date: item.acquired_date,
-      user_id: item.user_id,
-      isInUserInventory: true,
-      is_in_user_inventory: true,
-      tradeLockDays: item.trade_lock_days,
-      tradeLockUntil: item.trade_lock_until,
-      floatValue: item.float_value,
-      float_value: item.float_value,
-      isStatTrak: item.is_stat_trak,
-      is_stat_trak: item.is_stat_trak,
-      wear: item.wear || "",
-      condition: item.wear || "",
-      marketplace: item.marketplace,
-      fee_percentage: item.fee_percentage,
-      feePercentage: item.fee_percentage,
-      currency: item.currency_code,
-      currentPrice: item.current_price || item.price
-    }));
-    
-    return inventory;
-  } catch (error) {
-    console.error("Error fetching user inventory:", error);
-    return [];
-  }
-};
-
-export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<InventoryItem | null> => {
-  try {
-    const { data: userData } = await supabase.auth.getUser();
-
-    if (!userData?.user || !userData?.user.id) {
+    const user = await supabase.auth.getUser();
+    if (!user.data.user) {
       throw new Error("User not authenticated");
     }
 
-    const userId = userData.user.id;
-    const newItemId = uuidv4();
-    
-    // Make sure skin_id is always set - this will prevent the error
-    const skinId = skin.id || newItemId;
-    
-    const newItem = {
-      id: newItemId,
-      inventory_id: newItemId,
-      skin_id: skinId, // Ensure this is never null
-      user_id: userId,
-      name: skin.name || "Unknown Skin",
-      weapon: skin.weapon || "Unknown Weapon",
-      image: skin.image || "",
-      rarity: skin.rarity || "Common",
-      price: skin.price || 0,
-      purchase_price: purchaseInfo.purchasePrice || 0,
-      acquired_date: new Date().toISOString(),
-      is_in_user_inventory: true,
-      trade_lock_days: 0,
-      trade_lock_until: null,
-      float_value: skin.floatValue || null,
-      is_stat_trak: skin.isStatTrak || false,
-      wear: skin.wear || null,
-      marketplace: purchaseInfo.marketplace || "Unknown",
-      fee_percentage: purchaseInfo.feePercentage || 0,
-      currency_code: purchaseInfo.currency || "USD",
-      current_price: skin.price || 0
-    };
+    // Get transactions of type 'sell'
+    const { data: transactions, error: transactionError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', user.data.user.id)
+      .eq('type', 'sell');
 
+    if (transactionError) {
+      throw transactionError;
+    }
+
+    // Map transactions to the expected format
+    const soldItems = transactions.map((transaction) => {
+      return {
+        id: transaction.item_id,
+        inventoryId: transaction.item_id,
+        name: transaction.skin_name,
+        weapon: transaction.weapon_name,
+        image: "", // This would need to be stored in the transaction or looked up
+        rarity: "Unknown", // This would need to be stored in the transaction or looked up
+        price: transaction.price || 0,
+        soldPrice: transaction.price || 0,
+        soldDate: transaction.date,
+        soldMarketplace: transaction.marketplace || "Unknown",
+        isInUserInventory: false
+      };
+    });
+
+    return soldItems;
+  } catch (error) {
+    console.error("Error fetching sold items:", error);
+    return [];
+  }
+}
+
+interface TransactionParams {
+  type: 'add' | 'sell' | 'trade' | 'buy';
+  itemId: string;
+  skinName: string;
+  weaponName: string;
+  price: number;
+  marketplace?: string;
+  notes?: string;
+}
+
+export async function recordTransaction({
+  type,
+  itemId,
+  skinName,
+  weaponName,
+  price,
+  marketplace,
+  notes
+}: TransactionParams) {
+  try {
+    const user = await supabase.auth.getUser();
+    
+    if (!user.data.user) {
+      throw new Error("User not authenticated");
+    }
+    
+    const transactionId = nanoid();
+    
     const { data, error } = await supabase
-      .from('inventory')
-      .insert(newItem)
-      .select();
-
-    if (error) {
-      console.error("Error adding skin to inventory:", error);
-      return null;
-    }
-
-    // Create a transaction record for the purchase
-    const transactionId = uuidv4();
-    const transaction = {
-      id: transactionId,
-      transaction_id: transactionId,
-      user_id: userId,
-      type: 'add',
-      item_id: newItemId,
-      weapon_name: skin.weapon || "Unknown Weapon",
-      skin_name: skin.name || "Unknown Skin",
-      date: new Date().toISOString(),
-      price: purchaseInfo.purchasePrice || 0,
-      notes: `Added from ${purchaseInfo.marketplace || "Unknown"}`,
-      currency_code: purchaseInfo.currency || "USD"
-    };
-
-    const { error: transactionError } = await supabase
       .from('transactions')
-      .insert(transaction);
-
-    if (transactionError) {
-      console.error("Error creating add transaction:", transactionError);
-      // Continue anyway as the item was added to inventory
-    }
-
-    return {
-      inventoryId: newItem.id,
-      id: newItem.id,
-      skin_id: newItem.skin_id,
-      name: newItem.name,
-      weapon: newItem.weapon,
-      image: newItem.image,
-      rarity: newItem.rarity,
-      price: newItem.price,
-      purchasePrice: newItem.purchase_price,
-      acquiredDate: newItem.acquired_date,
-      userId: newItem.user_id,
-      isInUserInventory: newItem.is_in_user_inventory,
-      tradeLockDays: newItem.trade_lock_days,
-      tradeLockUntil: newItem.trade_lock_until,
-      floatValue: newItem.float_value,
-      isStatTrak: newItem.is_stat_trak,
-      wear: newItem.wear,
-      marketplace: newItem.marketplace,
-      feePercentage: newItem.fee_percentage,
-      currency: newItem.currency_code,
-      currentPrice: newItem.current_price
-    };
-  } catch (error) {
-    console.error("Error adding skin to inventory:", error);
-    return null;
-  }
-};
-
-export const removeInventoryItem = async (inventoryId: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('inventory')
-      .delete()
-      .eq('id', inventoryId);
-
+      .insert({
+        transaction_id: transactionId,
+        type,
+        item_id: itemId,
+        user_id: user.data.user.id,
+        price,
+        date: new Date().toISOString(),
+        skin_name: skinName,
+        weapon_name: weaponName,
+        notes,
+        marketplace
+      });
+      
     if (error) {
-      console.error("Error removing item from inventory:", error);
-      return false;
+      throw error;
     }
-
-    return true;
-  } catch (error) {
-    console.error("Error removing item from inventory:", error);
-    return false;
-  }
-};
-
-export const updateInventoryItem = async (itemId: string, updates: Partial<InventoryItem>): Promise<boolean> => {
-  try {
-    // Map the property names from the update object to column names in Supabase
-    const supabaseUpdates: { [key: string]: any } = {};
-    if (updates.purchasePrice !== undefined) supabaseUpdates.purchase_price = updates.purchasePrice;
-    if (updates.currentPrice !== undefined) supabaseUpdates.current_price = updates.currentPrice;
-    if (updates.tradeLockDays !== undefined) supabaseUpdates.trade_lock_days = updates.tradeLockDays;
-    if (updates.tradeLockUntil !== undefined) supabaseUpdates.trade_lock_until = updates.tradeLockUntil;
-    if (updates.floatValue !== undefined) supabaseUpdates.float_value = updates.floatValue;
-    if (updates.notes !== undefined) supabaseUpdates.notes = updates.notes;
-    if (updates.wear !== undefined) supabaseUpdates.wear = updates.wear;
-    if (updates.isStatTrak !== undefined) supabaseUpdates.is_stat_trak = updates.isStatTrak;
-    if (updates.marketplace !== undefined) supabaseUpdates.marketplace = updates.marketplace;
-    if (updates.feePercentage !== undefined) supabaseUpdates.fee_percentage = updates.feePercentage;
-    if (updates.currency !== undefined) supabaseUpdates.currency_code = updates.currency;
-
-    const { error } = await supabase
-      .from('inventory')
-      .update(supabaseUpdates)
-      .eq('id', itemId);
-
-    if (error) {
-      console.error("Error updating inventory item:", error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Error updating inventory item:", error);
-    return false;
-  }
-};
-
-export const markItemAsSold = async (itemId: string, sellData: SellData): Promise<boolean> => {
-  try {
-    // Ensure sold item ID is valid
-    if (!itemId) {
-      console.error("Cannot mark as sold: Invalid item ID");
-      return false;
-    }
-
-    console.log("Marking item as sold with data:", { itemId, sellData });
-
-    // Ensure soldDate is properly formatted
-    const soldDate = sellData.soldDate ? new Date(sellData.soldDate).toISOString() : new Date().toISOString();
     
-    // Get the purchase price to calculate profit
-    const { data: item } = await supabase
+    return { data, error: null };
+  } catch (error) {
+    console.error("Error recording transaction:", error);
+    return { data: null, error };
+  }
+}
+
+export async function markItemAsSold(
+  itemId: string, 
+  sellData: SellData
+) {
+  try {
+    const user = await supabase.auth.getUser();
+    
+    if (!user.data.user) {
+      throw new Error("User not authenticated");
+    }
+    
+    // Get item details before marking as sold
+    const { data: item, error: itemError } = await supabase
       .from('inventory')
-      .select('purchase_price, name, weapon, id')
-      .eq('id', itemId)
+      .select('*')
+      .eq('inventory_id', itemId)
+      .eq('user_id', user.data.user.id)
       .single();
-    
-    if (!item) {
-      console.error("Error marking item as sold: Item not found");
-      return false;
+      
+    if (itemError || !item) {
+      throw new Error("Item not found");
     }
-
-    console.log("Found item to mark as sold:", item);
-
-    const purchasePrice = item?.purchase_price || 0;
-    const soldPrice = sellData.soldPrice || 0;
-    const profit = soldPrice - purchasePrice;
     
-    // Update the inventory item (mark as not in inventory)
-    const { error } = await supabase
+    // Update inventory item to mark as sold
+    const { error: updateError } = await supabase
       .from('inventory')
-      .update({
-        is_in_user_inventory: false,
-        price: soldPrice,
-        updated_at: soldDate,
-        marketplace: sellData.soldMarketplace,
-        fee_percentage: sellData.soldFeePercentage,
-        currency_code: sellData.soldCurrency
-      })
-      .eq('id', itemId);
-
-    if (error) {
-      console.error("Error updating inventory item as sold:", error);
-      return false;
+      .update({ is_in_user_inventory: false })
+      .eq('inventory_id', itemId)
+      .eq('user_id', user.data.user.id);
+      
+    if (updateError) {
+      throw updateError;
     }
-
-    // Create a transaction record for the sale
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user?.id) {
-      console.error("User not authenticated");
-      return false;
-    }
-
-    const transactionId = uuidv4();
-    const transaction = {
-      id: transactionId,
-      transaction_id: transactionId,
-      user_id: userData.user.id,
+    
+    // Record sale transaction
+    const profit = sellData.soldPrice - (item.purchase_price || 0);
+    
+    await recordTransaction({
       type: 'sell',
-      item_id: itemId,
-      weapon_name: item.weapon || "Unknown Weapon",
-      skin_name: item.name || "Unknown Skin",
-      date: soldDate,
-      price: soldPrice,
-      notes: `Sold on ${sellData.soldMarketplace || "Unknown"}`,
-      currency_code: sellData.soldCurrency || "USD",
-      marketplace: sellData.soldMarketplace // Add marketplace to transaction
-    };
-
-    console.log("Creating sell transaction:", transaction);
-
-    const { error: transactionError } = await supabase
-      .from('transactions')
-      .insert(transaction);
-
-    if (transactionError) {
-      console.error("Error creating sell transaction:", transactionError);
-      // Continue anyway as the item was marked as sold in inventory
-      return false;
-    }
-
-    // Log successful transaction
-    console.log(`Item ${itemId} marked as sold for ${soldPrice} with profit ${profit}`);
-    return true;
+      itemId,
+      skinName: item.name,
+      weaponName: item.weapon,
+      price: sellData.soldPrice,
+      marketplace: sellData.soldMarketplace,
+      notes: sellData.soldNotes
+    });
+    
+    return { success: true, error: null };
   } catch (error) {
     console.error("Error marking item as sold:", error);
-    return false;
+    return { success: false, error };
   }
-};
-
-// Add a utility function to get current date as string
-export const getCurrentDateAsString = (): string => {
-  return new Date().toISOString();
-};
+}

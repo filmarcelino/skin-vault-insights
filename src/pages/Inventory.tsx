@@ -18,12 +18,14 @@ import { Skin, InventoryItem } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { fetchSoldItems } from "@/services/inventory/inventory-service";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import { fetchSoldItems } from "@/services/inventory/inventory-service";
 
 export default function Inventory() {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [activeTab, setActiveTab] = useState<string>("current");
   const { viewMode, setViewMode } = useViewMode("grid"); 
@@ -251,7 +253,7 @@ export default function Inventory() {
               </p>
             </div>
           ) : (
-            <SoldSkinsTable items={Array.isArray(soldItems) ? soldItems : []} />
+            <SoldSkinsTable items={soldItems as InventoryItem[]} />
           )}
         </TabsContent>
       </Tabs>

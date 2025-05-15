@@ -49,9 +49,15 @@ export function formatNumber(value: number): string {
 }
 
 /**
- * Legacy function for backward compatibility
- * @deprecated Use formatCurrencyValue instead
+ * Alias for formatCurrencyValue for backward compatibility
  */
 export function formatCurrency(value: number, currencyCode = 'USD'): string {
+  return formatCurrencyValue(value, currencyCode);
+}
+
+/**
+ * Format price for display (alias for formatCurrencyValue)
+ */
+export function formatPrice(value: number, currencyCode = 'USD'): string {
   return formatCurrencyValue(value, currencyCode);
 }

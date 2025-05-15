@@ -3,9 +3,10 @@ import { FC } from "react";
 
 interface LoadingProps {
   size?: "sm" | "md" | "lg";
+  className?: string;
 }
 
-export const Loading: FC<LoadingProps> = ({ size = "md" }) => {
+export const Loading: FC<LoadingProps> = ({ size = "md", className = "" }) => {
   const sizeClass = {
     sm: "h-4 w-4",
     md: "h-8 w-8",
@@ -14,7 +15,7 @@ export const Loading: FC<LoadingProps> = ({ size = "md" }) => {
 
   return (
     <div className="flex items-center justify-center">
-      <div className={`${sizeClass[size]} animate-spin`}>
+      <div className={`${sizeClass[size]} animate-spin ${className}`}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"

@@ -23,6 +23,8 @@ export interface UserProfile {
   is_admin?: boolean;
 }
 
+export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
+
 interface AuthState {
   user: User | null;
   session: Session | null;
@@ -31,6 +33,7 @@ interface AuthState {
   isProfileLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  authStatus: AuthStatus;
   signIn: (email: string, password: string, rememberMe: boolean) => Promise<{
     error: Error | null;
     data: Session | null;
@@ -89,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [isProfileLoading, setIsProfileLoading] = useState<boolean>(false);
   const [profileError, setProfileError] = useState<boolean>(false);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
   const currencyUpdater = useCurrencyUpdate();
   const { t } = useLanguage();
 
@@ -284,10 +288,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchProfile(currentSession.user.id);
       } else {
         setIsAuthLoading(false);
+        setAuthStatus('unauthenticated');
       }
     }).catch(error => {
       console.error("Error getting session:", error);
       setIsAuthLoading(false);
+      setAuthStatus('unauthenticated');
     });
 
     // Cleanup subscription
@@ -306,6 +312,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Otherwise we've finished loading auth
     setIsAuthLoading(false);
+    
+    // Update authStatus based on authentication state
+    setAuthStatus(isAuthenticated ? 'authenticated' : 'unauthenticated');
     
     if (isAuthenticated) {
       logDebug("Auth loaded", { user: user?.email, isAdmin });
@@ -541,6 +550,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isProfileLoading,
     isAuthenticated,
     isAdmin,
+    authStatus,
     signIn,
     signUp,
     signOut,

@@ -123,5 +123,5 @@ export interface LockStatus {
   tradeLockDate?: string;
 }
 
-// Define modal mode type
+// Define modal mode type - include 'sell' as a valid mode
 export type ModalMode = 'view' | 'edit' | 'add' | 'sell';
