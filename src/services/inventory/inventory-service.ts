@@ -31,37 +31,37 @@ export const fetchSoldItems = async () => {
     
     // Map transaction data to the expected format for the UI
     const mappedItems = transactionsData.map(transaction => {
-      // Make sure inventory is not null/undefined before accessing its properties
-      const inventoryItem = transaction.inventory || {};
+      // Define a proper type for the inventory object instead of using {} type
+      const inventoryItem: Record<string, any> = transaction.inventory || {};
       
       return {
         id: transaction.id,
         inventoryId: transaction.item_id,
-        skin_id: inventoryItem?.skin_id || transaction.item_id,
-        name: transaction.skin_name || inventoryItem?.name || "Unknown Skin",
-        weapon: transaction.weapon_name || inventoryItem?.weapon || "Unknown Weapon",
-        image: inventoryItem?.image || "",
-        rarity: inventoryItem?.rarity || "Unknown",
+        skin_id: inventoryItem.skin_id || transaction.item_id,
+        name: transaction.skin_name || inventoryItem.name || "Unknown Skin",
+        weapon: transaction.weapon_name || inventoryItem.weapon || "Unknown Weapon",
+        image: inventoryItem.image || "",
+        rarity: inventoryItem.rarity || "Unknown",
         // For sold items, price represents the sold price
         price: transaction.price || 0,
-        purchasePrice: inventoryItem?.purchase_price || 0,
-        acquiredDate: inventoryItem?.acquired_date || new Date().toISOString(),
+        purchasePrice: inventoryItem.purchase_price || 0,
+        acquiredDate: inventoryItem.acquired_date || new Date().toISOString(),
         user_id: transaction.user_id,
         isInUserInventory: false,
         is_in_user_inventory: false,
-        tradeLockDays: inventoryItem?.trade_lock_days,
-        tradeLockUntil: inventoryItem?.trade_lock_until,
+        tradeLockDays: inventoryItem.trade_lock_days,
+        tradeLockUntil: inventoryItem.trade_lock_until,
         // Calculate profit
-        profit: (transaction.price || 0) - (inventoryItem?.purchase_price || 0),
+        profit: (transaction.price || 0) - (inventoryItem.purchase_price || 0),
         currency: transaction.currency_code || 'USD',
-        floatValue: inventoryItem?.float_value,
-        isStatTrak: inventoryItem?.is_stat_trak,
-        wear: inventoryItem?.wear || "",
+        floatValue: inventoryItem.float_value,
+        isStatTrak: inventoryItem.is_stat_trak,
+        wear: inventoryItem.wear || "",
         // For sold items, we use these fields
         date_sold: transaction.date,
         sold_price: transaction.price,
-        sold_marketplace: inventoryItem?.marketplace || transaction.notes || "Unknown",
-        sold_fee_percentage: inventoryItem?.fee_percentage
+        sold_marketplace: inventoryItem.marketplace || transaction.notes || "Unknown",
+        sold_fee_percentage: inventoryItem.fee_percentage
       };
     });
     
