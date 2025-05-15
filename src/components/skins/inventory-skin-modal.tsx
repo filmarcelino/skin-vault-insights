@@ -50,14 +50,6 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   // Add extra safety check - if there's no valid data, don't render tabs that need data
   const canShowAdditionalInfo = mode !== 'add' && skinData && Object.keys(skinData).length > 0;
   const canShowSellTab = mode !== 'add' && isInUserInventory;
-  
-  // Debug
-  console.log("Modal tabs state:", { 
-    canShowAdditionalInfo, 
-    canShowSellTab, 
-    isInUserInventory,
-    mode
-  });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

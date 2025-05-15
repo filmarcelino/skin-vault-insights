@@ -41,7 +41,7 @@ export const InventoryFilterBar = ({
   return (
     <div className="flex flex-col md:flex-row gap-4 mb-4">
       <Search 
-        placeholder={t('inventory.searchPlaceholder')}
+        placeholder="inventory.searchPlaceholder"
         value={searchFilter}
         onChange={(e) => onFilterChange("search", e.target.value)}
         className="flex-1"

@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 // Define supported languages
@@ -100,6 +99,7 @@ const translations: Translations = {
     "dashboard.recentActivity": "Recent Activity",
     "dashboard.insights": "Insights",
     "dashboard.topSkins": "Top Skins",
+    "dashboard.inventoryDescription": "Manage your inventory of CS2 skins",
     
     // Inventory
     "inventory.title": "Inventory",
@@ -114,6 +114,9 @@ const translations: Translations = {
     "inventory.emptyDesc": "Add your first skin to start tracking your collection",
     "inventory.noSoldItems": "You haven't sold any items yet",
     "inventory.sellItemsDesc": "When you sell items from your inventory, they will appear here",
+    "inventory.searchPlaceholder": "Search inventory...",
+    "inventory.noItems": "Your inventory is empty",
+    "inventory.noFilterResults": "No items matched your filters",
     
     // Search
     "search.title": "Search",
@@ -127,6 +130,28 @@ const translations: Translations = {
     "search.resetFilters": "Reset Filters",
     "search.noResults": "No skins found with these criteria",
     "search.tryDifferent": "Try adjusting your filters",
+    "search.allSkins": "All Skins",
+    "search.item": "item",
+    "search.items": "items",
+    "search.clear": "Clear search",
+    "search.noSkinsAvailable": "No skins available",
+    
+    // Filters
+    "filters.search": "Search",
+    "filters.weapon": "Weapon",
+    "filters.rarity": "Rarity", 
+    "filters.sort": "Sort",
+    "filters.weaponType": "Weapon Type",
+    "filters.allWeapons": "All Weapons",
+    "filters.allRarities": "All Rarities",
+    "filters.sortBy": "Sort By",
+    "filters.highestValue": "Highest Value",
+    "filters.lowestValue": "Lowest Value",
+    "filters.nameAZ": "Name (A-Z)",
+    "filters.nameZA": "Name (Z-A)",
+    "filters.newest": "Newest",
+    "filters.oldest": "Oldest",
+    "filters.clear": "Clear Filters",
     
     // Analytics
     "analytics.title": "Analytics",
@@ -182,6 +207,14 @@ const translations: Translations = {
     "pwa.install": "Add to Home Screen",
     "pwa.later": "Remind Later",
     "pwa.understood": "Got it",
+    
+    // Skins
+    "skins.details": "Details",
+    "skins.additionalInfo": "Additional Info",
+    "skins.sell": "Sell",
+    "skins.skinDetails": "Skin Details",
+    "skins.addToInventory": "Add to Inventory",
+    "skins.editSkin": "Edit Skin"
   },
   pt: {
     // Common
@@ -270,6 +303,7 @@ const translations: Translations = {
     "dashboard.recentActivity": "Atividade Recente",
     "dashboard.insights": "Insights",
     "dashboard.topSkins": "Melhores Skins",
+    "dashboard.inventoryDescription": "Gerencie seu inventário de skins do CS2",
     
     // Inventory
     "inventory.title": "Inventário",
@@ -284,6 +318,9 @@ const translations: Translations = {
     "inventory.emptyDesc": "Adicione sua primeira skin para começar a rastrear sua coleção",
     "inventory.noSoldItems": "Você ainda não vendeu nenhum item",
     "inventory.sellItemsDesc": "Quando você vender itens do seu inventário, eles aparecerão aqui",
+    "inventory.searchPlaceholder": "Buscar no inventário...",
+    "inventory.noItems": "Seu inventário está vazio",
+    "inventory.noFilterResults": "Nenhum item corresponde aos seus filtros",
     
     // Search
     "search.title": "Buscar",
@@ -297,6 +334,28 @@ const translations: Translations = {
     "search.resetFilters": "Redefinir Filtros",
     "search.noResults": "Nenhuma skin encontrada com esses critérios",
     "search.tryDifferent": "Tente ajustar seus filtros",
+    "search.allSkins": "Todas as Skins",
+    "search.item": "item",
+    "search.items": "itens",
+    "search.clear": "Limpar busca",
+    "search.noSkinsAvailable": "Nenhuma skin disponível",
+    
+    // Filters
+    "filters.search": "Buscar",
+    "filters.weapon": "Arma",
+    "filters.rarity": "Raridade", 
+    "filters.sort": "Ordenar",
+    "filters.weaponType": "Tipo de Arma",
+    "filters.allWeapons": "Todas as Armas",
+    "filters.allRarities": "Todas as Raridades",
+    "filters.sortBy": "Ordenar Por",
+    "filters.highestValue": "Maior Valor",
+    "filters.lowestValue": "Menor Valor",
+    "filters.nameAZ": "Nome (A-Z)",
+    "filters.nameZA": "Nome (Z-A)",
+    "filters.newest": "Mais Recente",
+    "filters.oldest": "Mais Antigo",
+    "filters.clear": "Limpar Filtros",
     
     // Analytics
     "analytics.title": "Análises",
@@ -329,7 +388,7 @@ const translations: Translations = {
     // Settings
     "settings.title": "Configurações",
     "settings.general": "Geral",
-    "settings.appearance": "Aparência",
+    "settings.appearance": "Apariência",
     "settings.notifications": "Notificações",
     "settings.language": "Idioma",
     "settings.currency": "Moeda",
@@ -341,7 +400,7 @@ const translations: Translations = {
     "subscription.upgrade": "Atualizar Agora",
     "subscription.premiumFeature": "Recurso Premium",
     "subscription.upgradeToPremium": "Atualizar para Premium",
-    "subscription.upgradeToPremiumDesc": "Atualize para Premium para ver gráficos detalhados de histórico de preços",
+    "subscription.upgradeToPremiumDesc": "Atualize para Premium para ver gráficos detalhados de historial de preços",
     
     // Errors
     "errors.loadingError": "Erro ao carregar dados",
@@ -352,6 +411,14 @@ const translations: Translations = {
     "pwa.install": "Adicionar à Tela Inicial",
     "pwa.later": "Lembrar Depois",
     "pwa.understood": "Entendi",
+    
+    // Skins
+    "skins.details": "Detalhes",
+    "skins.additionalInfo": "Informações Adicionais",
+    "skins.sell": "Vender",
+    "skins.skinDetails": "Detalhes da Skin",
+    "skins.addToInventory": "Adicionar ao Inventário",
+    "skins.editSkin": "Editar Skin"
   },
   es: {
     // Common
@@ -440,6 +507,7 @@ const translations: Translations = {
     "dashboard.recentActivity": "Actividad Reciente",
     "dashboard.insights": "Insights",
     "dashboard.topSkins": "Mejores Skins",
+    "dashboard.inventoryDescription": "Administra tu inventario de skins de CS2",
     
     // Inventory
     "inventory.title": "Inventario",
@@ -454,6 +522,9 @@ const translations: Translations = {
     "inventory.emptyDesc": "Añade tu primera skin para empezar a seguir tu colección",
     "inventory.noSoldItems": "Aún no has vendido ningún artículo",
     "inventory.sellItemsDesc": "Cuando vendas artículos de tu inventario, aparecerán aquí",
+    "inventory.searchPlaceholder": "Buscar en inventario...",
+    "inventory.noItems": "Tu inventario está vacío",
+    "inventory.noFilterResults": "Ningún elemento coincide con tus filtros",
     
     // Search
     "search.title": "Buscar",
@@ -467,6 +538,28 @@ const translations: Translations = {
     "search.resetFilters": "Restablecer Filtros",
     "search.noResults": "No se encontraron skins con estos criterios",
     "search.tryDifferent": "Intenta ajustar tus filtros",
+    "search.allSkins": "Todas las Skins",
+    "search.item": "artículo",
+    "search.items": "artículos",
+    "search.clear": "Limpiar búsqueda",
+    "search.noSkinsAvailable": "No hay skins disponibles",
+    
+    // Filters
+    "filters.search": "Buscar",
+    "filters.weapon": "Arma",
+    "filters.rarity": "Rareza", 
+    "filters.sort": "Ordenar",
+    "filters.weaponType": "Tipo de Arma",
+    "filters.allWeapons": "Todas las Armas",
+    "filters.allRarities": "Todas las Rarezas",
+    "filters.sortBy": "Ordenar Por",
+    "filters.highestValue": "Mayor Valor",
+    "filters.lowestValue": "Menor Valor",
+    "filters.nameAZ": "Nombre (A-Z)",
+    "filters.nameZA": "Nombre (Z-A)",
+    "filters.newest": "Más Reciente",
+    "filters.oldest": "Más Antiguo",
+    "filters.clear": "Limpiar Filtros",
     
     // Analytics
     "analytics.title": "Análisis",
@@ -522,6 +615,14 @@ const translations: Translations = {
     "pwa.install": "Añadir a Pantalla de Inicio",
     "pwa.later": "Recordar Después",
     "pwa.understood": "Entendido",
+    
+    // Skins
+    "skins.details": "Detalles",
+    "skins.additionalInfo": "Información Adicional",
+    "skins.sell": "Vender",
+    "skins.skinDetails": "Detalles de la Skin",
+    "skins.addToInventory": "Añadir al Inventario",
+    "skins.editSkin": "Editar Skin"
   }
 };
 

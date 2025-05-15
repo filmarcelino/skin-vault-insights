@@ -5,11 +5,12 @@ import { Skin, InventoryItem } from "@/types/skin";
 import { SkinListItem } from "@/components/inventory/SkinListItem";
 import { SkinCard } from "@/components/inventory/SkinCard";
 import { ViewToggle } from "@/components/ui/view-toggle";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SearchResultsProps {
   isLoading?: boolean;
   paginatedSkins?: (Skin | InventoryItem)[];
-  items?: (Skin | InventoryItem)[];  // Add this prop
+  items?: (Skin | InventoryItem)[];
   itemsPerPage?: number;
   searchQuery?: string;
   weaponFilter?: string;
@@ -25,7 +26,7 @@ interface SearchResultsProps {
 export const SearchResults = ({
   isLoading,
   paginatedSkins,
-  items = [],  // Add default value
+  items = [],
   itemsPerPage = 20,
   searchQuery = "",
   weaponFilter = "",
@@ -38,6 +39,7 @@ export const SearchResults = ({
   onViewDetails
 }: SearchResultsProps) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const { t } = useLanguage();
   
   // Use either the paginatedSkins or items or skins prop
   const displayItems = paginatedSkins || items || skins;
@@ -57,27 +59,34 @@ export const SearchResults = ({
     <div className="mt-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">
-          {currentTab === "inventory" ? "My Inventory" : "All Skins"}
+          {currentTab === "inventory" ? t("inventory.title") : t("search.allSkins")}
         </h2>
         <div className="flex items-center gap-3">
           <div className="text-sm text-muted-foreground">
-            {totalItems || displayItems.length} {totalItems === 1 || displayItems.length === 1 ? "item" : "items"} found
+            {totalItems || displayItems.length} {totalItems === 1 || displayItems.length === 1 ? t("search.item") : t("search.items")}
           </div>
           <ViewToggle view={viewMode} onChange={setViewMode} />
         </div>
       </div>
 
       {isLoading ? (
-        /* ... keep existing code (loading state) */
-        <div></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {Array(10).fill(0).map((_, index) => (
+            <div key={`skeleton-${index}`} className="space-y-2">
+              <Skeleton className="h-48 w-full rounded-md" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
+        </div>
       ) : displayItems.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           {searchQuery.length > 0 || weaponFilter || rarityFilter ? (
-            <>No skins found with these criteria. Try adjusting your filters.</>
+            <>{t("search.noResults")}</>
           ) : currentTab === "inventory" ? (
-            <>Your inventory is empty.</>
+            <>{t("inventory.empty")}</>
           ) : (
-            <>No skins available.</>
+            <>{t("search.noSkinsAvailable")}</>
           )}
         </div>
       ) : viewMode === 'grid' ? (
