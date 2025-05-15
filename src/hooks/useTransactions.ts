@@ -6,6 +6,8 @@ export const useTransactions = () => {
   return useQuery({
     queryKey: ["transactions"],
     queryFn: getUserTransactions,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true
   });
 };
 
@@ -14,6 +16,8 @@ export const useInvalidateTransactions = () => {
   const queryClient = useQueryClient();
   
   return () => {
+    console.log("Invalidating transactions cache");
     queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    queryClient.invalidateQueries({ queryKey: ["sold-items"] });
   };
 };

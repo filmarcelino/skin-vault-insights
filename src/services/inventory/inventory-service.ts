@@ -1,7 +1,8 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { InventoryItem, SellData } from "@/types/skin";
-import { supabase } from '@/integrations/supabase/client'; // Direct import
+import { InventoryItem, SellData, Transaction } from "@/types/skin";
+import { supabase } from '@/integrations/supabase/client';
+import { mapSupabaseToTransaction } from './inventory-mapper';
 
 export const fetchSoldItems = async () => {
   try {
@@ -13,51 +14,55 @@ export const fetchSoldItems = async () => {
     
     const userId = userData.user.id;
     
-    // Fetch ALL sold items with no limit and proper sorting
-    const { data, error } = await supabase
-      .from('inventory')
-      .select('*')
+    // Fetch sold items from transactions table instead of inventory
+    const { data: transactionsData, error: transactionsError } = await supabase
+      .from('transactions')
+      .select('*, inventory(*)')
       .eq('user_id', userId)
-      .eq('is_in_user_inventory', false)
-      .order('updated_at', { ascending: false });
+      .eq('type', 'sell')
+      .order('date', { ascending: false });
       
-    if (error) {
-      console.error("Error fetching sold items:", error);
+    if (transactionsError) {
+      console.error("Error fetching sold items transactions:", transactionsError);
       return [];
     }
     
-    console.log("Raw sold items data from DB:", data);
+    console.log("Raw sold items data from transactions:", transactionsData);
     
-    // Map database fields to the expected format for the UI
-    const mappedItems = data.map(item => ({
-      id: item.id,
-      inventoryId: item.id,
-      skin_id: item.skin_id,
-      name: item.name,
-      weapon: item.weapon || "",
-      image: item.image || "",
-      rarity: item.rarity || "Unknown",
-      // For sold items, price represents the sold price
-      price: item.price || 0,
-      purchasePrice: item.purchase_price || 0,
-      acquiredDate: item.acquired_date || new Date().toISOString(),
-      user_id: item.user_id,
-      isInUserInventory: false,
-      is_in_user_inventory: false,
-      tradeLockDays: item.trade_lock_days,
-      tradeLockUntil: item.trade_lock_until,
-      // Calculate profit
-      profit: (item.price || 0) - (item.purchase_price || 0),
-      currency: item.currency_code || 'USD',
-      floatValue: item.float_value,
-      isStatTrak: item.is_stat_trak,
-      wear: item.wear || "",
-      // For sold items, we use these fields
-      date_sold: item.updated_at,
-      sold_price: item.price,
-      sold_marketplace: item.marketplace || "Unknown",
-      sold_fee_percentage: item.fee_percentage
-    }));
+    // Map transaction data to the expected format for the UI
+    const mappedItems = transactionsData.map(transaction => {
+      const inventoryItem = transaction.inventory || {};
+      
+      return {
+        id: transaction.id,
+        inventoryId: transaction.item_id,
+        skin_id: inventoryItem.skin_id || transaction.item_id,
+        name: transaction.skin_name || inventoryItem.name || "Unknown Skin",
+        weapon: transaction.weapon_name || inventoryItem.weapon || "Unknown Weapon",
+        image: inventoryItem.image || "",
+        rarity: inventoryItem.rarity || "Unknown",
+        // For sold items, price represents the sold price
+        price: transaction.price || 0,
+        purchasePrice: inventoryItem.purchase_price || 0,
+        acquiredDate: inventoryItem.acquired_date || new Date().toISOString(),
+        user_id: transaction.user_id,
+        isInUserInventory: false,
+        is_in_user_inventory: false,
+        tradeLockDays: inventoryItem.trade_lock_days,
+        tradeLockUntil: inventoryItem.trade_lock_until,
+        // Calculate profit
+        profit: (transaction.price || 0) - (inventoryItem.purchase_price || 0),
+        currency: transaction.currency_code || 'USD',
+        floatValue: inventoryItem.float_value,
+        isStatTrak: inventoryItem.is_stat_trak,
+        wear: inventoryItem.wear || "",
+        // For sold items, we use these fields
+        date_sold: transaction.date,
+        sold_price: transaction.price,
+        sold_marketplace: inventoryItem.marketplace || transaction.notes || "Unknown",
+        sold_fee_percentage: inventoryItem.fee_percentage
+      };
+    });
     
     console.log("Mapped sold items for UI:", mappedItems);
     return mappedItems;
@@ -144,17 +149,20 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
     const userId = userData.user.id;
     const newItemId = uuidv4();
     
+    // Make sure skin_id is always set - this will prevent the error
+    const skinId = skin.id || newItemId;
+    
     const newItem = {
       id: newItemId,
-      inventory_id: newItemId, // Add required inventory_id field
-      skin_id: skin.id,
+      inventory_id: newItemId,
+      skin_id: skinId, // Ensure this is never null
       user_id: userId,
-      name: skin.name,
-      weapon: skin.weapon,
-      image: skin.image,
-      rarity: skin.rarity,
-      price: skin.price,
-      purchase_price: purchaseInfo.purchasePrice,
+      name: skin.name || "Unknown Skin",
+      weapon: skin.weapon || "Unknown Weapon",
+      image: skin.image || "",
+      rarity: skin.rarity || "Common",
+      price: skin.price || 0,
+      purchase_price: purchaseInfo.purchasePrice || 0,
       acquired_date: new Date().toISOString(),
       is_in_user_inventory: true,
       trade_lock_days: 0,
@@ -162,10 +170,10 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
       float_value: skin.floatValue || null,
       is_stat_trak: skin.isStatTrak || false,
       wear: skin.wear || null,
-      marketplace: purchaseInfo.marketplace,
-      fee_percentage: purchaseInfo.feePercentage,
-      currency_code: purchaseInfo.currency,
-      current_price: skin.price
+      marketplace: purchaseInfo.marketplace || "Unknown",
+      fee_percentage: purchaseInfo.feePercentage || 0,
+      currency_code: purchaseInfo.currency || "USD",
+      current_price: skin.price || 0
     };
 
     const { data, error } = await supabase
@@ -176,6 +184,31 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
     if (error) {
       console.error("Error adding skin to inventory:", error);
       return null;
+    }
+
+    // Create a transaction record for the purchase
+    const transactionId = uuidv4();
+    const transaction = {
+      id: transactionId,
+      transaction_id: transactionId,
+      user_id: userId,
+      type: 'add',
+      item_id: newItemId,
+      weapon_name: skin.weapon || "Unknown Weapon",
+      skin_name: skin.name || "Unknown Skin",
+      date: new Date().toISOString(),
+      price: purchaseInfo.purchasePrice || 0,
+      notes: `Added from ${purchaseInfo.marketplace || "Unknown"}`,
+      currency_code: purchaseInfo.currency || "USD"
+    };
+
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .insert(transaction);
+
+    if (transactionError) {
+      console.error("Error creating add transaction:", transactionError);
+      // Continue anyway as the item was added to inventory
     }
 
     return {
@@ -267,19 +300,20 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
     // Get the purchase price to calculate profit
     const { data: item } = await supabase
       .from('inventory')
-      .select('purchase_price')
+      .select('purchase_price, name, weapon')
       .eq('id', itemId)
       .single();
     
+    if (!item) {
+      console.error("Error marking item as sold: Item not found");
+      return false;
+    }
+
     const purchasePrice = item?.purchase_price || 0;
     const soldPrice = sellData.soldPrice || 0;
+    const profit = soldPrice - purchasePrice;
     
-    // Store sold information in the existing fields
-    // We don't use separate fields like sold_price, instead we use:
-    // - price = sold price
-    // - updated_at = date sold
-    // - marketplace = sold marketplace
-    // - fee_percentage = sold fee percentage
+    // Update the inventory item (mark as not in inventory)
     const { error } = await supabase
       .from('inventory')
       .update({
@@ -293,12 +327,43 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
       .eq('id', itemId);
 
     if (error) {
-      console.error("Error marking item as sold:", error);
+      console.error("Error updating inventory item as sold:", error);
       return false;
     }
 
+    // Create a transaction record for the sale
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user?.id) {
+      console.error("User not authenticated");
+      return false;
+    }
+
+    const transactionId = uuidv4();
+    const transaction = {
+      id: transactionId,
+      transaction_id: transactionId,
+      user_id: userData.user.id,
+      type: 'sell',
+      item_id: itemId,
+      weapon_name: item.weapon || "Unknown Weapon",
+      skin_name: item.name || "Unknown Skin",
+      date: soldDate,
+      price: soldPrice,
+      notes: `Sold on ${sellData.soldMarketplace || "Unknown"}`,
+      currency_code: sellData.soldCurrency || "USD"
+    };
+
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .insert(transaction);
+
+    if (transactionError) {
+      console.error("Error creating sell transaction:", transactionError);
+      // Sale was marked in inventory, so return true
+    }
+
     // Log successful transaction
-    console.log(`Item ${itemId} marked as sold for ${soldPrice} with profit ${soldPrice - purchasePrice}`);
+    console.log(`Item ${itemId} marked as sold for ${soldPrice} with profit ${profit}`);
     return true;
   } catch (error) {
     console.error("Error marking item as sold:", error);

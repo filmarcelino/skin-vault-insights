@@ -24,9 +24,9 @@ export const useInventoryActions = () => {
   
   const invalidateTransactions = useInvalidateTransactions();
   
-  const handleViewDetails = (item: InventoryItem) => {
+  const handleViewDetails = (item: InventoryItem | null) => {
     setSelectedItem(item);
-    setIsDetailModalOpen(true);
+    setIsDetailModalOpen(!!item);
   };
 
   const handleEditItem = (item: InventoryItem) => {
@@ -46,8 +46,8 @@ export const useInventoryActions = () => {
     try {
       await removeSkin.mutateAsync(inventoryId);
       toast({
-        title: "Skin Removida",
-        description: "Skin removida do inventário com sucesso.",
+        title: "Skin Removed",
+        description: "Skin successfully removed from inventory.",
       });
       
       // Invalidate both inventory and transactions caches
@@ -55,22 +55,38 @@ export const useInventoryActions = () => {
       invalidateTransactions();
     } catch (error) {
       toast({
-        title: "Erro ao Remover",
-        description: "Falha ao remover a skin do inventário.",
+        title: "Error Removing",
+        description: "Failed to remove the skin from inventory.",
         variant: "destructive"
       });
     }
   };
 
-  const handleMarkAsSold = (item: InventoryItem | string, sellData: SellData) => {
-    // Handle both item object and direct itemId string
-    const itemId = typeof item === 'string' ? item : item.id;
-    sellSkin.mutate({ itemId: itemId, sellData: sellData });
-    handleClose();
-    
-    // Invalidate both inventory and transactions caches
-    invalidateInventory();
-    invalidateTransactions();
+  const handleMarkAsSold = async (item: InventoryItem | string, sellData: SellData) => {
+    try {
+      // Handle both item object and direct itemId string
+      const itemId = typeof item === 'string' ? item : item.id;
+      await sellSkin.mutateAsync({ itemId: itemId, sellData: sellData });
+      
+      toast({
+        title: "Skin Sold",
+        description: "Skin successfully marked as sold.",
+      });
+      
+      // Invalidate both inventory and transactions caches
+      invalidateInventory();
+      invalidateTransactions();
+      handleClose();
+      
+      return true;
+    } catch (error) {
+      toast({
+        title: "Error Selling",
+        description: "Failed to mark the skin as sold.",
+        variant: "destructive"
+      });
+      return false;
+    }
   };
   
   const handleDuplicate = async (item: InventoryItem | Skin) => {
@@ -98,8 +114,8 @@ export const useInventoryActions = () => {
       
       await addSkin.mutateAsync({ skin: skinToAdd, purchaseInfo: purchaseInfo });
       toast({
-        title: "Skin Duplicada",
-        description: "Skin duplicada para o inventário com sucesso.",
+        title: "Skin Duplicated",
+        description: "Skin successfully duplicated to inventory.",
       });
       
       // Invalidate both inventory and transactions caches
@@ -107,8 +123,8 @@ export const useInventoryActions = () => {
       invalidateTransactions();
     } catch (error) {
       toast({
-        title: "Erro ao Duplicar",
-        description: "Falha ao duplicar a skin para o inventário.",
+        title: "Error Duplicating",
+        description: "Failed to duplicate the skin to inventory.",
         variant: "destructive"
       });
     }
@@ -128,8 +144,8 @@ export const useInventoryActions = () => {
       const result = await addSkin.mutateAsync({ skin: skin, purchaseInfo: purchaseInfo });
       
       toast({
-        title: "Skin Adicionada",
-        description: "Skin adicionada ao inventário com sucesso.",
+        title: "Skin Added",
+        description: "Skin successfully added to inventory.",
       });
       
       // Invalidate both inventory and transactions caches
@@ -139,8 +155,8 @@ export const useInventoryActions = () => {
       return result;
     } catch (error) {
       toast({
-        title: "Erro ao Adicionar",
-        description: "Falha ao adicionar a skin ao inventário.",
+        title: "Error Adding",
+        description: "Failed to add the skin to inventory.",
         variant: "destructive"
       });
     }

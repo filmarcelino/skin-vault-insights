@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useInventory } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -103,9 +104,12 @@ export default function Inventory() {
 
   // Enhanced handler to refetch sold items after marking item as sold
   const handleSellItem = async (itemId: string, sellData: any) => {
-    await handleMarkAsSold(itemId, sellData);
+    const success = await handleMarkAsSold(itemId, sellData);
     // Force refetch sold items to update the list
-    refetchSoldItems();
+    if (success) {
+      refetchSoldItems();
+    }
+    return success;
   };
   
   if (isLoading) {
