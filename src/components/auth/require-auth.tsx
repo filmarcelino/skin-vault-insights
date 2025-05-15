@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Loading } from "@/components/ui/loading";
 import { toast } from "sonner";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RequireAuthProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface RequireAuthProps {
 
 const RequireAuth = ({ children }: RequireAuthProps) => {
   const { user, isLoading, session } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [redirecting, setRedirecting] = useState(false);
@@ -35,8 +37,8 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
           setRedirecting(true);
           
           // Provide visual feedback to user
-          toast("Redirecionando para login", {
-            description: "Por favor, faça login para acessar esta página"
+          toast(t("auth.redirecting_to_login"), {
+            description: t("auth.please_login")
           });
           
           // Redirect to login page with return path
@@ -47,7 +49,7 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
         }
       }
     }
-  }, [user, isLoading, navigate, location.pathname, session, redirecting]);
+  }, [user, isLoading, navigate, location.pathname, session, redirecting, t]);
 
   // Show loading while checking auth status
   if (isLoading || !authCheckComplete) {

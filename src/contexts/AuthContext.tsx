@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { CURRENCIES } from "@/contexts/CurrencyContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface UserProfile {
   id: string;
@@ -85,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profileError, setProfileError] = useState<boolean>(false);
   const { toast: useToastToast } = useToast();
   const currencyUpdater = useCurrencyUpdate();
+  const { t } = useLanguage();
 
   console.log("AuthProvider rendering. isLoading:", isLoading, "user:", user?.email);
 
@@ -217,16 +219,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) {
         console.error("Error creating profile:", error);
-        toast.error("Falha ao criar perfil", {
-          description: "Houve um problema ao configurar seu perfil. Por favor, tente novamente."
+        toast.error(t("auth.profile_create_error"), {
+          description: t("auth.profile_create_error_description")
         });
         return;
       }
       
       console.log("Profile created successfully:", data);
       setProfile(data as UserProfile);
-      toast.success("Perfil recuperado com sucesso", {
-        description: "Seu perfil foi restaurado com todas suas informações."
+      toast.success(t("auth.profile_recovered"), {
+        description: t("auth.profile_recovered_description")
       });
       
       // Update preferred currency
@@ -292,22 +294,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (response.error) {
         console.error("Sign in error:", response.error.message);
-        toast("Erro ao fazer login", {
+        toast(t("auth.login_error"), {
           description: response.error.message,
         });
         return { error: response.error, data: null };
       } else if (response.data.session) {
-        toast("Login realizado com sucesso", {
-          description: "Bem-vindo de volta!"
+        toast(t("auth.login_success"), {
+          description: t("auth.welcome_back")
         });
         return { error: null, data: response.data.session };
       }
       
-      return { error: new Error("Erro desconhecido"), data: null };
+      return { error: new Error(t("auth.unknown_error")), data: null };
     } catch (error) {
       console.error("Sign in error:", error);
-      toast("Erro ao fazer login", {
-        description: "Ocorreu um erro inesperado. Por favor, tente novamente."
+      toast(t("auth.login_error"), {
+        description: t("auth.unexpected_error")
       });
       return { error: error as Error, data: null };
     } finally {
@@ -343,7 +345,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (authResponse.error) {
-        toast("Erro ao criar conta", {
+        toast(t("auth.signup_error"), {
           description: authResponse.error.message
         });
         return { error: authResponse.error, data: null };
@@ -370,17 +372,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
         
-        toast("Conta criada com sucesso", {
-          description: "Bem-vindo ao CS Skin Vault!"
+        toast(t("auth.signup_success"), {
+          description: t("auth.welcome_message")
         });
         return { error: null, data: authResponse.data.session };
       }
       
-      return { error: new Error("Erro desconhecido"), data: null };
+      return { error: new Error(t("auth.unknown_error")), data: null };
     } catch (error) {
       console.error("Sign up error:", error);
-      toast("Erro ao criar conta", {
-        description: "Ocorreu um erro inesperado. Por favor, tente novamente."
+      toast(t("auth.signup_error"), {
+        description: t("auth.unexpected_error")
       });
       return { error: error as Error, data: null };
     } finally {
@@ -395,13 +397,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
       setProfile(null);
       setProfileError(false);
-      toast("Logout realizado", {
-        description: "Você saiu da sua conta com sucesso."
+      toast(t("auth.logout_success"), {
+        description: t("auth.logout_success_description")
       });
     } catch (error) {
       console.error("Sign out error:", error);
-      toast("Erro ao sair", {
-        description: "Ocorreu um erro ao tentar sair. Tente novamente."
+      toast(t("auth.logout_error"), {
+        description: t("auth.logout_error_description")
       });
     } finally {
       setIsLoading(false);
@@ -417,20 +419,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (response.error) {
-        toast("Erro ao enviar email", {
+        toast(t("auth.reset_email_error"), {
           description: response.error.message
         });
       } else {
-        toast("Email enviado", {
-          description: "Verifique sua caixa de entrada para redefinir sua senha."
+        toast(t("auth.reset_email_sent"), {
+          description: t("auth.reset_email_check_inbox")
         });
       }
       
       return response;
     } catch (error) {
       console.error("Reset password error:", error);
-      toast("Erro ao redefinir senha", {
-        description: "Ocorreu um erro inesperado. Por favor, tente novamente."
+      toast(t("auth.reset_password_error"), {
+        description: t("auth.unexpected_error")
       });
       return { error: error as Error, data: null };
     } finally {
@@ -440,7 +442,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!user) {
-      return { error: new Error("Nenhum usuário logado"), data: null };
+      return { error: new Error(t("auth.no_user_logged_in")), data: null };
     }
     
     setIsLoading(true);
@@ -454,18 +456,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
         
       if (error) {
-        toast("Erro ao atualizar perfil", {
+        toast(t("auth.profile_update_error"), {
           description: error.message
         });
         return { error, data: null };
       }
       
       setProfile(updatedProfile as UserProfile);
-      toast("Perfil atualizado", {
-        description: "Seu perfil foi atualizado com sucesso."
+      toast(t("auth.profile_updated"), {
+        description: t("auth.profile_updated_success")
       });
       
-      // Atualizar a moeda preferida se foi alterada
+      // Update preferred currency if changed
       if (data.preferred_currency && currencyUpdater) {
         const currency = CURRENCIES.find(c => c.code === data.preferred_currency);
         if (currency) {
@@ -476,8 +478,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: null, data: updatedProfile as UserProfile };
     } catch (error) {
       console.error("Update profile error:", error);
-      toast("Erro ao atualizar perfil", {
-        description: "Ocorreu um erro inesperado. Por favor, tente novamente."
+      toast(t("auth.profile_update_error"), {
+        description: t("auth.unexpected_error")
       });
       return { error: error as Error, data: null };
     } finally {

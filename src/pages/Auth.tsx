@@ -37,37 +37,11 @@ import { Logo } from "@/components/ui/logo";
 import { toast } from "sonner";
 import { CURRENCIES } from "@/contexts/CurrencyContext";
 import { AlertCircle, Loader2 } from "lucide-react";
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  rememberMe: z.boolean().default(false),
-});
-
-const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  fullName: z.string().min(3, "Full name is required"),
-  email: z.string().email("Invalid email"),
-  city: z.string().optional(),
-  country: z.string().optional(),
-  preferredCurrency: z.enum(["USD", "BRL", "RUB", "CNY", "EUR", "GBP"]),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
-
-const resetPasswordSchema = z.object({
-  email: z.string().email("Invalid email"),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = z.infer<typeof registerSchema>;
-type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Auth = () => {
   const { user, signIn, signUp, resetPassword, isLoading, session } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(
@@ -78,7 +52,37 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   console.log("Auth component rendering. User:", user, "isLoading:", isLoading, "Session:", session ? "Present" : "None");
+  
+  // Define form schemas with translations
+  const loginSchema = z.object({
+    email: z.string().email(t("validation.invalid_email")),
+    password: z.string().min(6, t("validation.password_min_length")),
+    rememberMe: z.boolean().default(false),
+  });
 
+  const registerSchema = z.object({
+    username: z.string().min(3, t("validation.username_min_length")),
+    fullName: z.string().min(3, t("validation.full_name_required")),
+    email: z.string().email(t("validation.invalid_email")),
+    city: z.string().optional(),
+    country: z.string().optional(),
+    preferredCurrency: z.enum(["USD", "BRL", "RUB", "CNY", "EUR", "GBP"]),
+    password: z.string().min(6, t("validation.password_min_length")),
+    confirmPassword: z.string().min(6, t("validation.password_min_length")),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: t("validation.passwords_dont_match"),
+    path: ["confirmPassword"],
+  });
+
+  const resetPasswordSchema = z.object({
+    email: z.string().email(t("validation.invalid_email")),
+  });
+
+  type LoginFormValues = z.infer<typeof loginSchema>;
+  type RegisterFormValues = z.infer<typeof registerSchema>;
+  type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+
+  // Initialize forms
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -135,16 +139,16 @@ const Auth = () => {
         
         // Handle common error cases with friendly messages
         if (error.message.includes("Invalid login credentials")) {
-          setAuthError("Email ou senha incorretos. Tente novamente.");
+          setAuthError(t("auth.invalid_credentials"));
         } else if (error.message.includes("Email not confirmed")) {
-          setAuthError("Por favor, confirme seu email antes de entrar.");
+          setAuthError(t("auth.email_not_confirmed"));
         } else {
           setAuthError(error.message);
         }
       } else {
         console.log("Login successful");
-        toast.success("Login bem-sucedido", {
-          description: "Bem-vindo de volta!"
+        toast.success(t("auth.login_success"), {
+          description: t("auth.welcome_back")
         });
         
         // Navigate to the intended destination or dashboard
@@ -153,7 +157,7 @@ const Auth = () => {
       }
     } catch (err) {
       console.error("Unexpected login error:", err);
-      setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+      setAuthError(t("auth.unexpected_error"));
     } finally {
       setIsSubmitting(false);
     }
@@ -180,14 +184,14 @@ const Auth = () => {
         
         // Handle common error cases with friendly messages
         if (error.message.includes("User already registered")) {
-          setAuthError("Este email já está registrado. Tente fazer login.");
+          setAuthError(t("auth.user_already_registered"));
         } else {
           setAuthError(error.message);
         }
       } else {
         console.log("Registration successful");
-        toast.success("Conta criada com sucesso", {
-          description: "Bem-vindo ao CS Skin Vault!"
+        toast.success(t("auth.signup_success"), {
+          description: t("auth.welcome_message")
         });
         
         // Navigate to dashboard or intended destination
@@ -196,7 +200,7 @@ const Auth = () => {
       }
     } catch (err) {
       console.error("Unexpected registration error:", err);
-      setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+      setAuthError(t("auth.unexpected_error"));
     } finally {
       setIsSubmitting(false);
     }
@@ -215,15 +219,15 @@ const Auth = () => {
         setAuthError(error.message);
       } else {
         setShowResetPassword(false);
-        toast.success("Email de recuperação enviado", {
-          description: "Verifique sua caixa de entrada para redefinir sua senha."
+        toast.success(t("auth.reset_email_sent"), {
+          description: t("auth.reset_email_check_inbox")
         });
         loginForm.setValue("email", data.email);
         setActiveTab("login");
       }
     } catch (err) {
       console.error("Unexpected password reset error:", err);
-      setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+      setAuthError(t("auth.unexpected_error"));
     } finally {
       setIsSubmitting(false);
     }
@@ -241,10 +245,10 @@ const Auth = () => {
           </CardTitle>
           <CardDescription>
             {showResetPassword 
-              ? "Digite seu email para recuperar sua senha" 
+              ? t("auth.enter_email_recover") 
               : activeTab === "login" 
-                ? "Entre na sua conta" 
-                : "Crie uma nova conta"}
+                ? t("auth.login_to_account") 
+                : t("auth.create_new_account")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -264,9 +268,9 @@ const Auth = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("auth.email")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="seu.email@exemplo.com" {...field} />
+                        <Input placeholder={t("auth.email_placeholder")} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -279,15 +283,15 @@ const Auth = () => {
                     onClick={() => setShowResetPassword(false)}
                     disabled={isSubmitting}
                   >
-                    Cancelar
+                    {t("common.cancel")}
                   </Button>
                   <Button type="submit" disabled={isSubmitting || isLoading}>
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enviando...
+                        {t("auth.sending")}
                       </>
-                    ) : "Enviar link de recuperação"}
+                    ) : t("auth.send_recovery_link")}
                   </Button>
                 </div>
               </form>
@@ -295,8 +299,8 @@ const Auth = () => {
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Cadastro</TabsTrigger>
+                <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
+                <TabsTrigger value="register">{t("auth.register")}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
@@ -307,9 +311,9 @@ const Auth = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t("auth.email")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="seu.email@exemplo.com" {...field} />
+                            <Input placeholder={t("auth.email_placeholder")} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -321,7 +325,7 @@ const Auth = () => {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Senha</FormLabel>
+                          <FormLabel>{t("auth.password")}</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -347,7 +351,7 @@ const Auth = () => {
                               htmlFor="rememberMe"
                               className="text-sm font-medium cursor-pointer"
                             >
-                              Lembrar-me
+                              {t("auth.remember_me")}
                             </Label>
                           </FormItem>
                         )}
@@ -360,7 +364,7 @@ const Auth = () => {
                         onClick={() => setShowResetPassword(true)}
                         disabled={isSubmitting}
                       >
-                        Esqueceu a senha?
+                        {t("auth.forgot_password")}
                       </Button>
                     </div>
                     
@@ -368,9 +372,9 @@ const Auth = () => {
                       {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Entrando...
+                          {t("auth.logging_in")}
                         </>
-                      ) : "Entrar"}
+                      ) : t("auth.login")}
                     </Button>
                   </form>
                 </Form>
@@ -385,9 +389,9 @@ const Auth = () => {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nome de usuário</FormLabel>
+                            <FormLabel>{t("auth.username")}</FormLabel>
                             <FormControl>
-                              <Input placeholder="username" {...field} />
+                              <Input placeholder={t("auth.username_placeholder")} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -399,9 +403,9 @@ const Auth = () => {
                         name="fullName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nome completo</FormLabel>
+                            <FormLabel>{t("auth.full_name")}</FormLabel>
                             <FormControl>
-                              <Input placeholder="Nome Sobrenome" {...field} />
+                              <Input placeholder={t("auth.full_name_placeholder")} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -414,9 +418,9 @@ const Auth = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t("auth.email")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="seu.email@exemplo.com" {...field} />
+                            <Input placeholder={t("auth.email_placeholder")} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -429,9 +433,9 @@ const Auth = () => {
                         name="city"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Cidade</FormLabel>
+                            <FormLabel>{t("auth.city")}</FormLabel>
                             <FormControl>
-                              <Input placeholder="Cidade" {...field} />
+                              <Input placeholder={t("auth.city_placeholder")} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -443,9 +447,9 @@ const Auth = () => {
                         name="country"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>País</FormLabel>
+                            <FormLabel>{t("auth.country")}</FormLabel>
                             <FormControl>
-                              <Input placeholder="País" {...field} />
+                              <Input placeholder={t("auth.country_placeholder")} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -458,20 +462,20 @@ const Auth = () => {
                       name="preferredCurrency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Moeda preferida</FormLabel>
+                          <FormLabel>{t("auth.preferred_currency")}</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Selecione uma moeda" />
+                                <SelectValue placeholder={t("auth.select_currency")} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="USD">USD (Dólar Americano)</SelectItem>
-                              <SelectItem value="BRL">BRL (Real Brasileiro)</SelectItem>
-                              <SelectItem value="RUB">RUB (Rublo Russo)</SelectItem>
-                              <SelectItem value="CNY">CNY (Yuan Chinês)</SelectItem>
-                              <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                              <SelectItem value="GBP">GBP (Libra Esterlina)</SelectItem>
+                              <SelectItem value="USD">USD ({t("currencies.usd")})</SelectItem>
+                              <SelectItem value="BRL">BRL ({t("currencies.brl")})</SelectItem>
+                              <SelectItem value="RUB">RUB ({t("currencies.rub")})</SelectItem>
+                              <SelectItem value="CNY">CNY ({t("currencies.cny")})</SelectItem>
+                              <SelectItem value="EUR">EUR ({t("currencies.eur")})</SelectItem>
+                              <SelectItem value="GBP">GBP ({t("currencies.gbp")})</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -484,7 +488,7 @@ const Auth = () => {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Senha</FormLabel>
+                          <FormLabel>{t("auth.password")}</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -498,7 +502,7 @@ const Auth = () => {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Confirmar senha</FormLabel>
+                          <FormLabel>{t("auth.confirm_password")}</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -510,7 +514,7 @@ const Auth = () => {
                     <div className="rounded-md bg-blue-50 dark:bg-blue-950 p-3 text-sm text-blue-800 dark:text-blue-300">
                       <p className="flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                        Novas contas recebem automaticamente 7 dias de teste Premium!
+                        {t("auth.trial_notice")}
                       </p>
                     </div>
                     
@@ -518,9 +522,9 @@ const Auth = () => {
                       {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Registrando...
+                          {t("auth.registering")}
                         </>
-                      ) : "Registrar"}
+                      ) : t("auth.register")}
                     </Button>
                   </form>
                 </Form>
