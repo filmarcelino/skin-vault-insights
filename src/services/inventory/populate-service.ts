@@ -15,6 +15,18 @@ export const populateUserInventory = async (): Promise<boolean> => {
       return false;
     }
     
+    // Get user email to check if it's the test account
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', user.id)
+      .single();
+    
+    if (!profileData || profileData.email !== "teste@teste.com") {
+      toast.error("This feature is only available for test accounts");
+      return false;
+    }
+    
     const { data, error } = await supabase.functions.invoke('populate-inventory', {
       body: { userId: user.id }
     });

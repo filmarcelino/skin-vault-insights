@@ -50,10 +50,10 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Check if user inventory is already populated
+    // Check if user's email is teste@teste.com
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('inventory_populated')
+      .select('email, inventory_populated')
       .eq('id', userId)
       .single();
     
@@ -63,6 +63,20 @@ serve(async (req) => {
         JSON.stringify({ error: "Failed to check user profile", details: profileError }),
         { 
           status: 500, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json" 
+          } 
+        }
+      );
+    }
+    
+    // Only allow teste@teste.com to populate inventory
+    if (profile.email !== "teste@teste.com") {
+      return new Response(
+        JSON.stringify({ error: "This feature is only available for test accounts" }),
+        { 
+          status: 403, 
           headers: { 
             ...corsHeaders, 
             "Content-Type": "application/json" 
