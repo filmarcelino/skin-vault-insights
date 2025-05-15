@@ -29,9 +29,9 @@ export default function Search() {
   const [filteredSkins, setFilteredSkins] = useState<Skin[]>([]);
   
   // Filters
-  const [weaponFilter, setWeaponFilter] = useState<string>('');
-  const [rarityFilter, setRarityFilter] = useState<string>('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [weaponFilter, setWeaponFilter] = useState<string>("all");
+  const [rarityFilter, setRarityFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [minPriceFilter, setMinPriceFilter] = useState<number | null>(null);
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
@@ -57,17 +57,17 @@ export default function Search() {
     }
     
     // Apply weapon filter
-    if (weaponFilter) {
+    if (weaponFilter && weaponFilter !== "all") {
       results = results.filter(skin => skin.weapon === weaponFilter);
     }
     
     // Apply rarity filter
-    if (rarityFilter) {
+    if (rarityFilter && rarityFilter !== "all") {
       results = results.filter(skin => skin.rarity === rarityFilter);
     }
     
     // Apply category filter
-    if (categoryFilter) {
+    if (categoryFilter && categoryFilter !== "all") {
       results = results.filter(skin => skin.category === categoryFilter);
     }
     
@@ -99,9 +99,9 @@ export default function Search() {
   
   // Reset all filters
   const handleResetFilters = () => {
-    setWeaponFilter('');
-    setRarityFilter('');
-    setCategoryFilter('');
+    setWeaponFilter("all");
+    setRarityFilter("all");
+    setCategoryFilter("all");
     setMinPriceFilter(null);
     setMaxPriceFilter(null);
     setSearchQuery('');

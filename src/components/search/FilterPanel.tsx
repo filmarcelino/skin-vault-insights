@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,7 @@ export const FilterPanel = ({
 }: FilterPanelProps) => {
   // Add the weapon and rarity options
   const weapons = [
-    { value: "", label: "All Weapons" },
+    { value: "all", label: "All Weapons" },
     { value: "AK-47", label: "AK-47" },
     { value: "AWP", label: "AWP" },
     { value: "M4A4", label: "M4A4" },
@@ -53,7 +54,7 @@ export const FilterPanel = ({
   ];
 
   const rarities = [
-    { value: "", label: "All Rarities" },
+    { value: "all", label: "All Rarities" },
     { value: "Consumer Grade", label: "Consumer Grade" },
     { value: "Industrial Grade", label: "Industrial Grade" },
     { value: "Mil-Spec", label: "Mil-Spec" },
@@ -64,7 +65,7 @@ export const FilterPanel = ({
   ];
 
   const types = [
-    { value: "", label: "All Types" },
+    { value: "all", label: "All Types" },
     { value: "Normal", label: "Normal" },
     { value: "StatTrak", label: "StatTrak" },
     { value: "Souvenir", label: "Souvenir" },
@@ -79,7 +80,7 @@ export const FilterPanel = ({
         <div className="space-y-6 pr-4">
           <div className="space-y-3">
             <Label>Weapon</Label>
-            <Select value={weaponFilter} onValueChange={onWeaponFilterChange}>
+            <Select value={weaponFilter || "all"} onValueChange={onWeaponFilterChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select weapon" />
               </SelectTrigger>
@@ -95,7 +96,7 @@ export const FilterPanel = ({
 
           <div className="space-y-3">
             <Label>Rarity</Label>
-            <Select value={rarityFilter} onValueChange={onRarityFilterChange}>
+            <Select value={rarityFilter || "all"} onValueChange={onRarityFilterChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select rarity" />
               </SelectTrigger>
@@ -113,7 +114,7 @@ export const FilterPanel = ({
             <div className="space-y-3">
               <Label>Type</Label>
               <Select 
-                value={typeFilter} 
+                value={typeFilter || "all"} 
                 onValueChange={onTypeFilterChange}
               >
                 <SelectTrigger>

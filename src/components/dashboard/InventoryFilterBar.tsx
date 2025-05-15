@@ -54,7 +54,7 @@ export const InventoryFilterBar = ({
           <SelectContent>
             <SelectItem value="all">{t('filters.allWeapons')}</SelectItem>
             {weaponTypes.map(weapon => (
-              <SelectItem key={weapon} value={weapon}>{weapon}</SelectItem>
+              <SelectItem key={weapon} value={weapon || "unknown"}>{weapon || "Unknown"}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -66,7 +66,7 @@ export const InventoryFilterBar = ({
           <SelectContent>
             <SelectItem value="all">{t('filters.allRarities')}</SelectItem>
             {rarityTypes.map(rarity => (
-              <SelectItem key={rarity} value={rarity}>{rarity}</SelectItem>
+              <SelectItem key={rarity} value={rarity || "unknown"}>{rarity || "Unknown"}</SelectItem>
             ))}
           </SelectContent>
         </Select>

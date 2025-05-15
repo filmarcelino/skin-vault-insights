@@ -98,3 +98,10 @@ export interface Transaction {
   currency?: string;
   userId: string;
 }
+
+// Define LockStatus type with isLocked, daysLeft, and tradeLockDate fields
+export interface LockStatus {
+  isLocked: boolean;
+  daysLeft: number;
+  tradeLockDate?: string;
+}
