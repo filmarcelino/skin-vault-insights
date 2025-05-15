@@ -1,10 +1,8 @@
-
 import { useState } from "react";
 import { useInventory } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { SoldSkinsTable } from "@/components/inventory/SoldSkinsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Layout } from "@/components/layout/layout";
 import { Ban, PackageOpen } from "lucide-react";
 import { InventoryFilterBar } from "@/components/dashboard/InventoryFilterBar";
 import { InventoryGrid } from "@/components/inventory/InventoryGrid";
@@ -95,30 +93,26 @@ export default function Inventory() {
   
   if (isLoading) {
     return (
-      <Layout>
-        <Loading />
-      </Layout>
+      <Loading />
     );
   }
   
   if (error) {
     return (
-      <Layout>
-        <div className="text-center p-8">
-          <h2 className="text-xl font-bold text-red-500">
-            {t("errors.loadingError")}
-          </h2>
-          <p className="text-muted-foreground mt-2">
-            {t("errors.tryAgain")}
-          </p>
-          <Button 
-            className="mt-4" 
-            onClick={() => window.location.reload()}
-          >
-            {t("common.refresh")}
-          </Button>
-        </div>
-      </Layout>
+      <div className="text-center p-8">
+        <h2 className="text-xl font-bold text-red-500">
+          {t("errors.loadingError")}
+        </h2>
+        <p className="text-muted-foreground mt-2">
+          {t("errors.tryAgain")}
+        </p>
+        <Button 
+          className="mt-4" 
+          onClick={() => window.location.reload()}
+        >
+          {t("common.refresh")}
+        </Button>
+      </div>
     );
   }
   
@@ -141,7 +135,7 @@ export default function Inventory() {
   };
   
   return (
-    <Layout>
+    <>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold">
           {t("inventory.title")}
@@ -253,6 +247,6 @@ export default function Inventory() {
         onOpenChange={handleCloseDetail}
         skin={selectedItem as Skin}
       />
-    </Layout>
+    </>
   );
 }

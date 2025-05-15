@@ -1,5 +1,3 @@
-
-// This function needs to be added or updated to ensure it returns items matching the InventoryItem interface
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryItem, SellData } from "@/types/skin";
 import { supabase } from '@/integrations/supabase/client'; // Direct import
@@ -16,10 +14,10 @@ export const fetchSoldItems = async () => {
     
     const { data, error } = await supabase
       .from('inventory')
-      .select('*, transactions(*)')
+      .select('*')
       .eq('user_id', userId)
       .eq('is_in_user_inventory', false)
-      .order('date_sold', { ascending: false });
+      .order('created_at', { ascending: false });
       
     if (error) {
       console.error("Error fetching sold items:", error);
@@ -42,13 +40,9 @@ export const fetchSoldItems = async () => {
       user_id: item.user_id,
       isInUserInventory: false,
       is_in_user_inventory: false,
-      date_sold: item.date_sold,
-      sold_price: item.sold_price,
-      sold_marketplace: item.marketplace,
-      sold_fee_percentage: item.fee_percentage,
       tradeLockDays: item.trade_lock_days,
       tradeLockUntil: item.trade_lock_until,
-      profit: item.profit || 0,
+      profit: item.purchase_price ? (item.current_price || 0) - item.purchase_price : 0,
       currency: item.currency_code || 'USD',
       floatValue: item.float_value,
       isStatTrak: item.is_stat_trak,
@@ -137,8 +131,11 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
     }
 
     const userId = userData.user.id;
+    const newItemId = uuidv4();
+    
     const newItem = {
-      id: uuidv4(),
+      id: newItemId,
+      inventory_id: newItemId, // Add required inventory_id field
       skin_id: skin.id,
       user_id: userId,
       name: skin.name,
@@ -162,7 +159,7 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
 
     const { data, error } = await supabase
       .from('inventory')
-      .insert([newItem])
+      .insert(newItem)
       .select();
 
     if (error) {

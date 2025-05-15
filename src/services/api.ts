@@ -1,4 +1,3 @@
-
 import { Skin, SkinCollection, SkinFilter } from "@/types/skin";
 import { 
   getLocalWeapons, 
@@ -74,11 +73,14 @@ export const fetchWeapons = async (): Promise<string[]> => {
  */
 export const fetchCategories = async (): Promise<string[]> => {
   try {
-    // Extrair categorias das skins
+    // Extract categories from skins
     const skins = await fetchSkins();
     
-    // Extrair categorias únicas
-    const categories = [...new Set(skins.map(skin => skin.category || ""))].filter(name => name);
+    // Extract unique categories
+    const categories = [...new Set(skins.map(skin => 
+      // Access category field correctly from the skin object
+      (skin as any).category || ""
+    ))].filter(name => name);
     
     console.log("Found categories:", categories);
     return categories.sort();

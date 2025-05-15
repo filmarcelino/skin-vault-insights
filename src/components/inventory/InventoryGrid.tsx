@@ -1,6 +1,6 @@
 
 import { InventoryItem, SellData } from "@/types/skin";
-import { InventoryCard } from "@/components/dashboard/inventory-card";
+import { SkinCard } from "@/components/inventory/SkinCard";
 
 export interface InventoryGridProps {
   items: InventoryItem[];
@@ -22,23 +22,15 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {items.map((item) => (
-        <InventoryCard
+        <SkinCard
           key={item.inventoryId || item.id}
-          weaponName={item.weapon || ''}
-          skinName={item.name || ''}
-          wear={item.wear || ''}
-          price={typeof item.currentPrice === 'number' ? item.currentPrice : 
-                (typeof item.price === 'number' ? item.price : 0)}
-          image={item.image || ''}
-          rarity={item.rarity || ''}
-          isStatTrak={!!item.isStatTrak}
-          tradeLockDays={item.tradeLockDays}
-          tradeLockUntil={item.tradeLockUntil}
-          className="animate-fade-in transition-transform duration-200"
+          item={item}
+          onEdit={() => onEdit(item)}
+          onDuplicate={() => onDuplicate(item)}
+          onRemove={() => onDelete(item.id)}
+          onSell={(itemId, sellData) => onSell(itemId, sellData)}
           onClick={() => onViewDetails(item)}
-          onDelete={() => onDelete(item.id)}
-          showDeleteButton={true}
-          purchasePrice={item.purchasePrice}
+          className="animate-fade-in transition-transform duration-200"
         />
       ))}
     </div>
