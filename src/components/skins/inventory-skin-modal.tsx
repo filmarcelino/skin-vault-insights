@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Skin, InventoryItem } from "@/types/skin";
+import { Skin, InventoryItem, SellData } from "@/types/skin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SkinDetailsCard } from "./skin-details-card";
 import { SkinSellingForm } from "./skin-selling-form";
@@ -9,12 +9,14 @@ import { SkinAdditionalInfo } from "./skin-additional-info";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { defaultSkin, defaultInventoryItem } from "@/utils/default-objects";
 
+export type ModalMode = 'view' | 'edit' | 'add' | 'sell';
+
 export interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   skin?: InventoryItem | Skin | null;
-  mode?: 'view' | 'edit' | 'add' | 'sell';
-  onSellSkin?: (itemId: string, sellData: any) => Promise<void>;
+  mode?: ModalMode;
+  onSellSkin?: (itemId: string, sellData: SellData) => Promise<void>;
   onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
   item?: InventoryItem | Skin | null;
 }

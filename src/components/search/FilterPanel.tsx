@@ -1,168 +1,230 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Filter, X } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FilterPanelProps {
   weaponFilter?: string;
   rarityFilter?: string;
-  typeFilter?: string;
+  categoryFilter?: string;
+  collectionFilter?: string;
   minPrice?: number | null;
   maxPrice?: number | null;
-  onWeaponFilterChange: (value: string) => void;
-  onRarityFilterChange: (value: string) => void;
-  onTypeFilterChange?: (value: string) => void;
-  onMinPriceChange: (value: number | null) => void;
-  onMaxPriceChange: (value: number | null) => void;
-  onResetFilters: () => void;
+  onWeaponFilterChange?: (value: string) => void;
+  onRarityFilterChange?: (value: string) => void;
+  onCategoryFilterChange?: (value: string) => void;
+  onCollectionFilterChange?: (value: string) => void;
+  onResetFilters?: () => void;
+  onMinPriceChange?: (value: number | null) => void;
+  onMaxPriceChange?: (value: number | null) => void;
+  activeFilterCount?: number;
+  availableWeapons?: string[];
+  availableRarities?: string[];
+  availableCategories?: string[];
+  availableCollections?: string[];
 }
 
 export const FilterPanel = ({
-  weaponFilter = "",
-  rarityFilter = "",
-  typeFilter = "",
+  weaponFilter = 'all',
+  rarityFilter = 'all',
+  categoryFilter = 'all',
+  collectionFilter = 'all',
   minPrice = null,
   maxPrice = null,
   onWeaponFilterChange,
   onRarityFilterChange,
-  onTypeFilterChange,
+  onCategoryFilterChange,
+  onCollectionFilterChange,
+  onResetFilters,
   onMinPriceChange,
   onMaxPriceChange,
-  onResetFilters
+  activeFilterCount = 0,
+  availableWeapons = [],
+  availableRarities = [],
+  availableCategories = [],
+  availableCollections = []
 }: FilterPanelProps) => {
-  // Add the weapon and rarity options
-  const weapons = [
-    { value: "all", label: "All Weapons" },
-    { value: "AK-47", label: "AK-47" },
-    { value: "AWP", label: "AWP" },
-    { value: "M4A4", label: "M4A4" },
-    { value: "M4A1-S", label: "M4A1-S" },
-    { value: "Desert Eagle", label: "Desert Eagle" },
-    { value: "USP-S", label: "USP-S" },
-    { value: "Glock-18", label: "Glock-18" },
-    // Add more weapons as needed
-  ];
-
-  const rarities = [
-    { value: "all", label: "All Rarities" },
-    { value: "Consumer Grade", label: "Consumer Grade" },
-    { value: "Industrial Grade", label: "Industrial Grade" },
-    { value: "Mil-Spec", label: "Mil-Spec" },
-    { value: "Restricted", label: "Restricted" },
-    { value: "Classified", label: "Classified" },
-    { value: "Covert", label: "Covert" },
-    { value: "Contraband", label: "Contraband" },
-  ];
-
-  const types = [
-    { value: "all", label: "All Types" },
-    { value: "Normal", label: "Normal" },
-    { value: "StatTrak", label: "StatTrak" },
-    { value: "Souvenir", label: "Souvenir" },
-  ];
-
+  const { t } = useLanguage();
+  const [minPriceInput, setMinPriceInput] = useState<string>(minPrice !== null ? minPrice.toString() : '');
+  const [maxPriceInput, setMaxPriceInput] = useState<string>(maxPrice !== null ? maxPrice.toString() : '');
+  
+  // Handle min price change
+  const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMinPriceInput(value);
+    
+    // Delay updating the actual filter to avoid too many updates
+    const numValue = value === '' ? null : parseFloat(value);
+    if (onMinPriceChange) {
+      onMinPriceChange(numValue);
+    }
+  };
+  
+  // Handle max price change
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setMaxPriceInput(value);
+    
+    // Delay updating the actual filter to avoid too many updates
+    const numValue = value === '' ? null : parseFloat(value);
+    if (onMaxPriceChange) {
+      onMaxPriceChange(numValue);
+    }
+  };
+  
+  // Default weapon and rarity options if none provided
+  const defaultWeapons = ['AK-47', 'AWP', 'M4A4', 'USP-S', 'Glock-18', 'Desert Eagle'];
+  const defaultRarities = ['Consumer Grade', 'Industrial Grade', 'Mil-Spec Grade', 'Restricted', 'Classified', 'Covert'];
+  const defaultCategories = ['Normal', 'StatTrak™', 'Souvenir', 'Knife', 'Gloves'];
+  
+  // Use provided lists or defaults
+  const weapons = availableWeapons.length > 0 ? availableWeapons : defaultWeapons;
+  const rarities = availableRarities.length > 0 ? availableRarities : defaultRarities;
+  const categories = availableCategories.length > 0 ? availableCategories : defaultCategories;
+  const collections = availableCollections;
+  
   return (
-    <div className="cs-card p-4 space-y-4">
-      <h2 className="text-lg font-semibold">Filters</h2>
-      <Separator />
-
-      <ScrollArea className="h-[calc(100vh-300px)]">
-        <div className="space-y-6 pr-4">
-          <div className="space-y-3">
-            <Label>Weapon</Label>
-            <Select value={weaponFilter || "all"} onValueChange={onWeaponFilterChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select weapon" />
-              </SelectTrigger>
-              <SelectContent>
-                {weapons.map((weapon) => (
-                  <SelectItem key={weapon.value} value={weapon.value}>
-                    {weapon.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Rarity</Label>
-            <Select value={rarityFilter || "all"} onValueChange={onRarityFilterChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select rarity" />
-              </SelectTrigger>
-              <SelectContent>
-                {rarities.map((rarity) => (
-                  <SelectItem key={rarity.value} value={rarity.value}>
-                    {rarity.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {onTypeFilterChange && (
-            <div className="space-y-3">
-              <Label>Type</Label>
-              <Select 
-                value={typeFilter || "all"} 
-                onValueChange={onTypeFilterChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {types.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            {t("search.filters")}
+            {activeFilterCount > 0 && (
+              <Badge className="ml-2" variant="secondary">{activeFilterCount}</Badge>
+            )}
+          </CardTitle>
+          {onResetFilters && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onResetFilters}
+              className="h-8"
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              {t("search.clear")}
+            </Button>
           )}
-
-          <div className="space-y-3">
-            <Label>Price Range</Label>
-            <div className="flex gap-2 items-center">
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Weapon filter */}
+        <div className="space-y-2">
+          <Label htmlFor="weapon-filter">{t("search.weapon")}</Label>
+          <Select
+            value={weaponFilter}
+            onValueChange={(value) => onWeaponFilterChange && onWeaponFilterChange(value)}
+          >
+            <SelectTrigger id="weapon-filter">
+              <SelectValue placeholder={t("search.allWeapons")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("search.allWeapons")}</SelectItem>
+              {weapons.map((weapon) => (
+                <SelectItem key={weapon} value={weapon}>{weapon}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Rarity filter */}
+        <div className="space-y-2">
+          <Label htmlFor="rarity-filter">{t("search.rarity")}</Label>
+          <Select
+            value={rarityFilter}
+            onValueChange={(value) => onRarityFilterChange && onRarityFilterChange(value)}
+          >
+            <SelectTrigger id="rarity-filter">
+              <SelectValue placeholder={t("search.allRarities")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("search.allRarities")}</SelectItem>
+              {rarities.map((rarity) => (
+                <SelectItem key={rarity} value={rarity}>{rarity}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Category filter */}
+        {onCategoryFilterChange && (
+          <div className="space-y-2">
+            <Label htmlFor="category-filter">{t("search.category")}</Label>
+            <Select
+              value={categoryFilter}
+              onValueChange={(value) => onCategoryFilterChange(value)}
+            >
+              <SelectTrigger id="category-filter">
+                <SelectValue placeholder={t("search.allCategories")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("search.allCategories")}</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        {/* Collection filter */}
+        {onCollectionFilterChange && collections.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="collection-filter">{t("search.collection")}</Label>
+            <Select
+              value={collectionFilter}
+              onValueChange={(value) => onCollectionFilterChange(value)}
+            >
+              <SelectTrigger id="collection-filter">
+                <SelectValue placeholder={t("search.allCollections")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("search.allCollections")}</SelectItem>
+                {collections.map((collection) => (
+                  <SelectItem key={collection} value={collection}>{collection}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        {/* Price range filters */}
+        <div className="space-y-2">
+          <Label>{t("search.priceRange")}</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label htmlFor="min-price" className="text-xs text-muted-foreground">Min</Label>
               <Input
+                id="min-price"
                 type="number"
-                placeholder="Min"
-                value={minPrice === null ? "" : minPrice}
-                onChange={(e) => onMinPriceChange(e.target.value ? Number(e.target.value) : null)}
                 min="0"
-                className="w-full"
+                placeholder="0"
+                value={minPriceInput}
+                onChange={handleMinPriceChange}
+                className="h-9"
               />
-              <span>to</span>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="max-price" className="text-xs text-muted-foreground">Max</Label>
               <Input
+                id="max-price"
                 type="number"
-                placeholder="Max"
-                value={maxPrice === null ? "" : maxPrice}
-                onChange={(e) => onMaxPriceChange(e.target.value ? Number(e.target.value) : null)}
                 min="0"
-                className="w-full"
+                placeholder="∞"
+                value={maxPriceInput}
+                onChange={handleMaxPriceChange}
+                className="h-9"
               />
             </div>
           </div>
-
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={onResetFilters}
-          >
-            Reset Filters
-          </Button>
         </div>
-      </ScrollArea>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

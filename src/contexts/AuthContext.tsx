@@ -1,11 +1,12 @@
-
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { CURRENCIES } from "@/contexts/CurrencyContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+// Debug flag - set to true for detailed console logs
+const DEBUG_AUTH = true;
 
 export interface UserProfile {
   id: string;
@@ -22,11 +23,14 @@ export interface UserProfile {
   is_admin?: boolean;
 }
 
-interface AuthContextType {
+interface AuthState {
   user: User | null;
   session: Session | null;
   profile: UserProfile | null;
-  isLoading: boolean;
+  isAuthLoading: boolean;
+  isProfileLoading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
   signIn: (email: string, password: string, rememberMe: boolean) => Promise<{
     error: Error | null;
     data: Session | null;
@@ -76,72 +80,39 @@ export const useCurrencyUpdate = () => {
   return context;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthState | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [isProfileLoading, setIsProfileLoading] = useState<boolean>(false);
   const [profileError, setProfileError] = useState<boolean>(false);
-  const { toast: useToastToast } = useToast();
   const currencyUpdater = useCurrencyUpdate();
   const { t } = useLanguage();
 
-  console.log("AuthProvider rendering. isLoading:", isLoading, "user:", user?.email);
-
-  // Initialize auth state and set up listeners
-  useEffect(() => {
-    console.log("AuthProvider useEffect running");
-    
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("Auth state changed:", event, "user:", newSession?.user?.email);
-        
-        // Update session and user state
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (newSession?.user) {
-          // Defer profile fetching to avoid potential deadlocks
-          setTimeout(() => {
-            fetchProfile(newSession.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setProfileError(false);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Got current session:", currentSession?.user?.email);
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        // Initial profile fetch for existing session
-        fetchProfile(currentSession.user.id);
-      }
-      
-      setIsLoading(false);
-    }).catch(error => {
-      console.error("Error getting session:", error);
-      setIsLoading(false);
-    });
-
-    // Cleanup subscription
-    return () => {
-      subscription.unsubscribe();
-    };
+  const logDebug = useCallback((...args: any[]) => {
+    if (DEBUG_AUTH) {
+      console.log(...args);
+    }
   }, []);
 
-  // Enhanced profile fetching with retry capability
-  const fetchProfile = async (userId: string) => {
+  const isAuthenticated = Boolean(user && session);
+  const isAdmin = Boolean(profile?.is_admin || (profile?.email === 'luisfelipemarcelino33@gmail.com'));
+
+  logDebug("AuthProvider rendering. isAuthLoading:", isAuthLoading, "user:", user?.email);
+
+  // Fetch profile function with memoization to prevent recreation on each render
+  const fetchProfile = useCallback(async (userId: string) => {
+    if (!userId) {
+      logDebug("fetchProfile called with no userId");
+      return;
+    }
+    
     try {
-      console.log("Fetching profile for user:", userId);
+      logDebug("Fetching profile for user:", userId);
+      setIsProfileLoading(true);
       setProfileError(false);
       
       // First, check if profile exists
@@ -157,15 +128,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // If profile not found, attempt to create one
         if (error.code === "PGRST116") {
-          console.log("Profile not found, attempting to create one");
+          logDebug("Profile not found, attempting to create one");
           await createMissingProfile(userId);
-          return;
         }
+        
+        setIsProfileLoading(false);
         return;
       }
       
       if (data) {
-        console.log("Profile fetched:", data);
+        logDebug("Profile fetched:", data);
         setProfile(data as UserProfile);
         
         // Update preferred currency
@@ -176,19 +148,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } else {
-        console.log("No profile data found, attempting to create one");
+        logDebug("No profile data found, attempting to create one");
         await createMissingProfile(userId);
       }
     } catch (error) {
       console.error("Exception in fetchProfile:", error);
       setProfileError(true);
+    } finally {
+      setIsProfileLoading(false);
+      logDebug("Profile loaded");
     }
-  };
+  }, [currencyUpdater, logDebug]);
 
-  // Function to create missing profile for existing users
-  const createMissingProfile = async (userId: string) => {
+  // Create missing profile function with memoization
+  const createMissingProfile = useCallback(async (userId: string) => {
     try {
-      console.log("Creating missing profile for user:", userId);
+      logDebug("Creating missing profile for user:", userId);
       
       // Get user data
       const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -225,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      console.log("Profile created successfully:", data);
+      logDebug("Profile created successfully:", data);
       setProfile(data as UserProfile);
       toast.success(t("auth.profile_recovered"), {
         description: t("auth.profile_recovered_description")
@@ -242,9 +217,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error("Exception in createMissingProfile:", error);
     }
-  };
+  }, [currencyUpdater, t, logDebug]);
 
-  const createTrialSubscription = async (userId: string, email: string) => {
+  const createTrialSubscription = useCallback(async (userId: string, email: string) => {
     try {
       // Create a 7-day trial
       const trialEnd = new Date();
@@ -265,15 +240,80 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error("Error creating trial subscription:", error);
       } else {
-        console.log("Trial subscription created successfully", { userId, trialEnd });
+        logDebug("Trial subscription created successfully", { userId, trialEnd });
       }
     } catch (err) {
       console.error("Exception creating trial subscription:", err);
     }
-  };
+  }, [logDebug]);
+
+  // Initialize auth state and set up listeners
+  useEffect(() => {
+    logDebug("AuthProvider useEffect running (main auth initialization)");
+    
+    // Set up auth state listener FIRST to prevent missing auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        logDebug("Auth state changed:", event, "user:", newSession?.user?.email);
+        
+        // Update session and user state
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        // Don't fetch profile synchronously in the callback to avoid deadlocks
+        if (newSession?.user) {
+          // Prevent deadlock by using setTimeout
+          setTimeout(() => {
+            fetchProfile(newSession.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+          setProfileError(false);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      logDebug("Got current session:", currentSession?.user?.email);
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        // Initial profile fetch for existing session
+        fetchProfile(currentSession.user.id);
+      } else {
+        setIsAuthLoading(false);
+      }
+    }).catch(error => {
+      console.error("Error getting session:", error);
+      setIsAuthLoading(false);
+    });
+
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+      logDebug("Auth event subscription unsubscribed");
+    };
+  }, []); // Empty dependencies to run only once
+
+  // Update isAuthLoading when we have both user and profile data
+  useEffect(() => {
+    // If we have a user but are still loading the profile, keep isAuthLoading true
+    if (user && isProfileLoading) {
+      return;
+    }
+    
+    // Otherwise we've finished loading auth
+    setIsAuthLoading(false);
+    
+    if (isAuthenticated) {
+      logDebug("Auth loaded", { user: user?.email, isAdmin });
+    }
+  }, [user, isProfileLoading, isAuthenticated, isAdmin, logDebug]);
 
   const signIn = async (email: string, password: string, rememberMe: boolean) => {
-    setIsLoading(true);
+    setIsAuthLoading(true);
     setProfileError(false);
     
     try {
@@ -313,7 +353,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return { error: error as Error, data: null };
     } finally {
-      setIsLoading(false);
+      // Auth loading state will be updated by the auth state change listener
     }
   };
 
@@ -326,7 +366,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     country?: string;
     preferred_currency: string;
   }) => {
-    setIsLoading(true);
+    setIsAuthLoading(true);
     setProfileError(false);
     
     try {
@@ -364,7 +404,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (populateResponse.error) {
                 console.error("Error populating inventory:", populateResponse.error);
               } else {
-                console.log("Inventory successfully populated:", populateResponse.data);
+                logDebug("Inventory successfully populated:", populateResponse.data);
               }
             } catch (populateError) {
               console.error("Exception populating inventory:", populateError);
@@ -386,12 +426,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return { error: error as Error, data: null };
     } finally {
-      setIsLoading(false);
+      // Auth loading state will be updated by the auth state change listener
     }
   };
 
   const signOut = async () => {
-    setIsLoading(true);
+    setIsAuthLoading(true);
     
     try {
       await supabase.auth.signOut();
@@ -406,12 +446,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: t("auth.logout_error_description")
       });
     } finally {
-      setIsLoading(false);
+      setIsAuthLoading(false);
     }
   };
 
   const resetPassword = async (email: string) => {
-    setIsLoading(true);
+    setIsAuthLoading(true);
     
     try {
       const response = await supabase.auth.resetPasswordForEmail(email, {
@@ -436,7 +476,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return { error: error as Error, data: null };
     } finally {
-      setIsLoading(false);
+      setIsAuthLoading(false);
     }
   };
 
@@ -445,7 +485,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: new Error(t("auth.no_user_logged_in")), data: null };
     }
     
-    setIsLoading(true);
+    setIsProfileLoading(true);
     
     try {
       const { data: updatedProfile, error } = await supabase
@@ -483,29 +523,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return { error: error as Error, data: null };
     } finally {
-      setIsLoading(false);
+      setIsProfileLoading(false);
     }
   };
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) {
       await fetchProfile(user.id);
     }
+  }, [user, fetchProfile]);
+
+  const contextValue: AuthState = {
+    user,
+    session,
+    profile,
+    isAuthLoading,
+    isProfileLoading,
+    isAuthenticated,
+    isAdmin,
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
+    updateProfile,
+    refreshProfile
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      profile,
-      isLoading,
-      signIn,
-      signUp,
-      signOut,
-      resetPassword,
-      updateProfile,
-      refreshProfile
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

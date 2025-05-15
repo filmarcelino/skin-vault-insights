@@ -59,6 +59,12 @@ export interface InventoryItem {
   sold_price?: number;
   sold_marketplace?: string;
   sold_fee_percentage?: number;
+  soldPrice?: number;
+  soldMarketplace?: string;
+  soldFeePercentage?: number;
+  soldDate?: string;
+  soldCurrency?: string;
+  soldNotes?: string;
   // Also include Skin properties
   id: string;
   name: string;
@@ -115,4 +121,3 @@ export interface LockStatus {
   daysLeft: number;
   tradeLockDate?: string;
 }
-

@@ -11,6 +11,7 @@ export interface SubscriptionStatus {
   subscriptionEnd: string | null;
   isLoading: boolean;
   checkSubscription: () => Promise<void>;
+  lastChecked: Date | null;
 }
 
 // Create context with default values
@@ -21,7 +22,11 @@ const SubscriptionContext = createContext<SubscriptionStatus>({
   subscriptionEnd: null,
   isLoading: true,
   checkSubscription: async () => {},
+  lastChecked: null
 });
+
+// Debug flag
+const DEBUG_SUBSCRIPTION = true;
 
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
@@ -29,7 +34,14 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number | null>(null);
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { session, user } = useAuth();
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const { session, user, isAuthenticated, isAuthLoading } = useAuth();
+  
+  const logDebug = (...args: any[]) => {
+    if (DEBUG_SUBSCRIPTION) {
+      console.log(...args);
+    }
+  };
 
   const calculateDaysRemaining = (endDate: string) => {
     const end = new Date(endDate);
@@ -39,14 +51,23 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  const checkSubscription = async () => {
-    if (!session?.access_token) {
+  const checkSubscription = async (forceCheck = false) => {
+    // Don't check if not authenticated yet
+    if (!isAuthenticated || !session?.access_token) {
       setIsLoading(false);
+      return;
+    }
+    
+    // If we checked recently (within last 5 minutes) and not forcing a check, use cached data
+    if (!forceCheck && lastChecked && (new Date().getTime() - lastChecked.getTime() < 5 * 60 * 1000)) {
+      logDebug("Using cached subscription data from", lastChecked);
       return;
     }
 
     try {
       setIsLoading(true);
+      logDebug("Checking subscription status for user", user?.email);
+      
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`
@@ -58,7 +79,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
         return;
       }
-
+      
+      logDebug("Subscription check result:", data);
       setIsSubscribed(data?.subscribed || false);
       setIsTrial(data?.is_trial || false);
       
@@ -71,6 +93,11 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         setSubscriptionEnd(null);
         setTrialDaysRemaining(null);
       }
+      
+      // Update the last checked time
+      setLastChecked(new Date());
+      logDebug("Subscription status updated");
+      console.log("Subscription ready");
     } catch (err) {
       console.error("Failed to check subscription status:", err);
     } finally {
@@ -78,9 +105,15 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Check subscription when session changes
+  // Check subscription when auth state changes
   useEffect(() => {
-    if (session) {
+    // Don't try to check subscription until auth is loaded
+    if (isAuthLoading) {
+      return;
+    }
+    
+    if (isAuthenticated && session) {
+      logDebug("Auth loaded, checking subscription");
       checkSubscription();
     } else {
       // Reset state when logged out
@@ -90,7 +123,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       setSubscriptionEnd(null);
       setIsLoading(false);
     }
-  }, [session]);
+  }, [isAuthenticated, session, isAuthLoading]);
 
   // Set up realtime subscription to subscribers table
   useEffect(() => {
@@ -105,8 +138,9 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         table: 'subscribers',
         filter: `email=eq.${user.email}`,
       }, (payload) => {
-        console.log('Subscription updated via webhook:', payload);
-        checkSubscription();
+        logDebug('Subscription updated via webhook:', payload);
+        // Force check when the subscription changes
+        checkSubscription(true);
       })
       .subscribe();
     
@@ -114,17 +148,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       supabase.removeChannel(channel);
     };
   }, [user?.email]);
-
-  // Fall back to periodic check every 30 minutes if user is logged in
-  useEffect(() => {
-    if (!user) return;
-    
-    const intervalId = setInterval(() => {
-      checkSubscription();
-    }, 30 * 60 * 1000); // 30 minutes
-    
-    return () => clearInterval(intervalId);
-  }, [user]);
 
   return (
     <SubscriptionContext.Provider
@@ -134,7 +157,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         trialDaysRemaining,
         subscriptionEnd,
         isLoading,
-        checkSubscription
+        checkSubscription: () => checkSubscription(true),
+        lastChecked
       }}
     >
       {children}

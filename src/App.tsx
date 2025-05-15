@@ -23,13 +23,15 @@ import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/auth/require-auth";
 import Landing from "./pages/Landing";
 import SearchPage from "./pages/Search";
+import AdminConsole from "./pages/AdminConsole";
 
-// Set up React Query with 15 minutes staleTime instead of 5 minutes
+// Set up React Query with 15 minutes staleTime for better caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 15, // 15 minutes
       retry: 1,
+      refetchOnWindowFocus: false, // Disable automatic refetch on window focus
     },
   },
 });
@@ -55,6 +57,9 @@ const App = () => {
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       
+                      {/* Redirect /login to /auth for convenience */}
+                      <Route path="/login" element={<Navigate to="/auth" replace />} />
+                      
                       {/* Protected routes with layout */}
                       <Route element={<RequireAuth><Layout /></RequireAuth>}>
                         <Route path="/dashboard" element={<Index />} />
@@ -66,6 +71,9 @@ const App = () => {
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/subscription" element={<Subscription />} />
                       </Route>
+                      
+                      {/* Admin routes */}
+                      <Route path="/admin" element={<RequireAuth adminOnly><AdminConsole /></RequireAuth>} />
                       
                       {/* Not found - needs layout wrapper */}
                       <Route path="*" element={<Layout><NotFound /></Layout>} />
