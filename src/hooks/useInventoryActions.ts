@@ -120,8 +120,22 @@ export const useInventoryActions = () => {
     if (!selectedItemForDuplicate) return;
     
     try {
+      // Convert InventoryItem to Skin for compatibility with handleAddToInventory
+      const skinToAdd: Skin = {
+        id: selectedItemForDuplicate.id,
+        name: selectedItemForDuplicate.name,
+        weapon: selectedItemForDuplicate.weapon,
+        image: selectedItemForDuplicate.image,
+        rarity: selectedItemForDuplicate.rarity,
+        price: selectedItemForDuplicate.price || 0,
+        category: selectedItemForDuplicate.category,
+        wear: selectedItemForDuplicate.wear,
+        isStatTrak: selectedItemForDuplicate.isStatTrak,
+        floatValue: selectedItemForDuplicate.floatValue
+      };
+      
       for (let i = 0; i < count; i++) {
-        await handleAddToInventory(selectedItemForDuplicate);
+        await handleAddToInventory(skinToAdd);
       }
       
       toast({

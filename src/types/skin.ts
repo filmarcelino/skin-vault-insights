@@ -1,3 +1,4 @@
+
 export interface Skin {
   id: string;
   name: string;
@@ -13,6 +14,7 @@ export interface Skin {
   collections?: SkinCollection[];
   collection?: SkinCollection;
   category?: string;
+  floatValue?: number; // Added to match usage in use-skin-image-analysis.ts
 }
 
 export interface SkinCollection {
@@ -39,7 +41,7 @@ export interface InventoryItem {
   skin_name?: string;
   weapon_name?: string;
   image_url?: string;
-  rarity?: string;
+  rarity: string; // Changed from optional to required to match Skin interface
   price?: number;
   purchase_price?: number;
   acquired_date?: string;

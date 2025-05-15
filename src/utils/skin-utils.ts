@@ -69,3 +69,54 @@ export const getRarityColorClass = (rarity?: string) => {
       return "";
   }
 };
+
+// Add the missing getTradeLockStatus function
+export const getTradeLockStatus = (tradeLockUntil?: string) => {
+  if (!tradeLockUntil) {
+    return { isLocked: false, daysLeft: 0 };
+  }
+
+  const tradeLockDate = new Date(tradeLockUntil);
+  const now = new Date();
+  
+  // Check if date is valid
+  if (isNaN(tradeLockDate.getTime())) {
+    return { isLocked: false, daysLeft: 0 };
+  }
+  
+  const isLocked = tradeLockDate > now;
+  
+  // Calculate days left
+  const diffTime = tradeLockDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return { 
+    isLocked, 
+    daysLeft: isLocked ? Math.max(0, diffDays) : 0,
+    tradeLockDate: isLocked ? tradeLockDate : undefined
+  };
+};
+
+// Add the formatDate utility function
+export const formatDate = (dateString?: string) => {
+  if (!dateString) return "N/A";
+  
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return "Invalid date";
+    }
+    
+    // Format date as DD/MM/YYYY
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Error";
+  }
+};

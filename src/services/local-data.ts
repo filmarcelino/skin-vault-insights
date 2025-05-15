@@ -1,86 +1,76 @@
 
+// Update imports to include necessary types
 import { Skin, SkinCollection } from "@/types/skin";
 
-// This file would contain local JSON data as fallback
-// In a real app, you'd import actual JSON files
-// For this example, we'll use a small sample dataset
+// Placeholder data for Local development mode
+const localWeapons = ["AK-47", "M4A4", "AWP", "Desert Eagle", "USP-S"];
 
-export const localWeapons: string[] = [
-  "AK-47", "M4A4", "M4A1-S", "AWP", "Desert Eagle", "USP-S", "Glock-18", "Karambit"
+const localCollections = [
+  { id: "c1", name: "Danger Zone Collection", description: "From Danger Zone update", image: "" },
+  { id: "c2", name: "Cobblestone Collection", description: "From Cobblestone map", image: "" },
+  { id: "c3", name: "Ancient Collection", description: "From Ancient map", image: "" },
+  { id: "c4", name: "Dust 2 Collection", description: "From Dust II map", image: "" },
 ];
 
-export const localCollections: SkinCollection[] = [
+const localSkins: Skin[] = [
   {
-    id: "ancient",
-    name: "The Ancient Collection",
-    description: "Introduced in Operation Broken Fang",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQwnfCcJmxDv9rhwIHZwqP3a-uGwz9Xv8F0j-qQrYj23FHm-UJqY2zwIYedc1Q9MwnU8gO_xr3ogIj84sr6NM-EHA"
-  },
-  {
-    id: "dreams-nightmares",
-    name: "Dreams & Nightmares",
-    description: "Dreams & Nightmares Collection",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQxnaecIT8Wv9rilYTYkfTyNuiFwmhUvpZz3-2Z9oqgjVfjqUI4ZGjwJIaQdFVoNFzU_1W7k7_thZe4uJvXiSw0K4XkrHs"
-  }
-];
-
-export const localSkins: Skin[] = [
-  {
-    id: "awp-neo-noir",
-    name: "Neo-Noir",
+    id: "skin_1",
+    name: "Asiimov",
     weapon: "AWP",
     category: "Sniper Rifle",
     rarity: "Covert",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G9SupUijOjAotyg3w2x_0ZkZ2rzd4OXdgRoYQuE8gDtyL_mg5K4tJ7XiSw0WqKv8kM"
+    image: "https://steamcdn-a.akamaihd.net/apps/730/icons/econ/default_generated/weapon_awp_cu_awp_asimov_light_large.32d9045f8a2bcd13ca18390cc9fd82026e7195ab.png",
+    price: 120, // Added price
   },
   {
-    id: "ak-47-vulcan",
+    id: "skin_2",
     name: "Vulcan",
     weapon: "AK-47",
     category: "Rifle",
     rarity: "Covert",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV09-5lpKKqPrxN7LEmyVQ7MEpiLuSrYmnjQO3-UdsZGHyd4_Cd1I2YQvX-wm9xrjvgpW1uZjNmyc3pGB8spM9TGbUn"
+    image: "https://steamcdn-a.akamaihd.net/apps/730/icons/econ/default_generated/weapon_ak47_cu_ak47_rubber_light_large.0db5a5503d3bbe3a1e62a0382fe3eed3afca9b2e.png",
+    price: 85, // Added price
   },
   {
-    id: "karambit-doppler",
-    name: "Doppler",
-    weapon: "Karambit",
-    category: "Knife",
-    rarity: "Covert",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpovbSsLQJf2PLacDBA5ciJlY20k_jkI7fUhFRB4MRij7v--YXygED6-kE4N2CgddSQJAE7ZFnSrFO7kry6gZO7u8jByXtj6CkjsHzVzRe10wYMMLIHxiLN2w"
-  },
-  {
-    id: "m4a4-desolate-space",
-    name: "Desolate Space",
-    weapon: "M4A4",
+    id: "skin_3",
+    name: "Hyper Beast",
+    weapon: "M4A1-S",
     category: "Rifle",
+    rarity: "Covert",
+    image: "https://steamcdn-a.akamaihd.net/apps/730/icons/econ/default_generated/weapon_m4a1_silencer_cu_m4a1s_hyper_beast_light_large.31850937661935a062d5f6faf5a1f02fca58c36a.png",
+    price: 60, // Added price
+  },
+  {
+    id: "skin_4",
+    name: "Neo-Noir",
+    weapon: "USP-S",
+    category: "Pistol",
     rarity: "Classified",
-    image: "https://community.akamai.steamstatic.com/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhjxszFJQJD_9W7m4WYg-X6N4Tdn2xZ_Pp9i_vG8MKsi1Cw-0E_N22iI4KVJAY2aAvW-VLrx-m-15TovJvLmydqvyRw5X7ZgVXp1tZS8s4y"
-  }
+    image: "https://steamcdn-a.akamaihd.net/apps/730/icons/econ/default_generated/weapon_usp_silencer_cu_usps_noir_light_large.ed0f4245c1b9031c6d410300ce6fb7ce3ff9a44d.png",
+    price: 25, // Added price
+  },
+  // You can add more skins here if needed
 ];
 
-// Functions that mimic the API but return local data
-export const getLocalWeapons = (): Promise<string[]> => {
-  return Promise.resolve(localWeapons);
+// Helper functions for fetching local data
+export const getLocalWeapons = () => {
+  return localWeapons;
 };
 
-export const getLocalCollections = (): Promise<SkinCollection[]> => {
-  return Promise.resolve(localCollections);
+export const getLocalCollections = () => {
+  return localCollections;
 };
 
-export const getLocalSkins = (query?: string): Promise<Skin[]> => {
-  if (!query) return Promise.resolve(localSkins);
+export const getLocalSkins = (search?: string) => {
+  if (!search) return localSkins;
   
-  const lowerQuery = query.toLowerCase();
-  const filtered = localSkins.filter(
-    skin => skin.name.toLowerCase().includes(lowerQuery) || 
-            skin.weapon?.toLowerCase().includes(lowerQuery)
+  const searchLower = search.toLowerCase();
+  return localSkins.filter(skin => 
+    skin.name.toLowerCase().includes(searchLower) || 
+    skin.weapon.toLowerCase().includes(searchLower)
   );
-  
-  return Promise.resolve(filtered);
 };
 
-export const getLocalSkinById = (id: string): Promise<Skin | null> => {
-  const skin = localSkins.find(skin => skin.id === id);
-  return Promise.resolve(skin || null);
+export const getLocalSkinById = (id: string) => {
+  return localSkins.find(skin => skin.id === id) || null;
 };
