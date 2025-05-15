@@ -12,5 +12,5 @@ interface Window {
 
 // Add specific UUID module declaration for ES modules
 declare module 'uuid' {
-  export const v4: () => string;
+  export function v4(): string;
 }

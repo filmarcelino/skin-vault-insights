@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
 import { defaultSkin } from "@/utils/default-objects";
-import { Skin } from "@/types/skin";
+import { Skin, InventoryItem } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -130,6 +130,16 @@ export default function Inventory() {
     { id: "sort", label: t("filters.sort"), value: sortMethod }
   ];
   
+  // Helper function to bridge the interface gap
+  const handleItemSell = (itemId: string, sellData: any) => {
+    handleMarkAsSold(itemId, sellData);
+  };
+  
+  // Helper function to bridge the interface gap
+  const handleItemDuplicate = (item: InventoryItem) => {
+    handleDuplicate(item);
+  };
+  
   return (
     <Layout>
       <div className="flex justify-between items-center mb-4">
@@ -200,8 +210,8 @@ export default function Inventory() {
               onViewDetails={handleViewDetails}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
-              onSell={handleMarkAsSold}
-              onDuplicate={handleDuplicate}
+              onSell={handleItemSell}
+              onDuplicate={handleItemDuplicate}
             />
           ) : (
             <InventoryTable 
@@ -209,8 +219,8 @@ export default function Inventory() {
               onViewDetails={handleViewDetails}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
-              onSell={handleMarkAsSold}
-              onDuplicate={handleDuplicate}
+              onSell={handleItemSell}
+              onDuplicate={handleItemDuplicate}
             />
           )}
         </TabsContent>

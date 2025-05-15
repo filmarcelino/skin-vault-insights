@@ -34,6 +34,9 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
           tradeLockDays={item.tradeLockDays}
           tradeLockUntil={item.tradeLockUntil}
           onClick={() => onViewDetails(item)}
+          onDelete={() => onDelete(item.id)}
+          showDeleteButton={true}
+          purchasePrice={item.purchasePrice}
         />
       ))}
     </div>

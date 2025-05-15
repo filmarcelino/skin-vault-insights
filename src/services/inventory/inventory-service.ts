@@ -2,7 +2,7 @@
 // This function needs to be added or updated to ensure it returns items matching the InventoryItem interface
 export const fetchSoldItems = async () => {
   try {
-    const { data: supabase } = await import('@/integrations/supabase/client');
+    const supabase = await import('@/integrations/supabase/client').then(module => module.default);
     const { data: user } = await supabase.auth.getUser();
     
     if (!user || !user.id) {
@@ -60,7 +60,7 @@ export const fetchSoldItems = async () => {
 // Updated user inventory function with proper type mappings
 export const fetchUserInventory = async () => {
   try {
-    const { data: supabase } = await import('@/integrations/supabase/client');
+    const supabase = await import('@/integrations/supabase/client').then(module => module.default);
     const { data: user } = await supabase.auth.getUser();
     
     if (!user || !user.id) {
@@ -123,13 +123,13 @@ export const fetchUserInventory = async () => {
   }
 };
 
-// Import using ES modules instead of require
+// Import using direct ES import
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryItem, SellData } from "@/types/skin";
 
 export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<InventoryItem | null> => {
   try {
-    const { data: supabase } = await import('@/integrations/supabase/client');
+    const supabase = await import('@/integrations/supabase/client').then(module => module.default);
     const { data: user } = await supabase.auth.getUser();
 
     if (!user || !user.id) {
@@ -200,7 +200,7 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
 
 export const removeInventoryItem = async (inventoryId: string): Promise<boolean> => {
   try {
-    const { data: supabase } = await import('@/integrations/supabase/client');
+    const supabase = await import('@/integrations/supabase/client').then(module => module.default);
 
     const { error } = await supabase
       .from('inventory')
@@ -221,7 +221,7 @@ export const removeInventoryItem = async (inventoryId: string): Promise<boolean>
 
 export const updateInventoryItem = async (itemId: string, updates: Partial<InventoryItem>): Promise<boolean> => {
   try {
-    const { data: supabase } = await import('@/integrations/supabase/client');
+    const supabase = await import('@/integrations/supabase/client').then(module => module.default);
 
     // Mapear os nomes das propriedades do objeto de atualização para os nomes das colunas no Supabase
     const supabaseUpdates: { [key: string]: any } = {};
@@ -256,7 +256,7 @@ export const updateInventoryItem = async (itemId: string, updates: Partial<Inven
 
 export const markItemAsSold = async (itemId: string, sellData: SellData): Promise<boolean> => {
   try {
-    const { data: supabase } = await import('@/integrations/supabase/client');
+    const supabase = await import('@/integrations/supabase/client').then(module => module.default);
 
     // Ensure soldDate is properly formatted
     const soldDate = sellData.soldDate ? new Date(sellData.soldDate).toISOString() : new Date().toISOString();

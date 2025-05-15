@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -32,6 +33,9 @@ export const useInventoryActions = () => {
     setSelectedItem(item);
     setIsModalOpen(true);
   };
+  
+  // Alias to maintain API compatibility
+  const handleEdit = handleEditItem;
 
   const handleSellItem = (item: InventoryItem) => {
     setSelectedItem(item);
@@ -58,8 +62,10 @@ export const useInventoryActions = () => {
     }
   };
 
-  const handleMarkAsSold = (item: InventoryItem, sellData: SellData) => {
-    sellSkin.mutate({ itemId: item.id, sellData: sellData });
+  const handleMarkAsSold = (item: InventoryItem | string, sellData: SellData) => {
+    // Handle both item object and direct itemId string
+    const itemId = typeof item === 'string' ? item : item.id;
+    sellSkin.mutate({ itemId: itemId, sellData: sellData });
     handleClose();
     
     // Invalidate both inventory and transactions caches
@@ -67,17 +73,17 @@ export const useInventoryActions = () => {
     invalidateTransactions();
   };
   
-  const handleDuplicate = async (skin: Skin) => {
+  const handleDuplicate = async (item: InventoryItem | Skin) => {
     try {
       // Basic purchase info for duplication
       const purchaseInfo = {
-        purchasePrice: skin.price || 0,
+        purchasePrice: item.price || 0,
         marketplace: "Duplicated",
         feePercentage: 0,
         currency: "USD"
       };
       
-      await addSkin.mutateAsync({ skin: skin, purchaseInfo: purchaseInfo });
+      await addSkin.mutateAsync({ skin: item, purchaseInfo: purchaseInfo });
       toast({
         title: "Skin Duplicada",
         description: "Skin duplicada para o inventário com sucesso.",
@@ -90,6 +96,38 @@ export const useInventoryActions = () => {
       toast({
         title: "Erro ao Duplicar",
         description: "Falha ao duplicar a skin para o inventário.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Add new function for adding inventory items
+  const handleAddToInventory = async (skin: Skin) => {
+    try {
+      // Basic purchase info for new items
+      const purchaseInfo = {
+        purchasePrice: skin.price || 0,
+        marketplace: "Steam Market",
+        feePercentage: 0,
+        currency: "USD"
+      };
+      
+      const result = await addSkin.mutateAsync({ skin: skin, purchaseInfo: purchaseInfo });
+      
+      toast({
+        title: "Skin Adicionada",
+        description: "Skin adicionada ao inventário com sucesso.",
+      });
+      
+      // Invalidate both inventory and transactions caches
+      invalidateInventory();
+      invalidateTransactions();
+      
+      return result;
+    } catch (error) {
+      toast({
+        title: "Erro ao Adicionar",
+        description: "Falha ao adicionar a skin ao inventário.",
         variant: "destructive"
       });
     }
@@ -114,9 +152,11 @@ export const useInventoryActions = () => {
     setIsDetailModalOpen,
     handleViewDetails,
     handleEditItem,
+    handleEdit, // Add the alias
     handleDeleteItem,
     handleMarkAsSold,
     handleDuplicate,
+    handleAddToInventory, // Export the new function
     handleClose,
     handleCloseDetail
   };
