@@ -31,6 +31,7 @@ export const fetchSoldItems = async () => {
     
     // Map transaction data to the expected format for the UI
     const mappedItems = transactionsData.map(transaction => {
+      // Make sure inventory is not null/undefined before accessing its properties
       const inventoryItem = transaction.inventory || {};
       
       return {
