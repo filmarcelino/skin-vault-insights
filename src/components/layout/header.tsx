@@ -22,7 +22,7 @@ export function Header() {
       toast.success(t("auth.logout_success"), {
         description: t("auth.logout_success_description")
       });
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
       toast.error(t("auth.logout_error"), {
@@ -70,6 +70,7 @@ export function Header() {
                   size="icon"
                   onClick={handleLogout}
                   className="hidden sm:flex"
+                  title={t("auth.logout")}
                 >
                   <LogOut className="h-4 w-4" />
                   <span className="sr-only">{t("auth.logout")}</span>

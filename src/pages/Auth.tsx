@@ -130,21 +130,24 @@ const Auth = () => {
       
       if (error) {
         console.error("Login error:", error);
-        setAuthError(error.message);
         
         // Handle common error cases with friendly messages
         if (error.message.includes("Invalid login credentials")) {
           setAuthError("Email ou senha incorretos. Tente novamente.");
         } else if (error.message.includes("Email not confirmed")) {
           setAuthError("Por favor, confirme seu email antes de entrar.");
+        } else {
+          setAuthError(error.message);
         }
       } else {
         console.log("Login successful");
-        toast.success("Login successful");
+        toast.success("Login bem-sucedido", {
+          description: "Bem-vindo de volta!"
+        });
         
         // Navigate to the intended destination or dashboard
         const destination = location.state?.from || "/dashboard";
-        navigate(destination);
+        navigate(destination, { replace: true });
       }
     } catch (err) {
       console.error("Unexpected login error:", err);
@@ -169,19 +172,22 @@ const Auth = () => {
       
       if (error) {
         console.error("Registration error:", error);
-        setAuthError(error.message);
         
         // Handle common error cases with friendly messages
         if (error.message.includes("User already registered")) {
           setAuthError("Este email já está registrado. Tente fazer login.");
+        } else {
+          setAuthError(error.message);
         }
       } else {
         console.log("Registration successful");
-        toast.success("Account created successfully");
+        toast.success("Conta criada com sucesso", {
+          description: "Bem-vindo ao CS Skin Vault!"
+        });
         
         // Navigate to dashboard or intended destination
         const destination = location.state?.from || "/dashboard";
-        navigate(destination);
+        navigate(destination, { replace: true });
       }
     } catch (err) {
       console.error("Unexpected registration error:", err);
@@ -201,6 +207,9 @@ const Auth = () => {
         setAuthError(error.message);
       } else {
         setShowResetPassword(false);
+        toast.success("Email de recuperação enviado", {
+          description: "Verifique sua caixa de entrada para redefinir sua senha."
+        });
         loginForm.setValue("email", data.email);
         setActiveTab("login");
       }
@@ -222,10 +231,10 @@ const Auth = () => {
           </CardTitle>
           <CardDescription>
             {showResetPassword 
-              ? "Enter your email to recover your password" 
+              ? "Digite seu email para recuperar sua senha" 
               : activeTab === "login" 
-                ? "Sign in to your account" 
-                : "Create a new account"}
+                ? "Entre na sua conta" 
+                : "Crie uma nova conta"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -247,7 +256,7 @@ const Auth = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="your.email@example.com" {...field} />
+                        <Input placeholder="seu.email@exemplo.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -259,10 +268,10 @@ const Auth = () => {
                     variant="outline" 
                     onClick={() => setShowResetPassword(false)}
                   >
-                    Cancel
+                    Cancelar
                   </Button>
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Sending..." : "Send recovery link"}
+                    {isLoading ? "Enviando..." : "Enviar link de recuperação"}
                   </Button>
                 </div>
               </form>
@@ -271,7 +280,7 @@ const Auth = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="register">Cadastro</TabsTrigger>
               </TabsList>
               
               <TabsContent value="login">
@@ -284,7 +293,7 @@ const Auth = () => {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="your.email@example.com" {...field} />
+                            <Input placeholder="seu.email@exemplo.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -296,7 +305,7 @@ const Auth = () => {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>Senha</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -322,7 +331,7 @@ const Auth = () => {
                               htmlFor="rememberMe"
                               className="text-sm font-medium cursor-pointer"
                             >
-                              Remember me
+                              Lembrar-me
                             </Label>
                           </FormItem>
                         )}
@@ -334,12 +343,12 @@ const Auth = () => {
                         className="text-sm"
                         onClick={() => setShowResetPassword(true)}
                       >
-                        Forgot password?
+                        Esqueceu a senha?
                       </Button>
                     </div>
                     
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Signing in..." : "Sign in"}
+                      {isLoading ? "Entrando..." : "Entrar"}
                     </Button>
                   </form>
                 </Form>
@@ -354,7 +363,7 @@ const Auth = () => {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>Nome de usuário</FormLabel>
                             <FormControl>
                               <Input placeholder="username" {...field} />
                             </FormControl>
@@ -368,9 +377,9 @@ const Auth = () => {
                         name="fullName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Full name</FormLabel>
+                            <FormLabel>Nome completo</FormLabel>
                             <FormControl>
-                              <Input placeholder="First Last" {...field} />
+                              <Input placeholder="Nome Sobrenome" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -385,7 +394,7 @@ const Auth = () => {
                         <FormItem>
                           <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input placeholder="your.email@example.com" {...field} />
+                            <Input placeholder="seu.email@exemplo.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -398,9 +407,9 @@ const Auth = () => {
                         name="city"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>City</FormLabel>
+                            <FormLabel>Cidade</FormLabel>
                             <FormControl>
-                              <Input placeholder="City" {...field} />
+                              <Input placeholder="Cidade" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -412,9 +421,9 @@ const Auth = () => {
                         name="country"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Country</FormLabel>
+                            <FormLabel>País</FormLabel>
                             <FormControl>
-                              <Input placeholder="Country" {...field} />
+                              <Input placeholder="País" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -427,20 +436,20 @@ const Auth = () => {
                       name="preferredCurrency"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Preferred Currency</FormLabel>
+                          <FormLabel>Moeda preferida</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select a currency" />
+                                <SelectValue placeholder="Selecione uma moeda" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="USD">USD (US Dollar)</SelectItem>
-                              <SelectItem value="BRL">BRL (Brazilian Real)</SelectItem>
-                              <SelectItem value="RUB">RUB (Russian Ruble)</SelectItem>
-                              <SelectItem value="CNY">CNY (Chinese Yuan)</SelectItem>
+                              <SelectItem value="USD">USD (Dólar Americano)</SelectItem>
+                              <SelectItem value="BRL">BRL (Real Brasileiro)</SelectItem>
+                              <SelectItem value="RUB">RUB (Rublo Russo)</SelectItem>
+                              <SelectItem value="CNY">CNY (Yuan Chinês)</SelectItem>
                               <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                              <SelectItem value="GBP">GBP (British Pound)</SelectItem>
+                              <SelectItem value="GBP">GBP (Libra Esterlina)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -453,7 +462,7 @@ const Auth = () => {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>Senha</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -467,7 +476,7 @@ const Auth = () => {
                       name="confirmPassword"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Confirm password</FormLabel>
+                          <FormLabel>Confirmar senha</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="******" {...field} />
                           </FormControl>
@@ -479,12 +488,12 @@ const Auth = () => {
                     <div className="rounded-md bg-blue-50 dark:bg-blue-950 p-3 text-sm text-blue-800 dark:text-blue-300">
                       <p className="flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                        New accounts will automatically receive a 7-day trial of Premium features!
+                        Novas contas recebem automaticamente 7 dias de teste Premium!
                       </p>
                     </div>
                     
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Registering..." : "Register"}
+                      {isLoading ? "Registrando..." : "Registrar"}
                     </Button>
                   </form>
                 </Form>

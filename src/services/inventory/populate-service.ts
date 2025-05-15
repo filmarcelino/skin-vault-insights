@@ -11,7 +11,7 @@ export const populateUserInventory = async (): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      toast.error("You must be logged in to populate your inventory");
+      toast.error("Você precisa estar logado para popular seu inventário");
       return false;
     }
     
@@ -23,7 +23,7 @@ export const populateUserInventory = async (): Promise<boolean> => {
       .single();
     
     if (!profileData || profileData.email !== "teste@teste.com") {
-      toast.error("This feature is only available for test accounts");
+      toast.error("Esta funcionalidade está disponível apenas para contas de teste");
       return false;
     }
     
@@ -32,30 +32,30 @@ export const populateUserInventory = async (): Promise<boolean> => {
     });
     
     if (error) {
-      console.error("Error populating inventory:", error);
-      toast.error("Failed to populate inventory", {
-        description: "An error occurred while adding starter skins to your inventory."
+      console.error("Erro ao popular inventário:", error);
+      toast.error("Falha ao popular o inventário", {
+        description: "Ocorreu um erro ao adicionar skins iniciais ao seu inventário."
       });
       return false;
     }
     
     // Check if the inventory was already populated
     if (data.message === "User inventory already populated") {
-      toast.info("Your inventory has already been populated", {
-        description: "You already have starter skins in your inventory."
+      toast.info("Seu inventário já foi populado", {
+        description: "Você já tem skins iniciais em seu inventário."
       });
       return true;
     }
     
-    toast.success("Inventory populated successfully", {
-      description: "70 starter skins have been added to your inventory!"
+    toast.success("Inventário populado com sucesso", {
+      description: "Suas skins iniciais foram adicionadas ao seu inventário!"
     });
     
     return true;
   } catch (error) {
-    console.error("Error in populateUserInventory:", error);
-    toast.error("Failed to populate inventory", {
-      description: "An unexpected error occurred. Please try again."
+    console.error("Erro em populateUserInventory:", error);
+    toast.error("Falha ao popular inventário", {
+      description: "Ocorreu um erro inesperado. Por favor, tente novamente."
     });
     return false;
   }
@@ -79,13 +79,13 @@ export const isInventoryPopulated = async (): Promise<boolean> => {
       .single();
     
     if (error) {
-      console.error("Error checking inventory populated status:", error);
+      console.error("Erro ao verificar status de inventário populado:", error);
       return false;
     }
     
     return !!data?.inventory_populated;
   } catch (error) {
-    console.error("Error in isInventoryPopulated:", error);
+    console.error("Erro em isInventoryPopulated:", error);
     return false;
   }
 };

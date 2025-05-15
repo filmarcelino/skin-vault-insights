@@ -1,3 +1,4 @@
+
 import { ReactNode, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -34,7 +35,10 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
         });
         
         // Redirect to login page with return path
-        navigate('/auth', { state: { from: location.pathname } });
+        navigate('/auth', { 
+          state: { from: location.pathname },
+          replace: true // Use replace to avoid building up history stack
+        });
       }
     }
   }, [user, isLoading, navigate, location.pathname, session, redirecting]);
