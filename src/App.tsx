@@ -55,7 +55,7 @@ const App = () => {
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       
-                      {/* Protected routes - wrapped in Layout only once */}
+                      {/* Protected routes with layout */}
                       <Route element={<RequireAuth><Layout /></RequireAuth>}>
                         <Route path="/dashboard" element={<Index />} />
                         <Route path="/inventory" element={<Inventory />} />
@@ -67,8 +67,8 @@ const App = () => {
                         <Route path="/subscription" element={<Subscription />} />
                       </Route>
                       
-                      {/* Not found */}
-                      <Route path="*" element={<NotFound />} />
+                      {/* Not found - needs layout wrapper */}
+                      <Route path="*" element={<Layout><NotFound /></Layout>} />
                     </Routes>
                   </BrowserRouter>
                 </div>

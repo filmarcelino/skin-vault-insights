@@ -1,6 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-import { Layout } from '@/components/layout/layout';
 import { SearchHeader } from '@/components/search/SearchHeader'; 
 import { SearchResults } from '@/components/search/SearchResults';
 import { FilterPanel } from '@/components/search/FilterPanel';
@@ -113,25 +112,23 @@ export default function Search() {
     setIsModalOpen(true);
   };
   
-  if (loading) return <Layout><Loading /></Layout>;
+  if (loading) return <Loading />;
   
   if (error) return (
-    <Layout>
-      <div className="text-center p-6">
-        <h2 className="text-xl font-bold text-red-500">{t("errors.loadingError")}</h2>
-        <p className="text-muted-foreground">{t("errors.tryAgain")}</p>
-        <button 
-          className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
-          onClick={() => window.location.reload()}
-        >
-          {t("common.refresh")}
-        </button>
-      </div>
-    </Layout>
+    <div className="text-center p-6">
+      <h2 className="text-xl font-bold text-red-500">{t("errors.loadingError")}</h2>
+      <p className="text-muted-foreground">{t("errors.tryAgain")}</p>
+      <button 
+        className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md"
+        onClick={() => window.location.reload()}
+      >
+        {t("common.refresh")}
+      </button>
+    </div>
   );
   
   return (
-    <Layout>
+    <>
       <SearchHeader 
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
@@ -180,6 +177,6 @@ export default function Search() {
         skin={selectedItem || defaultSkin as Skin}
         mode="add"
       />
-    </Layout>
+    </>
   );
 }
