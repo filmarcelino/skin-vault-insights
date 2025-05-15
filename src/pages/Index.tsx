@@ -1,334 +1,184 @@
+import React, { useState, useEffect } from 'react';
+import { useSkins } from '@/hooks/use-skins';
+import { Layout } from '@/components/layout/layout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { InventorySection } from '@/components/dashboard/inventory-section';
+import { SearchSection } from '@/components/dashboard/search-section';
+import { ActivitySection } from '@/components/dashboard/activity-section';
+import { useInventoryActions } from '@/hooks/useInventoryActions';
+import { InventorySkinModal } from '@/components/skins/inventory-skin-modal';
+import { SkinDetailModal } from '@/components/skins/skin-detail-modal';
+import { useViewMode } from '@/hooks/useViewMode';
+import { useInventoryFilter } from '@/hooks/useInventoryFilter';
+import { defaultSkin } from '@/utils/default-objects';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { InventoryItem, Skin } from '@/types/skin';
+import { Loading } from "@/components/ui/loading";
 
-import React, { useState, useEffect } from "react";
-import { Search } from "@/components/ui/search";
-import { useSkins } from "@/hooks/use-skins";
-import { InventoryItem, Skin, SellData } from "@/types/skin";
-import { useToast } from "@/hooks/use-toast";
-import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
-import { 
-  fetchUserInventory, 
-  getUserTransactions, 
-  calculateInventoryValue, 
-  findMostValuableSkin,
-  markItemAsSold,
-  addSkinToInventory
-} from "@/services/inventory";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ViewToggle } from "@/components/ui/view-toggle";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { StatsSection } from "@/components/dashboard/stats-section";
-import { InventorySection } from "@/components/dashboard/inventory-section";
-import { SearchSection } from "@/components/dashboard/search-section";
-import { ActivitySection } from "@/components/dashboard/activity-section";
-import { PremiumCTA } from "@/components/dashboard/premium-cta";
-import { useInventoryFilter } from "@/hooks/useInventoryFilter";
-import { useViewMode } from "@/hooks/useViewMode";
-
-interface IndexProps {
-  activeTab?: "inventory" | "search";
-}
-
-const Index = ({ activeTab = "inventory" }: IndexProps) => {
-  const [debugInfo, setDebugInfo] = useState<string>("");
-  const [selectedSkin, setSelectedSkin] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentTab, setCurrentTab] = useState<"inventory" | "search">(activeTab);
-  const [userInventory, setUserInventory] = useState<InventoryItem[]>([]);
-  const [transactions, setTransactions] = useState([]);
-  const [inventoryStats, setInventoryStats] = useState({
-    totalSkins: 0,
-    totalValue: "$0",
-    mostValuable: {
-      weapon: "None",
-      skin: "None",
-      price: "$0",
-      image: undefined as string | undefined
-    }
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const { toast } = useToast();
-  const { session } = useAuth();
+export default function Index() {
+  const [activeTab, setActiveTab] = useState("inventory");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSkin, setSelectedSkin] = useState<Skin | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
-  // Custom hooks
-  const { viewMode, setViewMode } = useViewMode('grid');
+  const { viewMode, setViewMode } = useViewMode("grid");
+  const { formatPrice } = useCurrency();
+
+  // Fetch inventory data
+  const { data: userInventory = [], isLoading: isLoadingInventory } = useSkins({ onlyUserInventory: true });
+  
+  // Fetch all skins for search
+  const { data: allSkins = [], isLoading: isLoadingSkins } = useSkins();
+  
+  // Fetch transactions
+  const { data: transactions = [], isLoading: isTransactionsLoading } = useTransactions();
+  
+  const { 
+    handleAddToInventory, 
+    handleViewDetails, 
+    selectedItem
+  } = useInventoryActions();
+
   const {
-    searchQuery,
+    searchQuery: inventorySearchQuery,
+    setSearchQuery: setInventorySearchQuery,
     weaponFilter,
-    rarityFilter,
-    sortMethod,
-    filteredInventory,
-    handleSearchChange,
     setWeaponFilter,
+    rarityFilter,
     setRarityFilter,
-    setSortMethod
+    sortMethod,
+    setSortMethod,
+    handleSearchChange,
+    filterItems
   } = useInventoryFilter(userInventory);
 
-  // Fetch skins based on search and filters
-  const { data: skins, isLoading: isSkinsLoading, error: skinsError } = useSkins({
-    search: searchQuery.length > 2 ? searchQuery : undefined,
-    onlyUserInventory: currentTab === "inventory",
-    weapon: weaponFilter !== "all" ? weaponFilter : undefined,
-    rarity: rarityFilter !== "all" ? rarityFilter : undefined
-  });
-
-  const refreshUserData = async () => {
-    setIsLoading(true);
-    try {
-      console.log("Refreshing user data...");
-      const loadedInventory = await fetchUserInventory();
-      console.log("Loaded inventory:", loadedInventory);
-      setUserInventory(loadedInventory || []);
-      
-      const loadedTransactions = await getUserTransactions();
-      setTransactions(loadedTransactions || []);
-
-      await prepareStats(loadedInventory);
-    } catch (error) {
-      console.error("Error refreshing user data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load user data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const checkSubscription = async () => {
-      if (!session?.access_token) return;
-
-      try {
-        const { data, error } = await supabase.functions.invoke('check-subscription', {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`
-          }
-        });
-
-        if (error) {
-          console.error("Error checking subscription:", error);
-          return;
-        }
-
-        setIsSubscribed(data?.subscribed || false);
-      } catch (err) {
-        console.error("Failed to check subscription status:", err);
-      }
-    };
-
-    checkSubscription();
-  }, [session]);
-
-  useEffect(() => {
-    refreshUserData();
-  }, []);
-
-  useEffect(() => {
-    setCurrentTab(activeTab);
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (currentTab === "inventory") {
-      setDebugInfo(`Loaded ${filteredInventory.length} skins from user inventory`);
-    } else if (skins) {
-      setDebugInfo(`Loaded ${skins.length} skins from search`);
-    } else if (isSkinsLoading) {
-      setDebugInfo("Loading skins...");
-    } else if (skinsError) {
-      setDebugInfo(`Error: ${skinsError.toString()}`);
-    }
-  }, [skins, isSkinsLoading, skinsError, filteredInventory, currentTab]);
-
-  const prepareStats = async (inventory?: InventoryItem[]) => {
-    try {
-      const inventoryToUse = inventory || userInventory;
-      
-      const totalSkins = inventoryToUse.length;
-      console.log("Total skins in inventory:", totalSkins);
-      
-      const totalValue = await calculateInventoryValue();
-      const mostValuableSkin = await findMostValuableSkin();
-
-      setInventoryStats({
-        totalSkins,
-        totalValue: `$${totalValue.toLocaleString()}`,
-        mostValuable: mostValuableSkin ? {
-          weapon: mostValuableSkin.weapon || "Unknown",
-          skin: mostValuableSkin.name,
-          price: mostValuableSkin.currentPrice || mostValuableSkin.price ? 
-            `$${(mostValuableSkin.currentPrice || mostValuableSkin.price || 0).toLocaleString()}` : "$0",
-          image: mostValuableSkin.image
-        } : {
-          weapon: "None",
-          skin: "None",
-          price: "$0",
-          image: undefined
-        }
-      });
-    } catch (error) {
-      console.error("Error preparing stats:", error);
-    }
-  };
-
-  const handleSkinClick = (skin: Skin | InventoryItem) => {
-    const inventorySkin: InventoryItem = {
-      ...skin,
-      inventoryId: `demo-${skin.id}`,
-      acquiredDate: new Date().toISOString(),
-      purchasePrice: skin.price || 0,
-      currentPrice: skin.price,
-      tradeLockDays: 0,
-      isStatTrak: false,
-      isInUserInventory: false
-    };
+  // Calculate inventory statistics
+  const inventoryStats = React.useMemo(() => {
+    if (userInventory?.length === 0) return { totalValue: formatPrice(0) };
     
-    setSelectedSkin(inventorySkin);
-    setIsModalOpen(true);
-  };
+    const totalValue = userInventory.reduce((acc, item) => 
+      acc + (item.currentPrice || item.price || 0), 0);
+      
+    return { totalValue: formatPrice(totalValue) };
+  }, [userInventory, formatPrice]);
 
-  const handleAddToInventory = async (skin: Skin) => {
-    try {
-      console.log("Adding skin to inventory:", skin);
-      const newItem = await addSkinToInventory(skin, {
-        purchasePrice: skin.price || 0,
-        marketplace: "Steam Market",
-        feePercentage: 13,
-        notes: "Added from search"
-      });
-      
-      await refreshUserData();
-      
-      toast({
-        title: "Skin Added",
-        description: `${skin.weapon} | ${skin.name} was added to your inventory.`,
-      });
-      
-      return newItem;
-    } catch (err) {
-      console.error("Error adding skin:", err);
-      toast({
-        title: "Error",
-        description: "Failed to add skin to inventory",
-        variant: "destructive"
-      });
-      return null;
-    }
-  };
+  // Filter the inventory based on the current filters
+  const filteredInventory = React.useMemo(() => {
+    return filterItems(userInventory || []);
+  }, [filterItems, userInventory]);
 
-  const handleSellSkin = async (itemId: string, sellData: SellData) => {
-    console.log("Selling skin:", itemId, sellData);
+  // Filter skins based on searchQuery
+  const filteredSkins = React.useMemo(() => {
+    if (!searchQuery) return [];
     
-    try {
-      await markItemAsSold(itemId, {
-        soldPrice: sellData.soldPrice,
-        soldMarketplace: sellData.soldMarketplace,
-        soldFeePercentage: sellData.soldFeePercentage,
-        soldNotes: sellData.soldNotes
-      });
-      
-      await refreshUserData();
-      
-      toast({
-        title: "Skin Sold",
-        description: `The skin was successfully marked as sold for $${sellData.soldPrice}.`,
-      });
-      
-      setIsModalOpen(false);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to sell the skin",
-        variant: "destructive"
-      });
-    }
+    return allSkins.filter(skin => {
+      const fullName = `${skin.weapon || ""} ${skin.name || ""}`.toLowerCase();
+      const search = searchQuery.toLowerCase();
+      return fullName.includes(search);
+    }).slice(0, 20); // Limit results
+  }, [searchQuery, allSkins]);
+
+  // Handle search input changes
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Handle skin click in search section
+  const handleSkinClick = (skin: Skin) => {
+    setSelectedSkin(skin);
+    setIsDetailModalOpen(true);
+  };
+
+  // Handle skin click in inventory section (view details)
+  const handleInventorySkinClick = (item: InventoryItem) => {
+    handleViewDetails(item);
   };
 
   return (
-    <>
-      <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <Search 
-          placeholder="Search for weapon, skin or rarity..." 
-          onChange={handleSearchChange}
-          value={searchQuery}
-          className="flex-1"
-        />
-        <div className="flex items-center gap-2">
-          <ViewToggle 
-            view={viewMode}
-            onChange={setViewMode}
-          />
-          <Tabs value={currentTab} onValueChange={(value) => setCurrentTab(value as "inventory" | "search")} className="w-full sm:w-auto">
-            <TabsList>
-              <TabsTrigger value="inventory">My Inventory</TabsTrigger>
-              <TabsTrigger value="search">Search Skins</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-      </div>
+    <Layout>
+      <div className="space-y-6 pb-8">
+        {/* Tab navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="pb-6">
+          <TabsList className="w-full">
+            <TabsTrigger value="inventory" className="w-1/2">
+              My Inventory
+            </TabsTrigger>
+            <TabsTrigger value="search" className="w-1/2">
+              Search Skins
+            </TabsTrigger>
+          </TabsList>
+          
+          {/* Search input */}
+          <div className="mt-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder={activeTab === 'inventory' ? "Filter inventory..." : "Search for skins..."}
+                className="pl-8"
+                value={activeTab === 'inventory' ? inventorySearchQuery : searchQuery}
+                onChange={activeTab === 'inventory' ? handleSearchChange : handleSearchInputChange}
+              />
+            </div>
+          </div>
 
-      {skinsError && (
-        <div className="p-4 mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400">
-          Error loading skin data. Please try again later.
-        </div>
-      )}
-
-      <PremiumCTA isSubscribed={isSubscribed} />
-
-      <StatsSection 
-        isLoading={isLoading} 
-        inventoryStats={inventoryStats} 
-        currentTab={currentTab} 
-      />
-      
-      <div className="mt-8">
-        {currentTab === "inventory" && (
-          <InventorySection 
-            searchQuery={searchQuery}
-            onSearchChange={handleSearchChange}
-            weaponFilter={weaponFilter}
-            setWeaponFilter={setWeaponFilter}
-            rarityFilter={rarityFilter}
-            setRarityFilter={setRarityFilter}
-            sortMethod={sortMethod}
-            setSortMethod={setSortMethod}
-            viewMode={viewMode}
-            isLoading={isLoading}
-            filteredInventory={filteredInventory}
-            userInventory={userInventory}
-            inventoryStats={inventoryStats}
-            handleSkinClick={handleSkinClick}
-          />
-        )}
+          {/* Tab content */}
+          <TabsContent value="inventory" className="mt-6">
+            <InventorySection 
+              searchQuery={inventorySearchQuery}
+              onSearchChange={handleSearchChange}
+              weaponFilter={weaponFilter}
+              setWeaponFilter={setWeaponFilter}
+              rarityFilter={rarityFilter}
+              setRarityFilter={setRarityFilter}
+              sortMethod={sortMethod}
+              setSortMethod={setSortMethod}
+              viewMode={viewMode}
+              isLoading={isLoadingInventory}
+              filteredInventory={filteredInventory}
+              userInventory={userInventory as InventoryItem[]}
+              inventoryStats={inventoryStats}
+              handleSkinClick={handleInventorySkinClick}
+            />
+          </TabsContent>
+          
+          <TabsContent value="search" className="mt-6">
+            <SearchSection 
+              viewMode={viewMode}
+              isSkinsLoading={isLoadingSkins}
+              skins={filteredSkins as Skin[]}
+              searchQuery={searchQuery}
+              handleSkinClick={handleSkinClick}
+            />
+          </TabsContent>
+        </Tabs>
         
-        {currentTab === 'search' && (
-          <SearchSection 
-            viewMode={viewMode}
-            isSkinsLoading={isSkinsLoading}
-            skins={skins}
-            searchQuery={searchQuery}
-            handleSkinClick={handleSkinClick}
-          />
-        )}
+        {/* Activity Section */}
+        <ActivitySection 
+          isLoading={isTransactionsLoading}
+          transactions={transactions}
+        />
       </div>
       
-      <ActivitySection 
-        isLoading={isLoading}
-        transactions={transactions}
-      />
-
-      <InventorySkinModal
-        open={isModalOpen} 
-        onOpenChange={setIsModalOpen}
+      {/* Skin detail modal for search items */}
+      <SkinDetailModal 
         skin={selectedSkin}
-        item={selectedSkin} // Add this line to fix the error
-        onSellSkin={handleSellSkin}
-        onAddToInventory={handleAddToInventory}
+        open={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        onAddSkin={handleAddToInventory}
       />
-    </>
+      
+      {/* Skin modal for inventory items */}
+      {selectedItem && (
+        <InventorySkinModal
+          open={!!selectedItem}
+          onOpenChange={() => handleViewDetails(null)}
+          item={selectedItem}
+          mode="view"
+        />
+      )}
+    </Layout>
   );
-};
-
-export default Index;
+}

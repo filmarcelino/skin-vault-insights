@@ -1,64 +1,55 @@
 
+import { supabase } from "@/lib/supabase";
 import { InventoryItem, Transaction } from "@/types/skin";
 
-export const mapSupabaseToInventoryItem = (item: any): InventoryItem | null => {
-  if (!item) return null;
-  
-  try {
-    const mappedItem: InventoryItem = {
-      id: item.skin_id || '',
-      inventoryId: item.inventory_id || '',
-      name: item.name || '',
-      weapon: item.weapon || '',
-      rarity: item.rarity,
-      wear: item.wear,
-      image: item.image,
-      price: item.price,
-      purchasePrice: item.purchase_price,
-      currentPrice: item.current_price,
-      acquiredDate: item.acquired_date || new Date().toISOString(),
-      isStatTrak: Boolean(item.is_stat_trak),
-      tradeLockDays: item.trade_lock_days || 0,
-      tradeLockUntil: item.trade_lock_until,
-      marketplace: item.marketplace,
-      feePercentage: item.fee_percentage,
-      floatValue: item.float_value,
-      notes: item.notes,
-      currency: item.currency_code || "USD",
-      collection: item.collection_name ? {
-        id: item.collection_id,
-        name: item.collection_name
-      } : undefined,
-      // Ensure isInUserInventory is always a boolean
-      isInUserInventory: item.is_in_user_inventory !== false
-    };
-    
-    console.log(`Mapped item ${mappedItem.name} with isInUserInventory:`, mappedItem.isInUserInventory);
-    
-    return mappedItem;
-  } catch (error) {
-    console.error("Error mapping inventory item:", error);
-    return null;
-  }
+// Map database inventory item to frontend InventoryItem
+export const mapInventoryItem = (item: any): InventoryItem => {
+  return {
+    id: item.id,
+    inventoryId: item.inventory_id,
+    name: item.name,
+    weapon: item.weapon,
+    image: item.image,
+    rarity: item.rarity,
+    price: item.price ? parseFloat(item.price) : 0,
+    purchasePrice: item.purchase_price ? parseFloat(item.purchase_price) : 0,
+    acquiredDate: item.acquired_date,
+    tradeLockDays: item.trade_lock_days,
+    tradeLockUntil: item.trade_lock_until,
+    isStatTrak: item.is_stat_trak,
+    notes: item.notes,
+    userId: item.user_id,
+    isInUserInventory: item.is_in_user_inventory,
+    skin_id: item.skin_id,
+    wear: item.wear,
+    floatValue: item.float_value,
+    fee_percentage: item.fee_percentage,
+    marketplace: item.marketplace,
+    currency: item.currency_code,
+  };
 };
 
-export const mapSupabaseToTransaction = (transaction: any): Transaction | null => {
-  if (!transaction) return null;
-  
-  try {
-    return {
-      id: transaction.transaction_id || '',
-      type: transaction.type || 'add',
-      itemId: transaction.item_id || '',
-      weaponName: transaction.weapon_name || '',
-      skinName: transaction.skin_name || '',
-      date: transaction.date || new Date().toISOString(),
-      price: transaction.price,
-      notes: transaction.notes,
-      currency: transaction.currency_code || "USD"
-    };
-  } catch (error) {
-    console.error("Error mapping transaction:", error);
-    return null;
-  }
+// Map frontend InventoryItem to database format for insertion/update
+export const mapToDbItem = (item: InventoryItem): any => {
+  return {
+    inventory_id: item.inventoryId,
+    name: item.name,
+    weapon: item.weapon,
+    image: item.image,
+    rarity: item.rarity,
+    price: item.price,
+    purchase_price: item.purchasePrice,
+    acquired_date: item.acquiredDate,
+    trade_lock_days: item.tradeLockDays,
+    trade_lock_until: item.tradeLockUntil,
+    is_stat_trak: item.isStatTrak,
+    wear: item.wear,
+    float_value: item.floatValue,
+    notes: item.notes,
+    is_in_user_inventory: item.isInUserInventory,
+    skin_id: item.skin_id || item.id,
+    marketplace: item.marketplace,
+    fee_percentage: item.fee_percentage,
+    currency_code: item.currency || "USD"
+  };
 };
