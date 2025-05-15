@@ -21,8 +21,10 @@ export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
 
   // Calculate profit percentage
   const calculateProfitPercentage = (item: InventoryItem) => {
-    if (!item.purchasePrice || !item.sold_price || item.purchasePrice === 0) return 0;
-    return ((item.sold_price - item.purchasePrice) / item.purchasePrice) * 100;
+    if (!item.purchasePrice || item.purchasePrice === 0) return 0;
+    // For sold items, price represents the sold price
+    const soldPrice = item.sold_price || item.price || 0;
+    return ((soldPrice - item.purchasePrice) / item.purchasePrice) * 100;
   };
 
   return (
@@ -48,7 +50,10 @@ export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
           ) : (
             items.map((item) => {
               const profitPercentage = calculateProfitPercentage(item);
-              const isProfit = item.profit && item.profit > 0;
+              // Calculate profit on the fly if not provided
+              const soldPrice = item.sold_price || item.price || 0;
+              const profit = item.profit !== undefined ? item.profit : (soldPrice - (item.purchasePrice || 0));
+              const isProfit = profit > 0;
 
               return (
                 <TableRow key={item.id}>
@@ -70,18 +75,18 @@ export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{formatDate(item.date_sold)}</TableCell>
+                  <TableCell>{formatDate(item.date_sold || item.updated_at)}</TableCell>
                   <TableCell>{formatPrice(item.purchasePrice || 0)}</TableCell>
-                  <TableCell>{formatPrice(item.sold_price || 0)}</TableCell>
+                  <TableCell>{formatPrice(soldPrice)}</TableCell>
                   <TableCell>
                     <span className={isProfit ? "text-green-500" : "text-red-500"}>
-                      {formatPrice(item.profit || 0)}
+                      {formatPrice(profit)}
                       <span className="text-xs ml-1">
                         ({profitPercentage > 0 ? "+" : ""}{profitPercentage.toFixed(1)}%)
                       </span>
                     </span>
                   </TableCell>
-                  <TableCell>{item.sold_marketplace || t("common.unknown")}</TableCell>
+                  <TableCell>{item.sold_marketplace || item.marketplace || t("common.unknown")}</TableCell>
                 </TableRow>
               );
             })

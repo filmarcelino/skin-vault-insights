@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryItem, SellData } from "@/types/skin";
 import { supabase } from '@/integrations/supabase/client'; // Direct import
@@ -12,7 +13,7 @@ export const fetchSoldItems = async () => {
     
     const userId = userData.user.id;
     
-    // Fetch all sold items without pagination to ensure we get everything
+    // Fetch ALL sold items with no limit and proper sorting
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
@@ -25,39 +26,40 @@ export const fetchSoldItems = async () => {
       return [];
     }
     
-    console.log("Raw sold items:", data);
+    console.log("Raw sold items data from DB:", data);
     
-    // Ensure all required properties are present and properly formatted
+    // Map database fields to the expected format for the UI
     const mappedItems = data.map(item => ({
       id: item.id,
       inventoryId: item.id,
       skin_id: item.skin_id,
       name: item.name,
-      weapon: item.weapon || "", // Fallback for missing fields
+      weapon: item.weapon || "",
       image: item.image || "",
-      rarity: item.rarity || "Unknown", // Make sure rarity is never undefined
+      rarity: item.rarity || "Unknown",
+      // For sold items, price represents the sold price
       price: item.price || 0,
-      purchasePrice: item.purchase_price || 0, // Required field
+      purchasePrice: item.purchase_price || 0,
       acquiredDate: item.acquired_date || new Date().toISOString(),
-      acquired_date: item.acquired_date,
       user_id: item.user_id,
       isInUserInventory: false,
       is_in_user_inventory: false,
       tradeLockDays: item.trade_lock_days,
       tradeLockUntil: item.trade_lock_until,
-      // Calculate profit safely
-      profit: item.price ? (item.price - (item.purchase_price || 0)) : 0,
+      // Calculate profit
+      profit: (item.price || 0) - (item.purchase_price || 0),
       currency: item.currency_code || 'USD',
       floatValue: item.float_value,
       isStatTrak: item.is_stat_trak,
       wear: item.wear || "",
-      // Safely assign sold-related fields if they exist
-      date_sold: item.updated_at, // Use updated_at as a fallback for date_sold
-      sold_price: item.price, // Use price as a fallback for sold_price
-      sold_marketplace: item.marketplace || "Unknown" // Use marketplace as a fallback
+      // For sold items, we use these fields
+      date_sold: item.updated_at,
+      sold_price: item.price,
+      sold_marketplace: item.marketplace || "Unknown",
+      sold_fee_percentage: item.fee_percentage
     }));
     
-    console.log("Mapped sold items:", mappedItems);
+    console.log("Mapped sold items for UI:", mappedItems);
     return mappedItems;
   } catch (error) {
     console.error("Error fetching sold items:", error);
@@ -271,16 +273,21 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
     
     const purchasePrice = item?.purchase_price || 0;
     const soldPrice = sellData.soldPrice || 0;
-    const calculatedProfit = soldPrice - purchasePrice;
     
+    // Store sold information in the existing fields
+    // We don't use separate fields like sold_price, instead we use:
+    // - price = sold price
+    // - updated_at = date sold
+    // - marketplace = sold marketplace
+    // - fee_percentage = sold fee percentage
     const { error } = await supabase
       .from('inventory')
       .update({
         is_in_user_inventory: false,
-        price: sellData.soldPrice, // Update price to sold price
-        updated_at: soldDate,  // Use updated_at to track when item was sold
-        marketplace: sellData.soldMarketplace, // Use marketplace for sold marketplace
-        fee_percentage: sellData.soldFeePercentage, // Use fee_percentage for sold fee
+        price: soldPrice,
+        updated_at: soldDate,
+        marketplace: sellData.soldMarketplace,
+        fee_percentage: sellData.soldFeePercentage,
         currency_code: sellData.soldCurrency
       })
       .eq('id', itemId);
@@ -291,7 +298,7 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
     }
 
     // Log successful transaction
-    console.log(`Item ${itemId} marked as sold for ${sellData.soldPrice} with profit ${calculatedProfit}`);
+    console.log(`Item ${itemId} marked as sold for ${soldPrice} with profit ${soldPrice - purchasePrice}`);
     return true;
   } catch (error) {
     console.error("Error marking item as sold:", error);

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useInventory } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -35,18 +34,21 @@ export default function Inventory() {
     isFetching 
   } = useInventory();
   
-  // Fetch sold items separately
+  // Fetch sold items with a separate query
   const { 
     data: soldItems = [], 
     isLoading: isSoldItemsLoading,
     refetch: refetchSoldItems
   } = useQuery({
     queryKey: ["sold-items"],
-    queryFn: fetchSoldItems
+    queryFn: fetchSoldItems,
+    // Ensure we always get fresh data
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: true
   });
   
   console.log("Current inventory items:", inventory?.length || 0);
-  console.log("Sold items:", soldItems?.length || 0); // Debug log to check sold items
+  console.log("Sold items:", soldItems?.length || 0);
   
   const { 
     searchQuery, 
@@ -99,10 +101,10 @@ export default function Inventory() {
   const currentCount = inventory?.length || 0;
   const soldCount = soldItems?.length || 0;
 
-  // Custom handler to refetch sold items after marking item as sold
+  // Enhanced handler to refetch sold items after marking item as sold
   const handleSellItem = async (itemId: string, sellData: any) => {
     await handleMarkAsSold(itemId, sellData);
-    // Refetch sold items to update the list
+    // Force refetch sold items to update the list
     refetchSoldItems();
   };
   
