@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface InventorySkinEditModalProps {
   item: any;
@@ -24,6 +25,7 @@ export function InventorySkinEditModal({
   const [soldPrice, setSoldPrice] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const { formatPrice, currency } = useCurrency();
+  const { t } = useLanguage();
   
   useEffect(() => {
     if (item) {
@@ -54,7 +56,7 @@ export function InventorySkinEditModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Editar Detalhes da Venda</DialogTitle>
+          <DialogTitle>{t('inventory.editSaleDetails')}</DialogTitle>
           <DialogDescription>
             {`${item.weapon_name || ''} | ${item.skin_name || 'Skin'}`}
           </DialogDescription>
@@ -63,7 +65,7 @@ export function InventorySkinEditModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="soldDate">Data da Venda</Label>
+              <Label htmlFor="soldDate">{t('inventory.saleDate')}</Label>
               <Input
                 id="soldDate"
                 type="date"
@@ -73,7 +75,7 @@ export function InventorySkinEditModal({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="soldPrice">Valor Vendido ({currency.symbol})</Label>
+              <Label htmlFor="soldPrice">{t('inventory.salePrice')} ({currency.symbol})</Label>
               <Input
                 id="soldPrice"
                 type="number"
@@ -87,22 +89,22 @@ export function InventorySkinEditModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notas</Label>
+            <Label htmlFor="notes">{t('common.notes')}</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Detalhes adicionais sobre a venda..."
+              placeholder={t('inventory.additionalSaleDetails')}
               rows={3}
             />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t('common.cancel')}
             </Button>
             <Button type="submit">
-              Salvar Alterações
+              {t('common.saveChanges')}
             </Button>
           </DialogFooter>
         </form>

@@ -26,7 +26,7 @@ export default function Inventory() {
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<string>("current");
-  const { viewMode, setViewMode } = useViewMode("grid"); // Changed from "inventory" to "grid"
+  const { viewMode, setViewMode } = useViewMode("grid"); 
   
   const { 
     data: inventory, 
@@ -36,10 +36,15 @@ export default function Inventory() {
   } = useInventory();
   
   // Fetch sold items separately
-  const { data: soldItems = [] } = useQuery({
+  const { 
+    data: soldItems = [], 
+    isLoading: isSoldItemsLoading 
+  } = useQuery({
     queryKey: ["sold-items"],
     queryFn: fetchSoldItems
   });
+  
+  console.log("Sold items:", soldItems); // Debug log to check sold items
   
   const { 
     searchQuery, 
@@ -221,7 +226,9 @@ export default function Inventory() {
         </TabsContent>
         
         <TabsContent value="sold" className="mt-4">
-          {soldItems?.length === 0 ? (
+          {isSoldItemsLoading ? (
+            <Loading />
+          ) : soldItems?.length === 0 ? (
             <div className="text-center py-12 border rounded-lg bg-muted/10">
               <h3 className="text-lg font-medium">
                 {t("inventory.noSoldItems")}

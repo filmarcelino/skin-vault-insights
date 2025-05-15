@@ -1,7 +1,7 @@
 
 import { FC } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Plus, LayoutGrid, Search, MoreHorizontal } from "lucide-react";
+import { Home, Plus, LayoutGrid, MoreHorizontal } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export const MobileNav: FC = () => {
@@ -22,7 +22,7 @@ export const MobileNav: FC = () => {
   return (
     <div className="fixed bottom-0 left-0 right-0 border-t border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 md:hidden">
       <div className="flex items-center justify-around h-16">
-        <Link to="/" className={getLinkClass("/")}>
+        <Link to="/dashboard" className={getLinkClass("/dashboard")}>
           <Home className="h-5 w-5" />
           <span className="text-[10px] mt-1">{t("common.home")}</span>
         </Link>

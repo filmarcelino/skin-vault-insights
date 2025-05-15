@@ -79,8 +79,11 @@ export const Search: FC<SearchProps> = ({
     }
   };
 
-  // Translate placeholder if it appears to be a translation key
-  const translatedPlaceholder = placeholder.includes('.') ? t(placeholder) : placeholder;
+  // Get the translated placeholder
+  let translatedPlaceholder = placeholder;
+  if (placeholder.includes('.')) {
+    translatedPlaceholder = t(placeholder);
+  }
 
   return (
     <form onSubmit={handleSubmit} className={`relative w-full ${className}`}>
