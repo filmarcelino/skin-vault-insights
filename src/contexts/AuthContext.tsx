@@ -253,10 +253,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Create a trial subscription for the new user
         if (authResponse.data.user) {
           await createTrialSubscription(authResponse.data.user.id, data.email);
+          
+          // Call the populate-inventory function to automatically add starter skins
+          try {
+            const populateResponse = await supabase.functions.invoke('populate-inventory', {
+              body: { userId: authResponse.data.user.id }
+            });
+            
+            if (populateResponse.error) {
+              console.error("Error populating inventory:", populateResponse.error);
+            } else {
+              console.log("Inventory successfully populated:", populateResponse.data);
+            }
+          } catch (populateError) {
+            console.error("Exception populating inventory:", populateError);
+          }
         }
         
         toast("Account created successfully", {
-          description: "Welcome to CS Skin Vault!"
+          description: "Welcome to CS Skin Vault! Your account has been pre-loaded with 70 skins."
         });
         return { error: null, data: authResponse.data.session };
       }

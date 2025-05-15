@@ -13,6 +13,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Edit, User, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
+import { populateUserInventory, isInventoryPopulated } from "@/services/inventory";
+import { useQuery } from "@tanstack/react-query";
 
 const profileSchema = z.object({
   username: z.string().min(3, 'Username must have at least 3 characters'),
@@ -98,6 +100,12 @@ const Profile = () => {
       .toUpperCase()
       .substring(0, 2);
   };
+
+  const { data: inventoryPopulated, refetch: refetchPopulatedStatus } = useQuery({
+    queryKey: ["inventoryPopulated"],
+    queryFn: isInventoryPopulated,
+    enabled: !!profile // Only run this query if the user is logged in
+  });
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 p-4">
@@ -316,6 +324,28 @@ const Profile = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Add this section to the Profile page just before the closing Card tag */}
+      <div className="pt-4 mt-6 border-t">
+        <h3 className="text-lg font-medium mb-2">Inventory Tools</h3>
+        <Button 
+          onClick={async () => {
+            const success = await populateUserInventory();
+            if (success) {
+              refetchPopulatedStatus();
+            }
+          }}
+          disabled={inventoryPopulated}
+          variant={inventoryPopulated ? "outline" : "default"}
+        >
+          {inventoryPopulated ? "Inventory Already Populated" : "Add 70 Starter Skins to Inventory"}
+        </Button>
+        {inventoryPopulated && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Your account already has starter skins. You can view them in your inventory.
+          </p>
+        )}
+      </div>
     </div>
   );
 };
