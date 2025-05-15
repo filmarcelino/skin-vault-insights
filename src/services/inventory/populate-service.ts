@@ -16,11 +16,27 @@ export const populateUserInventory = async (): Promise<boolean> => {
     }
     
     // Get user email to check if it's the test account
-    const { data: profileData } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('email')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+    
+    // If the profile doesn't exist, we need to handle this error
+    if (profileError && profileError.code === 'PGRST116') {
+      toast.error("Perfil não encontrado", {
+        description: "Não foi possível encontrar seu perfil. Tente fazer login novamente."
+      });
+      return false;
+    }
+    
+    if (profileError) {
+      console.error("Erro ao buscar perfil:", profileError);
+      toast.error("Falha ao verificar perfil", {
+        description: "Ocorreu um erro ao verificar suas informações."
+      });
+      return false;
+    }
     
     if (!profileData || profileData.email !== "teste@teste.com") {
       toast.error("Esta funcionalidade está disponível apenas para contas de teste");
@@ -76,7 +92,7 @@ export const isInventoryPopulated = async (): Promise<boolean> => {
       .from('profiles')
       .select('inventory_populated')
       .eq('id', user.id)
-      .maybeSingle(); // Changed from single() to maybeSingle() to handle case when profile doesn't exist
+      .maybeSingle(); 
     
     if (error) {
       console.error("Erro ao verificar status de inventário populado:", error);

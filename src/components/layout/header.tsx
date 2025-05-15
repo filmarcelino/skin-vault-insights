@@ -6,18 +6,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { LanguageSelector } from "@/components/ui/language-selector";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Bell, User, LogOut } from "lucide-react";
+import { Bell, User, LogOut, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export function Header() {
-  const { user, signOut, session } = useAuth();
+  const { user, signOut, session, profile } = useAuth();
   const { isSubscribed, isTrial, trialDaysRemaining } = useSubscription();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       await signOut();
       toast.success(t("auth.logout_success"), {
         description: t("auth.logout_success_description")
@@ -28,6 +31,8 @@ export function Header() {
       toast.error(t("auth.logout_error"), {
         description: t("auth.logout_error_description")
       });
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -35,6 +40,8 @@ export function Header() {
     navigate("/auth");
   };
   
+  const userName = profile?.username || user?.email?.split('@')[0] || '';
+
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -57,11 +64,17 @@ export function Header() {
                     {t("subscription.trial")}: {trialDaysRemaining} {t("subscription.days")}
                   </span>
                 )}
+
+                {/* User info with name */}
+                <div className="hidden sm:flex items-center gap-2 mr-2">
+                  <span className="text-sm font-medium">{userName}</span>
+                </div>
+                
                 <Link to="/profile">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.user_metadata?.avatar_url || undefined} />
+                    <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url || undefined} />
                     <AvatarFallback>
-                      <User className="h-4 w-4" />
+                      {userName.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
@@ -69,10 +82,15 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
+                  disabled={isLoggingOut}
                   className="hidden sm:flex"
                   title={t("auth.logout")}
                 >
-                  <LogOut className="h-4 w-4" />
+                  {isLoggingOut ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LogOut className="h-4 w-4" />
+                  )}
                   <span className="sr-only">{t("auth.logout")}</span>
                 </Button>
               </>

@@ -80,18 +80,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [profileError, setProfileError] = useState<boolean>(false);
   const { toast: useToastToast } = useToast();
   const currencyUpdater = useCurrencyUpdate();
 
   console.log("AuthProvider rendering. isLoading:", isLoading, "user:", user?.email);
 
+  // Initialize auth state and set up listeners
   useEffect(() => {
     console.log("AuthProvider useEffect running");
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         console.log("Auth state changed:", event, "user:", newSession?.user?.email);
+        
+        // Update session and user state
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
@@ -102,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }, 0);
         } else {
           setProfile(null);
+          setProfileError(false);
         }
       }
     );
@@ -113,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
+        // Initial profile fetch for existing session
         fetchProfile(currentSession.user.id);
       }
       
@@ -122,22 +128,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
+    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
+  // Enhanced profile fetching with retry capability
   const fetchProfile = async (userId: string) => {
     try {
       console.log("Fetching profile for user:", userId);
+      setProfileError(false);
+      
+      // First, check if profile exists
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
         
       if (error) {
         console.error("Error fetching profile:", error);
+        setProfileError(true);
+        
+        // If profile not found, attempt to create one
+        if (error.code === "PGRST116") {
+          console.log("Profile not found, attempting to create one");
+          await createMissingProfile(userId);
+          return;
+        }
         return;
       }
       
@@ -145,16 +164,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Profile fetched:", data);
         setProfile(data as UserProfile);
         
-        // Atualizar a moeda preferida do usuário no CurrencyContext
+        // Update preferred currency
         if (currencyUpdater && data.preferred_currency) {
           const currency = CURRENCIES.find(c => c.code === data.preferred_currency);
           if (currency) {
             currencyUpdater.setCurrency(currency);
           }
         }
+      } else {
+        console.log("No profile data found, attempting to create one");
+        await createMissingProfile(userId);
       }
     } catch (error) {
-      console.error("Exception fetching profile:", error);
+      console.error("Exception in fetchProfile:", error);
+      setProfileError(true);
+    }
+  };
+
+  // Function to create missing profile for existing users
+  const createMissingProfile = async (userId: string) => {
+    try {
+      console.log("Creating missing profile for user:", userId);
+      
+      // Get user data
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userData.user) {
+        console.error("Error getting user data:", userError);
+        return;
+      }
+      
+      const user = userData.user;
+      
+      // Create profile with available data
+      const profileData = {
+        id: userId,
+        username: user.user_metadata.username || `user_${userId.substring(0, 8)}`,
+        full_name: user.user_metadata.full_name || 'User',
+        email: user.email || '',
+        city: user.user_metadata.city,
+        country: user.user_metadata.country,
+        preferred_currency: user.user_metadata.preferred_currency || 'USD',
+      };
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profileData)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error("Error creating profile:", error);
+        toast.error("Falha ao criar perfil", {
+          description: "Houve um problema ao configurar seu perfil. Por favor, tente novamente."
+        });
+        return;
+      }
+      
+      console.log("Profile created successfully:", data);
+      setProfile(data as UserProfile);
+      toast.success("Perfil recuperado com sucesso", {
+        description: "Seu perfil foi restaurado com todas suas informações."
+      });
+      
+      // Update preferred currency
+      if (currencyUpdater && data.preferred_currency) {
+        const currency = CURRENCIES.find(c => c.code === data.preferred_currency);
+        if (currency) {
+          currencyUpdater.setCurrency(currency);
+        }
+      }
+      
+    } catch (error) {
+      console.error("Exception in createMissingProfile:", error);
     }
   };
 
@@ -188,11 +270,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string, rememberMe: boolean) => {
     setIsLoading(true);
+    setProfileError(false);
     
     try {
       const response = await supabase.auth.signInWithPassword({ 
         email, 
-        password
+        password,
+        options: {
+          // Set proper persistence based on rememberMe flag
+          persistSession: rememberMe
+        }
       });
       
       if (response.error) {
@@ -230,6 +317,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     preferred_currency: string;
   }) => {
     setIsLoading(true);
+    setProfileError(false);
     
     try {
       const authResponse = await supabase.auth.signUp({ 
@@ -298,6 +386,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       setProfile(null);
+      setProfileError(false);
       toast("Logout realizado", {
         description: "Você saiu da sua conta com sucesso."
       });

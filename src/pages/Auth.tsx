@@ -36,7 +36,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Logo } from "@/components/ui/logo";
 import { toast } from "sonner";
 import { CURRENCIES } from "@/contexts/CurrencyContext";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -75,6 +75,7 @@ const Auth = () => {
   );
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   console.log("Auth component rendering. User:", user, "isLoading:", isLoading, "Session:", session ? "Present" : "None");
 
@@ -83,7 +84,7 @@ const Auth = () => {
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false,
+      rememberMe: true, // Default to remember me for better UX
     },
   });
 
@@ -124,6 +125,7 @@ const Auth = () => {
   const handleLoginSubmit = async (data: LoginFormValues) => {
     console.log("Login attempt with:", data.email);
     setAuthError(null);
+    setIsSubmitting(true);
     
     try {
       const { error } = await signIn(data.email, data.password, data.rememberMe);
@@ -152,12 +154,15 @@ const Auth = () => {
     } catch (err) {
       console.error("Unexpected login error:", err);
       setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleRegisterSubmit = async (data: RegisterFormValues) => {
     console.log("Register attempt with:", data.email);
     setAuthError(null);
+    setIsSubmitting(true);
     
     try {
       const { error } = await signUp({
@@ -192,12 +197,15 @@ const Auth = () => {
     } catch (err) {
       console.error("Unexpected registration error:", err);
       setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleResetPasswordSubmit = async (data: ResetPasswordFormValues) => {
     console.log("Password reset attempt for:", data.email);
     setAuthError(null);
+    setIsSubmitting(true);
     
     try {
       const { error } = await resetPassword(data.email);
@@ -216,6 +224,8 @@ const Auth = () => {
     } catch (err) {
       console.error("Unexpected password reset error:", err);
       setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -267,11 +277,17 @@ const Auth = () => {
                     type="button" 
                     variant="outline" 
                     onClick={() => setShowResetPassword(false)}
+                    disabled={isSubmitting}
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Enviando..." : "Enviar link de recuperação"}
+                  <Button type="submit" disabled={isSubmitting || isLoading}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : "Enviar link de recuperação"}
                   </Button>
                 </div>
               </form>
@@ -342,13 +358,19 @@ const Auth = () => {
                         variant="link"
                         className="text-sm"
                         onClick={() => setShowResetPassword(true)}
+                        disabled={isSubmitting}
                       >
                         Esqueceu a senha?
                       </Button>
                     </div>
                     
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Entrando..." : "Entrar"}
+                    <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Entrando...
+                        </>
+                      ) : "Entrar"}
                     </Button>
                   </form>
                 </Form>
@@ -492,8 +514,13 @@ const Auth = () => {
                       </p>
                     </div>
                     
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Registrando..." : "Registrar"}
+                    <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Registrando...
+                        </>
+                      ) : "Registrar"}
                     </Button>
                   </form>
                 </Form>

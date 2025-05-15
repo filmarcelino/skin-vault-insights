@@ -14,6 +14,7 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [redirecting, setRedirecting] = useState(false);
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
 
   useEffect(() => {
     console.log("RequireAuth - Authentication state:", { 
@@ -22,29 +23,34 @@ const RequireAuth = ({ children }: RequireAuthProps) => {
       session: session ? "Active" : "None" 
     });
     
-    if (!isLoading && !user) {
-      console.log("User not authenticated, redirecting to /auth");
+    // Wait for isLoading to be false to ensure we have the final auth state
+    if (!isLoading) {
+      setAuthCheckComplete(true);
       
-      // Prevent multiple redirects
-      if (!redirecting) {
-        setRedirecting(true);
+      if (!user || !session) {
+        console.log("User not authenticated, redirecting to /auth");
         
-        // Provide visual feedback to user
-        toast("Redirecionando para login", {
-          description: "Por favor, faça login para acessar esta página"
-        });
-        
-        // Redirect to login page with return path
-        navigate('/auth', { 
-          state: { from: location.pathname },
-          replace: true // Use replace to avoid building up history stack
-        });
+        // Prevent multiple redirects
+        if (!redirecting) {
+          setRedirecting(true);
+          
+          // Provide visual feedback to user
+          toast("Redirecionando para login", {
+            description: "Por favor, faça login para acessar esta página"
+          });
+          
+          // Redirect to login page with return path
+          navigate('/auth', { 
+            state: { from: location.pathname },
+            replace: true // Use replace to avoid building up history stack
+          });
+        }
       }
     }
   }, [user, isLoading, navigate, location.pathname, session, redirecting]);
 
   // Show loading while checking auth status
-  if (isLoading) {
+  if (isLoading || !authCheckComplete) {
     console.log("RequireAuth - Loading authentication state");
     return (
       <div className="flex justify-center items-center min-h-screen">
