@@ -14,7 +14,7 @@ export interface Skin {
   collections?: SkinCollection[];
   collection?: SkinCollection;
   category?: string;
-  floatValue?: number; // Added to match usage in use-skin-image-analysis.ts
+  floatValue?: number;
 }
 
 export interface SkinCollection {
@@ -113,6 +113,7 @@ export interface Transaction {
   itemId: string;
   currency?: string;
   userId: string;
+  marketplace?: string;
 }
 
 // Define LockStatus type with isLocked, daysLeft, and tradeLockDate fields
@@ -121,3 +122,6 @@ export interface LockStatus {
   daysLeft: number;
   tradeLockDate?: string;
 }
+
+// Define modal mode type
+export type ModalMode = 'view' | 'edit' | 'add' | 'sell';

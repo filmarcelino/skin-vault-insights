@@ -8,27 +8,44 @@ const mapInventoryItem = (item: any): InventoryItem => {
     id: item.id,
     inventoryId: item.inventory_id,
     name: item.name,
-    weapon: item.weapon,
-    image: item.image,
-    rarity: item.rarity,
-    isInUserInventory: item.is_in_user_inventory !== false,
-    purchasePrice: item.purchase_price || 0,
-    currentPrice: item.current_price,
-    acquiredDate: item.acquired_date,
-    tradeLockDays: item.trade_lock_days || 0,
+    weapon: item.weapon || "",
+    image: item.image || "",
+    rarity: item.rarity || "Unknown", // Make sure rarity is never undefined
+    price: item.price || 0,
+    purchasePrice: item.purchase_price || 0, // Required field
+    purchase_price: item.purchase_price,
+    acquiredDate: item.acquired_date || new Date().toISOString(),
+    acquired_date: item.acquired_date,
+    user_id: item.user_id,
+    isInUserInventory: true,
+    is_in_user_inventory: true,
+    tradeLockDays: item.trade_lock_days,
     tradeLockUntil: item.trade_lock_until,
     floatValue: item.float_value,
+    float_value: item.float_value,
     isStatTrak: item.is_stat_trak,
-    wear: item.wear,
-    notes: item.notes,
+    is_stat_trak: item.is_stat_trak,
+    wear: item.wear || "",
+    condition: item.wear || "",
     marketplace: item.marketplace,
+    fee_percentage: item.fee_percentage,
     feePercentage: item.fee_percentage,
-    skin_id: item.skin_id,
+    currency: item.currency_code,
+    currentPrice: item.current_price || item.price
   };
 };
 
-export async function fetchSoldItems(userId: string) {
+export async function fetchSoldItems() {
   try {
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user || !userData?.user.id) {
+      console.log("No authenticated user found");
+      return [];
+    }
+    
+    const userId = userData.user.id;
+    
     // Fetch sold items from transactions table 
     const { data: transactionsData, error: transactionsError } = await supabase
       .from('transactions')
@@ -111,9 +128,9 @@ export async function fetchSoldItems(userId: string) {
         // Sales specific data
         soldPrice: transaction.price || 0,
         soldDate: transaction.date,
-        soldMarketplace: transaction.marketplace || 'Unknown',
+        soldMarketplace: 'Unknown', // Since marketplace doesn't exist in transaction
         soldFeePercentage: inventoryItem.fee_percentage || 0,
-        marketplace: inventoryItem.marketplace || transaction.marketplace || 'Unknown',
+        marketplace: inventoryItem.marketplace || 'Unknown',
         feePercentage: inventoryItem.fee_percentage || 0,
         skin_id: inventoryItem.skin_id || '',
         // Other required fields from InventoryItem interface
@@ -423,7 +440,8 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
       date: soldDate,
       price: soldPrice,
       notes: `Sold on ${sellData.soldMarketplace || "Unknown"}`,
-      currency_code: sellData.soldCurrency || "USD"
+      currency_code: sellData.soldCurrency || "USD",
+      marketplace: sellData.soldMarketplace // Add marketplace to transaction
     };
 
     console.log("Creating sell transaction:", transaction);

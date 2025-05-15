@@ -102,7 +102,7 @@ export default function Inventory() {
   } = useInventoryActions();
   
   const currentCount = inventory?.length || 0;
-  const soldCount = soldItems?.length || 0;
+  const soldCount = Array.isArray(soldItems) ? soldItems.length : 0;
 
   // Enhanced handler to refetch sold items after marking item as sold
   const handleItemSell = async (itemId: string, sellData: any): Promise<void> => {
@@ -241,7 +241,7 @@ export default function Inventory() {
         <TabsContent value="sold" className="mt-4">
           {isSoldItemsLoading ? (
             <Loading />
-          ) : soldItems?.length === 0 ? (
+          ) : Array.isArray(soldItems) && soldItems.length === 0 ? (
             <div className="text-center py-12 border rounded-lg bg-muted/10">
               <h3 className="text-lg font-medium">
                 {t("inventory.noSoldItems")}
@@ -251,7 +251,7 @@ export default function Inventory() {
               </p>
             </div>
           ) : (
-            <SoldSkinsTable items={soldItems} />
+            <SoldSkinsTable items={Array.isArray(soldItems) ? soldItems : []} />
           )}
         </TabsContent>
       </Tabs>

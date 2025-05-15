@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -15,6 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
 import { populateUserInventory, isInventoryPopulated } from "@/services/inventory";
 import { useQuery } from "@tanstack/react-query";
+import { Loading } from '@/components/ui/loading';
 
 const profileSchema = z.object({
   username: z.string().min(3, 'Username must have at least 3 characters'),
@@ -27,10 +29,20 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const Profile = () => {
-  const { profile, updateProfile, isLoading } = useAuth();
+  const { profile, updateProfile, authStatus } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
   const { currency, setCurrency } = useCurrency();
+
+  // Show loading when auth is initializing or profile is loading
+  if (authStatus === 'loading' || !profile) {
+    return (
+      <div className="w-full flex justify-center items-center p-8">
+        <Loading size="lg" />
+      </div>
+    );
+  }
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -44,6 +56,7 @@ const Profile = () => {
   });
 
   const onSubmit = async (data: ProfileFormValues) => {
+    setIsUpdating(true);
     try {
       const { error, data: updatedProfile } = await updateProfile({
         username: data.username,
@@ -81,16 +94,10 @@ const Profile = () => {
         description: "Could not update your profile. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
-
-  if (!profile) {
-    return (
-      <div className="w-full flex justify-center items-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   const getInitials = (name: string) => {
     return name

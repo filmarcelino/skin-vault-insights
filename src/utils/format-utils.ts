@@ -1,45 +1,57 @@
 
-import { format, parseISO, formatDistanceToNow } from 'date-fns';
+// Format utilities for the application
 
-// Format currency based on user preference
-export const formatPrice = (price: number | string, currency: string = 'USD'): string => {
-  const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+/**
+ * Format a number as a currency based on the provided currency code
+ */
+export function formatCurrencyValue(value: number, currencyCode = 'USD'): string {
+  if (value === undefined || value === null) return '-';
   
-  if (isNaN(numPrice)) return '$0.00';
-  
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency || 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-  
-  return formatter.format(numPrice);
-};
-
-// Format date to YYYY-MM-DD
-export const formatDateToYMD = (date: Date | string): string => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return format(d, 'yyyy-MM-dd');
-};
-
-// Format date to locale string
-export const formatDateToLocale = (date: Date | string): string => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString();
-};
-
-// Format ISO date to readable format
-export const formatISODate = (isoDate: string, formatStr: string = 'dd/MM/yyyy'): string => {
   try {
-    return format(parseISO(isoDate), formatStr);
+    const formatter = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    
+    return formatter.format(value);
   } catch (error) {
-    return '';
+    console.error(`Error formatting currency: ${error}`);
+    return `${value} ${currencyCode}`;
   }
-};
+}
 
-// Format relative time (e.g. "2 days ago")
-export const formatRelativeTime = (date: Date | string): string => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return formatDistanceToNow(d, { addSuffix: true });
-};
+/**
+ * Format a date string into a localized date
+ */
+export function formatDate(dateString: string | Date): string {
+  try {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString();
+  } catch (error) {
+    return 'Invalid date';
+  }
+}
+
+/**
+ * Format a percentage value with % symbol
+ */
+export function formatPercentage(value: number, decimals = 2): string {
+  return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Format a number with thousand separators
+ */
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat().format(value);
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use formatCurrencyValue instead
+ */
+export function formatCurrency(value: number, currencyCode = 'USD'): string {
+  return formatCurrencyValue(value, currencyCode);
+}

@@ -1,118 +1,92 @@
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Skin, InventoryItem, SellData } from "@/types/skin";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SkinDetailsCard } from "./skin-details-card";
-import { SkinSellingForm } from "./skin-selling-form";
-import { SkinAdditionalInfo } from "./skin-additional-info";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { InventoryItem, ModalMode, Skin } from "@/types/skin";
+import { SkinSellingForm } from "@/components/skins/skin-selling-form";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { defaultSkin, defaultInventoryItem } from "@/utils/default-objects";
 
-export type ModalMode = 'view' | 'edit' | 'add' | 'sell';
-
-export interface InventorySkinModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  skin?: InventoryItem | Skin | null;
-  mode?: ModalMode;
-  onSellSkin?: (itemId: string, sellData: SellData) => Promise<void>;
-  onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
-  item?: InventoryItem | Skin | null;
+interface InventorySkinModalProps {
+  skin: Skin | InventoryItem;
+  mode?: ModalMode; // Use the ModalMode type here
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onSellSkin?: (itemId: string, sellData: any) => void;
 }
 
-export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
+export function InventorySkinModal({
+  skin,
+  mode = "add",
   open,
   onOpenChange,
-  skin = null,
-  mode = 'view',
   onSellSkin,
-  onAddToInventory,
-  item = null,
-}) => {
-  // Use the mode to determine initial tab
-  const initialTab = mode === 'sell' ? "sell" : "details";
-  const [activeTab, setActiveTab] = useState(initialTab);
+}: InventorySkinModalProps) {
   const { t } = useLanguage();
-  
-  // Use item if provided, otherwise use skin, and ensure we always have a valid default
-  const skinData = item || skin || (mode === 'add' ? defaultSkin : defaultInventoryItem);
-  
-  // Debug log to help identify issues
-  console.log("InventorySkinModal skinData:", skinData);
-  console.log("InventorySkinModal mode:", mode);
-  console.log("InventorySkinModal activeTab:", activeTab);
-  
-  // Safely check for isInUserInventory with better type handling
-  const isInUserInventory = 'isInUserInventory' in skinData ? 
-    Boolean(skinData.isInUserInventory) : false;
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (onOpenChange) {
-      onOpenChange(newOpen);
-    }
-  };
+  // Set dialog title based on mode
+  let title = t("inventory.addSkin");
+  if (mode === "edit") title = t("inventory.editSkin");
+  if (mode === "view") title = t("inventory.viewSkin");
+  if (mode === "sell") title = t("inventory.sellSkin");
 
-  // Add extra safety check - if there's no valid data, don't render tabs that need data
-  const canShowAdditionalInfo = mode !== 'add' && skinData && Object.keys(skinData).length > 0;
-  const canShowSellTab = mode !== 'add' && isInUserInventory;
-
-  // Handle sell action
-  const handleSellSkin = async (itemId: string, sellData: any) => {
-    if (onSellSkin) {
-      console.log("Handling skin sell in modal:", { itemId, sellData });
-      await onSellSkin(itemId, sellData);
-      // Don't close the modal here - let the parent component decide
-    }
-  };
+  // Set dialog description based on mode
+  let description = t("inventory.addSkinDesc");
+  if (mode === "edit") description = t("inventory.editSkinDesc");
+  if (mode === "view") description = t("inventory.viewSkinDesc");
+  if (mode === "sell") description = t("inventory.sellSkinDesc");
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {mode === 'add' ? t('skins.addToInventory') : 
-             mode === 'edit' ? t('skins.editSkin') :
-             mode === 'sell' ? t('skins.sellSkin') :
-             t('skins.skinDetails')}
-          </DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="details">{t('skins.details')}</TabsTrigger>
-            {canShowAdditionalInfo && (
-              <TabsTrigger value="additional">{t('skins.additionalInfo')}</TabsTrigger>
-            )}
-            {canShowSellTab && (
-              <TabsTrigger value="sell">{t('skins.sell')}</TabsTrigger>
-            )}
-          </TabsList>
-          
-          <TabsContent value="details">
-            <SkinDetailsCard 
-              item={skinData} 
-              mode={mode} 
-              onAddToInventory={onAddToInventory} 
+        <div className="py-4">
+          {mode === "sell" && (
+            <SkinSellingForm 
+              skin={skin as InventoryItem} 
+              onSellSkin={onSellSkin} 
+              onCancel={() => onOpenChange && onOpenChange(false)} 
             />
-          </TabsContent>
-          
-          {canShowAdditionalInfo && (
-            <TabsContent value="additional">
-              <SkinAdditionalInfo item={skinData} />
-            </TabsContent>
           )}
-          
-          {canShowSellTab && (
-            <TabsContent value="sell">
-              <SkinSellingForm 
-                item={skinData as InventoryItem} 
-                onSellSkin={handleSellSkin} 
-              />
-            </TabsContent>
+          {mode !== "sell" && (
+            <p>View/Edit/Add form would go here</p>
           )}
-        </Tabs>
+        </div>
+
+        {mode !== "sell" && (
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange && onOpenChange(false)}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button 
+              type="submit"
+              disabled={isLoading} 
+              onClick={() => onOpenChange && onOpenChange(false)}
+            >
+              {isLoading ? (
+                <>{t("common.saving")}</>
+              ) : (
+                <>{t("common.save")}</>
+              )}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
-};
+}

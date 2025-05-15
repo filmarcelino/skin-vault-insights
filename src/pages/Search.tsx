@@ -50,10 +50,17 @@ export default function Search() {
     const weapons = [...new Set(allSkins.map(skin => skin.weapon).filter(Boolean))];
     const rarities = [...new Set(allSkins.map(skin => skin.rarity).filter(Boolean))];
     const categories = [...new Set(allSkins.map(skin => skin.category).filter(Boolean))];
+    
+    // Handle collections safely - first check if the skin has collections property
     const collections = [...new Set(
       allSkins
-        .filter(skin => skin.collections && Array.isArray(skin.collections) && skin.collections.length > 0)
-        .map(skin => skin.collections?.[0]?.name)
+        .filter(skin => 'collections' in skin && skin.collections && Array.isArray(skin.collections) && skin.collections.length > 0)
+        .map(skin => {
+          if ('collections' in skin && skin.collections && Array.isArray(skin.collections)) {
+            return skin.collections[0]?.name;
+          }
+          return null;
+        })
         .filter(Boolean)
     )];
     
@@ -105,13 +112,14 @@ export default function Search() {
       activeFilterCount++;
     }
     
-    // Apply collection filter
+    // Apply collection filter - safely check if collections exists
     if (collectionFilter && collectionFilter !== "all") {
-      results = results.filter(skin => 
-        skin.collections && 
-        Array.isArray(skin.collections) && 
-        skin.collections.some(collection => collection.name === collectionFilter)
-      );
+      results = results.filter(skin => {
+        if ('collections' in skin && skin.collections && Array.isArray(skin.collections)) {
+          return skin.collections.some(collection => collection.name === collectionFilter);
+        }
+        return false;
+      });
       activeFilterCount++;
     }
     
