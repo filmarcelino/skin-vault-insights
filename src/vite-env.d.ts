@@ -9,3 +9,6 @@ interface Window {
     fixItem: (itemId: string) => void;
   };
 }
+
+// Add module declarations for any missing packages
+declare module 'uuid';

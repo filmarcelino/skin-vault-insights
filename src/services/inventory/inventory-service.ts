@@ -6,16 +6,18 @@ import { supabase } from '@/integrations/supabase/client'; // Direct import
 
 export const fetchSoldItems = async () => {
   try {
-    const { data: user } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
     
-    if (!user || !user.id) {
+    if (!userData?.user || !userData?.user.id) {
       throw new Error("User not authenticated");
     }
+    
+    const userId = userData.user.id;
     
     const { data, error } = await supabase
       .from('inventory')
       .select('*, transactions(*)')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_in_user_inventory', false)
       .order('date_sold', { ascending: false });
       
@@ -30,8 +32,8 @@ export const fetchSoldItems = async () => {
       inventoryId: item.id,
       skin_id: item.skin_id,
       name: item.name,
-      weapon: item.weapon_name,
-      image: item.image_url,
+      weapon: item.weapon || "", // Fallback for missing fields
+      image: item.image || "",
       rarity: item.rarity || "Unknown", // Make sure rarity is never undefined
       price: item.price || 0,
       purchasePrice: item.purchase_price || 0, // Required field
@@ -42,15 +44,15 @@ export const fetchSoldItems = async () => {
       is_in_user_inventory: false,
       date_sold: item.date_sold,
       sold_price: item.sold_price,
-      sold_marketplace: item.sold_marketplace,
-      sold_fee_percentage: item.sold_fee_percentage,
+      sold_marketplace: item.marketplace,
+      sold_fee_percentage: item.fee_percentage,
       tradeLockDays: item.trade_lock_days,
       tradeLockUntil: item.trade_lock_until,
       profit: item.profit || 0,
-      currency: item.currency || 'USD',
+      currency: item.currency_code || 'USD',
       floatValue: item.float_value,
       isStatTrak: item.is_stat_trak,
-      wear: item.condition
+      wear: item.wear || ""
     }));
     
     return mappedItems;
@@ -63,19 +65,20 @@ export const fetchSoldItems = async () => {
 // Updated user inventory function with proper type mappings
 export const fetchUserInventory = async () => {
   try {
-    const { data: user } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
     
-    if (!user || !user.id) {
+    if (!userData?.user || !userData?.user.id) {
       console.log("No authenticated user found");
       return [];
     }
     
-    console.log("Fetching inventory for user:", user.id);
+    const userId = userData.user.id;
+    console.log("Fetching inventory for user:", userId);
     
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_in_user_inventory', true)
       .order('acquired_date', { ascending: false });
       
@@ -92,8 +95,8 @@ export const fetchUserInventory = async () => {
       inventoryId: item.id,
       skin_id: item.skin_id,
       name: item.name,
-      weapon: item.weapon_name,
-      image: item.image_url,
+      weapon: item.weapon || "",
+      image: item.image || "",
       rarity: item.rarity || "Unknown", // Make sure rarity is never undefined
       price: item.price || 0,
       purchasePrice: item.purchase_price || 0, // Required field
@@ -109,12 +112,12 @@ export const fetchUserInventory = async () => {
       float_value: item.float_value,
       isStatTrak: item.is_stat_trak,
       is_stat_trak: item.is_stat_trak,
-      wear: item.condition,
-      condition: item.condition,
+      wear: item.wear || "",
+      condition: item.wear || "",
       marketplace: item.marketplace,
       fee_percentage: item.fee_percentage,
       feePercentage: item.fee_percentage,
-      currency: item.currency,
+      currency: item.currency_code,
       currentPrice: item.current_price || item.price
     }));
     
@@ -127,19 +130,20 @@ export const fetchUserInventory = async () => {
 
 export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<InventoryItem | null> => {
   try {
-    const { data: user } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
 
-    if (!user || !user.id) {
+    if (!userData?.user || !userData?.user.id) {
       throw new Error("User not authenticated");
     }
 
+    const userId = userData.user.id;
     const newItem = {
       id: uuidv4(),
       skin_id: skin.id,
-      user_id: user.id,
+      user_id: userId,
       name: skin.name,
-      weapon_name: skin.weapon,
-      image_url: skin.image,
+      weapon: skin.weapon,
+      image: skin.image,
       rarity: skin.rarity,
       price: skin.price,
       purchase_price: purchaseInfo.purchasePrice,
@@ -149,10 +153,10 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
       trade_lock_until: null,
       float_value: skin.floatValue || null,
       is_stat_trak: skin.isStatTrak || false,
-      condition: skin.wear || null,
+      wear: skin.wear || null,
       marketplace: purchaseInfo.marketplace,
       fee_percentage: purchaseInfo.feePercentage,
-      currency: purchaseInfo.currency,
+      currency_code: purchaseInfo.currency,
       current_price: skin.price
     };
 
@@ -171,8 +175,8 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
       id: newItem.id,
       skin_id: newItem.skin_id,
       name: newItem.name,
-      weapon: newItem.weapon_name,
-      image: newItem.image_url,
+      weapon: newItem.weapon,
+      image: newItem.image,
       rarity: newItem.rarity,
       price: newItem.price,
       purchasePrice: newItem.purchase_price,
@@ -183,10 +187,10 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
       tradeLockUntil: newItem.trade_lock_until,
       floatValue: newItem.float_value,
       isStatTrak: newItem.is_stat_trak,
-      wear: newItem.condition,
+      wear: newItem.wear,
       marketplace: newItem.marketplace,
       feePercentage: newItem.fee_percentage,
-      currency: newItem.currency,
+      currency: newItem.currency_code,
       currentPrice: newItem.current_price
     };
   } catch (error) {
@@ -216,7 +220,7 @@ export const removeInventoryItem = async (inventoryId: string): Promise<boolean>
 
 export const updateInventoryItem = async (itemId: string, updates: Partial<InventoryItem>): Promise<boolean> => {
   try {
-    // Mapear os nomes das propriedades do objeto de atualização para os nomes das colunas no Supabase
+    // Map the property names from the update object to column names in Supabase
     const supabaseUpdates: { [key: string]: any } = {};
     if (updates.purchasePrice !== undefined) supabaseUpdates.purchase_price = updates.purchasePrice;
     if (updates.currentPrice !== undefined) supabaseUpdates.current_price = updates.currentPrice;
@@ -224,11 +228,11 @@ export const updateInventoryItem = async (itemId: string, updates: Partial<Inven
     if (updates.tradeLockUntil !== undefined) supabaseUpdates.trade_lock_until = updates.tradeLockUntil;
     if (updates.floatValue !== undefined) supabaseUpdates.float_value = updates.floatValue;
     if (updates.notes !== undefined) supabaseUpdates.notes = updates.notes;
-    if (updates.wear !== undefined) supabaseUpdates.condition = updates.wear;
+    if (updates.wear !== undefined) supabaseUpdates.wear = updates.wear;
     if (updates.isStatTrak !== undefined) supabaseUpdates.is_stat_trak = updates.isStatTrak;
     if (updates.marketplace !== undefined) supabaseUpdates.marketplace = updates.marketplace;
     if (updates.feePercentage !== undefined) supabaseUpdates.fee_percentage = updates.feePercentage;
-    if (updates.currency !== undefined) supabaseUpdates.currency = updates.currency;
+    if (updates.currency !== undefined) supabaseUpdates.currency_code = updates.currency;
 
     const { error } = await supabase
       .from('inventory')
@@ -261,7 +265,7 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
         sold_marketplace: sellData.soldMarketplace,
         sold_fee_percentage: sellData.soldFeePercentage,
         profit: sellData.profit,
-        currency: sellData.soldCurrency
+        currency_code: sellData.soldCurrency
       })
       .eq('id', itemId);
 

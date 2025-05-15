@@ -77,13 +77,26 @@ export const useInventoryActions = () => {
     try {
       // Basic purchase info for duplication
       const purchaseInfo = {
-        purchasePrice: ('price' in item && typeof item.price === 'number') ? item.price : 0,
+        purchasePrice: ('purchasePrice' in item) ? item.purchasePrice : (item.price || 0),
         marketplace: "Duplicated",
         feePercentage: 0,
         currency: "USD"
       };
       
-      await addSkin.mutateAsync({ skin: item, purchaseInfo: purchaseInfo });
+      // Make sure the item has all required properties for a skin
+      const skinToAdd: Skin = {
+        id: item.id,
+        name: item.name,
+        image: item.image,
+        weapon: item.weapon || '',
+        rarity: item.rarity || '',
+        price: ('price' in item) ? item.price : (item.purchasePrice || 0),
+        floatValue: item.floatValue,
+        isStatTrak: item.isStatTrak || false,
+        wear: item.wear || ''
+      };
+      
+      await addSkin.mutateAsync({ skin: skinToAdd, purchaseInfo: purchaseInfo });
       toast({
         title: "Skin Duplicada",
         description: "Skin duplicada para o inventário com sucesso.",

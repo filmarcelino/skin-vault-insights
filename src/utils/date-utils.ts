@@ -1,39 +1,57 @@
 
-// Date utility functions
+/**
+ * Utility functions for date formatting and manipulation
+ */
 
-// Format a date to ISO string
-export const formatDateToISO = (date: Date): string => {
-  return date.toISOString();
-};
-
-// Get current date as ISO string
-export const getCurrentDateAsString = (): string => {
-  return new Date().toISOString();
-};
-
-// Format a date to local format
-export const formatDate = (dateString: string): string => {
-  if (!dateString) return '';
+/**
+ * Format a date string to a localized format
+ * @param dateStr ISO date string or Date object
+ * @param locale Locale for formatting (defaults to 'en-US')
+ * @returns Formatted date string
+ */
+export const formatDateString = (dateStr: string | Date | null | undefined, locale = 'en-US'): string => {
+  if (!dateStr) return 'N/A';
   
-  try {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('pt-BR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(date);
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return dateString;
-  }
+  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  
+  return date.toLocaleDateString(locale, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
 };
 
-// Calculate days between two dates
-export const daysBetween = (date1: string | Date, date2: string | Date): number => {
-  const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
-  const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
+/**
+ * Check if a date is in the past
+ * @param date Date to check
+ * @returns Boolean indicating if date is in the past
+ */
+export const isDateInPast = (date: string | Date | null | undefined): boolean => {
+  if (!date) return false;
   
-  const diffTime = Math.abs(d2.getTime() - d1.getTime());
+  const dateObject = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  
+  return dateObject < now;
+};
+
+/**
+ * Calculate days remaining until a future date
+ * @param futureDate Future date
+ * @returns Number of days remaining, or 0 if date is in the past
+ */
+export const daysRemaining = (futureDate: string | Date | null | undefined): number => {
+  if (!futureDate) return 0;
+  
+  const date = typeof futureDate === 'string' ? new Date(futureDate) : futureDate;
+  const now = new Date();
+  
+  if (date <= now) return 0;
+  
+  const diffTime = Math.abs(date.getTime() - now.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   return diffDays;

@@ -23,16 +23,18 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {items.map((item) => (
         <InventoryCard
-          key={item.inventoryId}
+          key={item.inventoryId || item.id}
           weaponName={item.weapon || ''}
-          skinName={item.name}
+          skinName={item.name || ''}
           wear={item.wear || ''}
-          price={item.currentPrice || item.price || 0}
-          image={item.image}
-          rarity={item.rarity}
-          isStatTrak={item.isStatTrak}
+          price={typeof item.currentPrice === 'number' ? item.currentPrice : 
+                (typeof item.price === 'number' ? item.price : 0)}
+          image={item.image || ''}
+          rarity={item.rarity || ''}
+          isStatTrak={!!item.isStatTrak}
           tradeLockDays={item.tradeLockDays}
           tradeLockUntil={item.tradeLockUntil}
+          className="animate-fade-in transition-transform duration-200"
           onClick={() => onViewDetails(item)}
           onDelete={() => onDelete(item.id)}
           showDeleteButton={true}
