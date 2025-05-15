@@ -2,7 +2,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-import { starterSkins, generateStarterItem } from "../../utils/starter-inventory.ts";
+import { starterSkins, generateStarterItem } from "../utils/starter-inventory.ts";
 
 // Set up CORS headers for browser support
 const corsHeaders = {
