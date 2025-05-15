@@ -32,7 +32,7 @@ export const fetchSoldItems = async () => {
     // Map transaction data to the expected format for the UI
     const mappedItems = transactionsData.map(transaction => {
       // Define a proper type for the inventory object instead of using {} type
-      const inventoryItem: Record<string, any> = transaction.inventory || {};
+      const inventoryItem = transaction.inventory || {} as Record<string, any>;
       
       return {
         id: transaction.id,
@@ -295,13 +295,21 @@ export const updateInventoryItem = async (itemId: string, updates: Partial<Inven
 
 export const markItemAsSold = async (itemId: string, sellData: SellData): Promise<boolean> => {
   try {
+    // Ensure sold item ID is valid
+    if (!itemId) {
+      console.error("Cannot mark as sold: Invalid item ID");
+      return false;
+    }
+
+    console.log("Marking item as sold with data:", { itemId, sellData });
+
     // Ensure soldDate is properly formatted
     const soldDate = sellData.soldDate ? new Date(sellData.soldDate).toISOString() : new Date().toISOString();
     
     // Get the purchase price to calculate profit
     const { data: item } = await supabase
       .from('inventory')
-      .select('purchase_price, name, weapon')
+      .select('purchase_price, name, weapon, id')
       .eq('id', itemId)
       .single();
     
@@ -309,6 +317,8 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
       console.error("Error marking item as sold: Item not found");
       return false;
     }
+
+    console.log("Found item to mark as sold:", item);
 
     const purchasePrice = item?.purchase_price || 0;
     const soldPrice = sellData.soldPrice || 0;
@@ -354,13 +364,16 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
       currency_code: sellData.soldCurrency || "USD"
     };
 
+    console.log("Creating sell transaction:", transaction);
+
     const { error: transactionError } = await supabase
       .from('transactions')
       .insert(transaction);
 
     if (transactionError) {
       console.error("Error creating sell transaction:", transactionError);
-      // Sale was marked in inventory, so return true
+      // Continue anyway as the item was marked as sold in inventory
+      return false;
     }
 
     // Log successful transaction

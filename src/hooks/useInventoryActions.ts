@@ -15,6 +15,7 @@ export const useInventoryActions = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'add' | 'sell'>('view');
   const { toast } = useToast();
   const addSkin = useAddSkin();
   const removeSkin = useRemoveSkin();
@@ -31,6 +32,7 @@ export const useInventoryActions = () => {
 
   const handleEditItem = (item: InventoryItem) => {
     setSelectedItem(item);
+    setModalMode('edit');
     setIsModalOpen(true);
   };
   
@@ -38,7 +40,9 @@ export const useInventoryActions = () => {
   const handleEdit = handleEditItem;
 
   const handleSellItem = (item: InventoryItem) => {
+    console.log("Opening sell modal for item:", item);
     setSelectedItem(item);
+    setModalMode('sell');
     setIsModalOpen(true);
   };
 
@@ -65,8 +69,16 @@ export const useInventoryActions = () => {
   const handleMarkAsSold = async (item: InventoryItem | string, sellData: SellData) => {
     try {
       // Handle both item object and direct itemId string
-      const itemId = typeof item === 'string' ? item : item.id;
-      await sellSkin.mutateAsync({ itemId: itemId, sellData: sellData });
+      const itemId = typeof item === 'string' ? item : item.id || item.inventoryId;
+      
+      if (!itemId) {
+        console.error("Cannot mark as sold - no item ID found");
+        return false;
+      }
+      
+      console.log("Marking item as sold:", { itemId, sellData });
+      
+      await sellSkin.mutateAsync({ itemId, sellData });
       
       toast({
         title: "Skin Sold",
@@ -80,6 +92,7 @@ export const useInventoryActions = () => {
       
       return true;
     } catch (error) {
+      console.error("Error marking item as sold:", error);
       toast({
         title: "Error Selling",
         description: "Failed to mark the skin as sold.",
@@ -165,6 +178,8 @@ export const useInventoryActions = () => {
   const handleClose = () => {
     setIsModalOpen(false);
     setSelectedItem(null);
+    // Reset mode to default
+    setModalMode('view');
   };
 
   const handleCloseDetail = () => {
@@ -177,6 +192,7 @@ export const useInventoryActions = () => {
     selectedItem,
     isModalOpen,
     isDetailModalOpen,
+    modalMode,
     setIsModalOpen,
     setIsDetailModalOpen,
     handleViewDetails,
@@ -184,6 +200,7 @@ export const useInventoryActions = () => {
     handleEdit, // Add the alias
     handleDeleteItem,
     handleMarkAsSold,
+    handleSellItem,
     handleDuplicate,
     handleAddToInventory, // Export the new function
     handleClose,

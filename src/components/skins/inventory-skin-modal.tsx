@@ -13,7 +13,7 @@ export interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   skin?: InventoryItem | Skin | null;
-  mode?: 'view' | 'edit' | 'add';
+  mode?: 'view' | 'edit' | 'add' | 'sell';
   onSellSkin?: (itemId: string, sellData: any) => Promise<void>;
   onAddToInventory?: (skin: Skin) => Promise<InventoryItem | null>;
   item?: InventoryItem | Skin | null;
@@ -28,7 +28,9 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   onAddToInventory,
   item = null,
 }) => {
-  const [activeTab, setActiveTab] = useState("details");
+  // Use the mode to determine initial tab
+  const initialTab = mode === 'sell' ? "sell" : "details";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { t } = useLanguage();
   
   // Use item if provided, otherwise use skin, and ensure we always have a valid default
@@ -36,6 +38,8 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   
   // Debug log to help identify issues
   console.log("InventorySkinModal skinData:", skinData);
+  console.log("InventorySkinModal mode:", mode);
+  console.log("InventorySkinModal activeTab:", activeTab);
   
   // Safely check for isInUserInventory with better type handling
   const isInUserInventory = 'isInUserInventory' in skinData ? 
@@ -51,13 +55,23 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   const canShowAdditionalInfo = mode !== 'add' && skinData && Object.keys(skinData).length > 0;
   const canShowSellTab = mode !== 'add' && isInUserInventory;
 
+  // Handle sell action
+  const handleSellSkin = async (itemId: string, sellData: any) => {
+    if (onSellSkin) {
+      console.log("Handling skin sell in modal:", { itemId, sellData });
+      await onSellSkin(itemId, sellData);
+      // Don't close the modal here - let the parent component decide
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {mode === 'add' ? t('skins.addToInventory') : 
-             mode === 'edit' ? t('skins.editSkin') : 
+             mode === 'edit' ? t('skins.editSkin') :
+             mode === 'sell' ? t('skins.sellSkin') :
              t('skins.skinDetails')}
           </DialogTitle>
         </DialogHeader>
@@ -91,7 +105,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
             <TabsContent value="sell">
               <SkinSellingForm 
                 item={skinData as InventoryItem} 
-                onSellSkin={onSellSkin} 
+                onSellSkin={handleSellSkin} 
                 onCancel={() => setActiveTab("details")}
               />
             </TabsContent>

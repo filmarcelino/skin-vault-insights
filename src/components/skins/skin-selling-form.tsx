@@ -10,6 +10,7 @@ import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { format } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SkinSellingFormProps {
   item?: InventoryItem | null;
@@ -28,6 +29,7 @@ const MARKETPLACE_OPTIONS = [
 ];
 
 export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = () => {} }: SkinSellingFormProps) {
+  const { t } = useLanguage();
   // Use item if it exists, otherwise use skin, ensure it's never null
   const skinData = item || skin || {} as InventoryItem;
   const { currency, formatPrice, convertPrice } = useCurrency();
@@ -76,7 +78,8 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
     
     // Safely check if inventoryId exists with type guard
     const inventoryId = 'inventoryId' in skinData ? 
-      typeof skinData.inventoryId === 'string' ? skinData.inventoryId : '' : '';
+      typeof skinData.inventoryId === 'string' ? skinData.inventoryId : 
+      (skinData.id || '') : (skinData.id || '');
     
     if (!soldPrice || !inventoryId) return;
     
@@ -90,6 +93,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
       soldCurrency
     };
     
+    console.log("Selling skin with data:", { inventoryId, sellData });
     onSellSkin(inventoryId, sellData);
   };
 
@@ -97,7 +101,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="sold-date">Data da venda</Label>
+          <Label htmlFor="sold-date">{t('inventory.dateOfSale', 'Data da venda')}</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -106,7 +110,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
                 id="sold-date"
                 type="button"
               >
-                {soldDate ? format(soldDate, "dd/MM/yyyy") : <span>Selecionar data</span>}
+                {soldDate ? format(soldDate, "dd/MM/yyyy") : <span>{t('common.selectDate', 'Selecionar data')}</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -127,7 +131,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
             onValueChange={setSoldMarketplace}
           >
             <SelectTrigger id="marketplace">
-              <SelectValue placeholder="Selecione onde vendeu" />
+              <SelectValue placeholder={t('inventory.selectMarketplace', 'Selecione onde vendeu')} />
             </SelectTrigger>
             <SelectContent>
               {MARKETPLACE_OPTIONS.map(option => (
@@ -138,7 +142,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="sold-price">Preço de venda</Label>
+          <Label htmlFor="sold-price">{t('inventory.salePrice', 'Preço de venda')}</Label>
           <Input
             id="sold-price"
             type="number"
@@ -152,13 +156,13 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="sold-currency">Moeda</Label>
+          <Label htmlFor="sold-currency">{t('common.currency', 'Moeda')}</Label>
           <Select
             value={soldCurrency}
             onValueChange={setSoldCurrency}
           >
             <SelectTrigger id="sold-currency">
-              <SelectValue placeholder="Selecionar moeda" />
+              <SelectValue placeholder={t('common.selectCurrency', 'Selecionar moeda')} />
             </SelectTrigger>
             <SelectContent>
               {CURRENCIES.map(curr => (
@@ -171,7 +175,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fee-percentage">Taxa do marketplace (%)</Label>
+          <Label htmlFor="fee-percentage">{t('inventory.marketplaceFee', 'Taxa do marketplace (%)')}</Label>
           <Input
             id="fee-percentage"
             type="number"
@@ -189,7 +193,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         
         {profit !== 0 && (
           <div className="space-y-2">
-            <Label>Lucro/Perda estimado</Label>
+            <Label>{t('inventory.estimatedProfitLoss', 'Lucro/Perda estimado')}</Label>
             <div className={`p-2 border rounded ${profit > 0 ? 'bg-green-500/10 border-green-500/30' : profit < 0 ? 'bg-red-500/10 border-red-500/30' : 'bg-muted/20'}`}>
               <p className={`font-medium ${profit > 0 ? 'text-green-500' : profit < 0 ? 'text-red-500' : ''}`}>
                 {formatPrice(profit)}
@@ -203,10 +207,10 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Observações sobre a venda</Label>
+        <Label htmlFor="notes">{t('inventory.saleNotes', 'Observações sobre a venda')}</Label>
         <Textarea
           id="notes"
-          placeholder="Adicione observações sobre esta venda..."
+          placeholder={t('inventory.addSaleNotes', 'Adicione observações sobre esta venda...')}
           value={soldNotes}
           onChange={(e) => setSoldNotes(e.target.value)}
         />
@@ -214,10 +218,10 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
-          Cancelar
+          {t('common.cancel', 'Cancelar')}
         </Button>
         <Button type="submit" variant="default">
-          Confirmar Venda
+          {t('inventory.confirmSale', 'Confirmar Venda')}
         </Button>
       </div>
     </form>

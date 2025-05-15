@@ -53,15 +53,8 @@ export const InventoryTableActions = ({
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();
-            onSell(item.inventoryId, {
-              soldPrice: item.currentPrice || item.price || 0,
-              soldDate: new Date().toISOString(),
-              soldMarketplace: "steam",
-              soldFeePercentage: 13,
-              soldNotes: "",
-              profit: 0,
-              soldCurrency: "USD"
-            });
+            // Just open the sell modal, don't directly trigger selling
+            onEdit(item);
           }}
         >
           <DollarSign className="mr-2 h-4 w-4" />
@@ -70,7 +63,7 @@ export const InventoryTableActions = ({
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();
-            onRemove(item.inventoryId);
+            onRemove(item.inventoryId || item.id);
           }}
           className="text-destructive"
         >

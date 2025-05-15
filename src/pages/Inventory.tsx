@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useInventory } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -88,12 +87,14 @@ export default function Inventory() {
     selectedItem, 
     isModalOpen,
     isDetailModalOpen,
+    modalMode,
     setIsModalOpen,
     setIsDetailModalOpen,
     handleViewDetails,
     handleEditItem,
     handleDeleteItem,
     handleMarkAsSold,
+    handleSellItem,
     handleDuplicate,
     handleClose,
     handleCloseDetail
@@ -103,11 +104,14 @@ export default function Inventory() {
   const soldCount = soldItems?.length || 0;
 
   // Enhanced handler to refetch sold items after marking item as sold
-  const handleSellItem = async (itemId: string, sellData: any) => {
+  const handleItemSell = async (itemId: string, sellData: any) => {
+    console.log("Inventory page: handling sell item request", { itemId, sellData });
     const success = await handleMarkAsSold(itemId, sellData);
+    
     // Force refetch sold items to update the list
     if (success) {
-      refetchSoldItems();
+      console.log("Sale successful, refetching sold items");
+      await refetchSoldItems();
     }
     return success;
   };
@@ -146,13 +150,9 @@ export default function Inventory() {
   ];
   
   // Helper function to bridge the interface gap
-  const handleItemSell = (itemId: string, sellData: any) => {
-    handleSellItem(itemId, sellData);
-  };
-  
-  // Helper function to bridge the interface gap
-  const handleItemDuplicate = (item: InventoryItem) => {
-    handleDuplicate(item);
+  const openSellModal = (item: InventoryItem) => {
+    console.log("Opening sell modal for:", item);
+    handleSellItem(item);
   };
   
   return (
@@ -258,13 +258,16 @@ export default function Inventory() {
         </TabsContent>
       </Tabs>
       
+      {/* Inventory Item Edit/Sell Modal */}
       <InventorySkinModal 
         open={isModalOpen}
         onOpenChange={handleClose}
         skin={selectedItem || defaultSkin as Skin}
-        mode="edit"
+        mode={modalMode}
+        onSellSkin={handleItemSell}
       />
       
+      {/* Skin Detail View Modal */}
       <SkinDetailModal 
         open={isDetailModalOpen}
         onOpenChange={handleCloseDetail}
