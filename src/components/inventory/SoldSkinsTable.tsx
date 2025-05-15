@@ -4,15 +4,18 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { InventoryItem } from "@/types/skin";
 import { formatDateString } from "@/utils/date-utils";
 import { formatPrice } from "@/utils/format-utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SoldSkinsTableProps {
   items: InventoryItem[];
 }
 
 export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
+  const { t } = useLanguage();
+  
   // Format date function
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "Unknown";
+    if (!dateStr) return t("common.unknown");
     return formatDateString(dateStr);
   };
 
@@ -27,19 +30,19 @@ export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Item</TableHead>
-            <TableHead>Date Sold</TableHead>
-            <TableHead>Purchase Price</TableHead>
-            <TableHead>Sold Price</TableHead>
-            <TableHead>Profit</TableHead>
-            <TableHead>Marketplace</TableHead>
+            <TableHead>{t("inventory.item")}</TableHead>
+            <TableHead>{t("inventory.dateSold")}</TableHead>
+            <TableHead>{t("inventory.purchasePrice")}</TableHead>
+            <TableHead>{t("inventory.soldPrice")}</TableHead>
+            <TableHead>{t("inventory.profit")}</TableHead>
+            <TableHead>{t("inventory.marketplace")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center py-4">
-                No sold items found
+                {t("inventory.noSoldItems")}
               </TableCell>
             </TableRow>
           ) : (
@@ -78,7 +81,7 @@ export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
                       </span>
                     </span>
                   </TableCell>
-                  <TableCell>{item.sold_marketplace || "Unknown"}</TableCell>
+                  <TableCell>{item.sold_marketplace || t("common.unknown")}</TableCell>
                 </TableRow>
               );
             })

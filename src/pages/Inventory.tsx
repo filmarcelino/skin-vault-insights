@@ -38,13 +38,15 @@ export default function Inventory() {
   // Fetch sold items separately
   const { 
     data: soldItems = [], 
-    isLoading: isSoldItemsLoading 
+    isLoading: isSoldItemsLoading,
+    refetch: refetchSoldItems
   } = useQuery({
     queryKey: ["sold-items"],
     queryFn: fetchSoldItems
   });
   
-  console.log("Sold items:", soldItems); // Debug log to check sold items
+  console.log("Current inventory items:", inventory?.length || 0);
+  console.log("Sold items:", soldItems?.length || 0); // Debug log to check sold items
   
   const { 
     searchQuery, 
@@ -96,6 +98,13 @@ export default function Inventory() {
   
   const currentCount = inventory?.length || 0;
   const soldCount = soldItems?.length || 0;
+
+  // Custom handler to refetch sold items after marking item as sold
+  const handleSellItem = async (itemId: string, sellData: any) => {
+    await handleMarkAsSold(itemId, sellData);
+    // Refetch sold items to update the list
+    refetchSoldItems();
+  };
   
   if (isLoading) {
     return (
@@ -132,7 +141,7 @@ export default function Inventory() {
   
   // Helper function to bridge the interface gap
   const handleItemSell = (itemId: string, sellData: any) => {
-    handleMarkAsSold(itemId, sellData);
+    handleSellItem(itemId, sellData);
   };
   
   // Helper function to bridge the interface gap

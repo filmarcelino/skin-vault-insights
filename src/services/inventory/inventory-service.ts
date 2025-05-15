@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryItem, SellData } from "@/types/skin";
 import { supabase } from '@/integrations/supabase/client'; // Direct import
@@ -12,17 +13,20 @@ export const fetchSoldItems = async () => {
     
     const userId = userData.user.id;
     
+    // Fetch all sold items without pagination to ensure we get everything
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
       .eq('user_id', userId)
       .eq('is_in_user_inventory', false)
-      .order('created_at', { ascending: false });
+      .order('date_sold', { ascending: false });
       
     if (error) {
       console.error("Error fetching sold items:", error);
       return [];
     }
+    
+    console.log("Raw sold items:", data);
     
     // Ensure all required properties are present and properly formatted
     const mappedItems = data.map(item => ({
@@ -42,13 +46,17 @@ export const fetchSoldItems = async () => {
       is_in_user_inventory: false,
       tradeLockDays: item.trade_lock_days,
       tradeLockUntil: item.trade_lock_until,
-      profit: item.purchase_price ? (item.current_price || 0) - item.purchase_price : 0,
+      profit: item.sold_price ? (item.sold_price - (item.purchase_price || 0)) : 0,
       currency: item.currency_code || 'USD',
       floatValue: item.float_value,
       isStatTrak: item.is_stat_trak,
-      wear: item.wear || ""
+      wear: item.wear || "",
+      date_sold: item.date_sold,
+      sold_price: item.sold_price,
+      sold_marketplace: item.sold_marketplace
     }));
     
+    console.log("Mapped sold items:", mappedItems);
     return mappedItems;
   } catch (error) {
     console.error("Error fetching sold items:", error);
@@ -252,7 +260,18 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
   try {
     // Ensure soldDate is properly formatted
     const soldDate = sellData.soldDate ? new Date(sellData.soldDate).toISOString() : new Date().toISOString();
-
+    
+    // Get the purchase price to calculate profit
+    const { data: item } = await supabase
+      .from('inventory')
+      .select('purchase_price')
+      .eq('id', itemId)
+      .single();
+    
+    const purchasePrice = item?.purchase_price || 0;
+    const soldPrice = sellData.soldPrice || 0;
+    const calculatedProfit = soldPrice - purchasePrice;
+    
     const { error } = await supabase
       .from('inventory')
       .update({
@@ -261,7 +280,7 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
         sold_price: sellData.soldPrice,
         sold_marketplace: sellData.soldMarketplace,
         sold_fee_percentage: sellData.soldFeePercentage,
-        profit: sellData.profit,
+        profit: calculatedProfit,
         currency_code: sellData.soldCurrency
       })
       .eq('id', itemId);
@@ -271,6 +290,8 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
       return false;
     }
 
+    // Log successful transaction
+    console.log(`Item ${itemId} marked as sold for ${sellData.soldPrice} with profit ${calculatedProfit}`);
     return true;
   } catch (error) {
     console.error("Error marking item as sold:", error);

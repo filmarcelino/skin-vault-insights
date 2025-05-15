@@ -1,3 +1,4 @@
+
 import { MoreVertical, Edit, Copy, Trash2, DollarSign } from "lucide-react";
 import {
   DropdownMenu,
@@ -7,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { InventoryItem, SellData } from "@/types/skin";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface InventoryTableActionsProps {
   item: InventoryItem;
@@ -23,11 +25,13 @@ export const InventoryTableActions = ({
   onRemove,
   onSell,
 }: InventoryTableActionsProps) => {
+  const { t } = useLanguage();
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Abrir menu</span>
+          <span className="sr-only">{t("common.openMenu")}</span>
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -37,14 +41,14 @@ export const InventoryTableActions = ({
           onEdit(item);
         }}>
           <Edit className="mr-2 h-4 w-4" />
-          <span>Editar</span>
+          <span>{t("common.edit")}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={(e) => {
           e.stopPropagation();
           onDuplicate(item);
         }}>
           <Copy className="mr-2 h-4 w-4" />
-          <span>Duplicar</span>
+          <span>{t("common.duplicate")}</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={(e) => {
@@ -61,7 +65,7 @@ export const InventoryTableActions = ({
           }}
         >
           <DollarSign className="mr-2 h-4 w-4" />
-          <span>Vender</span>
+          <span>{t("inventory.sell")}</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={(e) => {
@@ -71,7 +75,7 @@ export const InventoryTableActions = ({
           className="text-destructive"
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          <span>Remover</span>
+          <span>{t("common.remove")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
