@@ -101,7 +101,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="sold-date">{t('inventory.dateOfSale', 'Data da venda')}</Label>
+          <Label htmlFor="sold-date">{t('inventory.dateOfSale')}</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -110,7 +110,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
                 id="sold-date"
                 type="button"
               >
-                {soldDate ? format(soldDate, "dd/MM/yyyy") : <span>{t('common.selectDate', 'Selecionar data')}</span>}
+                {soldDate ? format(soldDate, "dd/MM/yyyy") : <span>{t('common.selectDate')}</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -131,7 +131,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
             onValueChange={setSoldMarketplace}
           >
             <SelectTrigger id="marketplace">
-              <SelectValue placeholder={t('inventory.selectMarketplace', 'Selecione onde vendeu')} />
+              <SelectValue placeholder={t('inventory.selectMarketplace')} />
             </SelectTrigger>
             <SelectContent>
               {MARKETPLACE_OPTIONS.map(option => (
@@ -142,7 +142,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="sold-price">{t('inventory.salePrice', 'Preço de venda')}</Label>
+          <Label htmlFor="sold-price">{t('inventory.salePrice')}</Label>
           <Input
             id="sold-price"
             type="number"
@@ -156,13 +156,13 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="sold-currency">{t('common.currency', 'Moeda')}</Label>
+          <Label htmlFor="sold-currency">{t('common.currency')}</Label>
           <Select
             value={soldCurrency}
             onValueChange={setSoldCurrency}
           >
             <SelectTrigger id="sold-currency">
-              <SelectValue placeholder={t('common.selectCurrency', 'Selecionar moeda')} />
+              <SelectValue placeholder={t('common.selectCurrency')} />
             </SelectTrigger>
             <SelectContent>
               {CURRENCIES.map(curr => (
@@ -175,7 +175,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fee-percentage">{t('inventory.marketplaceFee', 'Taxa do marketplace (%)')}</Label>
+          <Label htmlFor="fee-percentage">{t('inventory.marketplaceFee')}</Label>
           <Input
             id="fee-percentage"
             type="number"
@@ -193,7 +193,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         
         {profit !== 0 && (
           <div className="space-y-2">
-            <Label>{t('inventory.estimatedProfitLoss', 'Lucro/Perda estimado')}</Label>
+            <Label>{t('inventory.estimatedProfitLoss')}</Label>
             <div className={`p-2 border rounded ${profit > 0 ? 'bg-green-500/10 border-green-500/30' : profit < 0 ? 'bg-red-500/10 border-red-500/30' : 'bg-muted/20'}`}>
               <p className={`font-medium ${profit > 0 ? 'text-green-500' : profit < 0 ? 'text-red-500' : ''}`}>
                 {formatPrice(profit)}
@@ -207,10 +207,10 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">{t('inventory.saleNotes', 'Observações sobre a venda')}</Label>
+        <Label htmlFor="notes">{t('inventory.saleNotes')}</Label>
         <Textarea
           id="notes"
-          placeholder={t('inventory.addSaleNotes', 'Adicione observações sobre esta venda...')}
+          placeholder={t('inventory.addSaleNotes')}
           value={soldNotes}
           onChange={(e) => setSoldNotes(e.target.value)}
         />
@@ -218,10 +218,10 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
-          {t('common.cancel', 'Cancelar')}
+          {t('common.cancel')}
         </Button>
         <Button type="submit" variant="default">
-          {t('inventory.confirmSale', 'Confirmar Venda')}
+          {t('inventory.confirmSale')}
         </Button>
       </div>
     </form>

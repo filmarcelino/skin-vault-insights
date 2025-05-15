@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryItem, SellData, Transaction } from "@/types/skin";
 import { supabase } from '@/integrations/supabase/client';
@@ -31,13 +30,13 @@ export const fetchSoldItems = async () => {
     
     // Map transaction data to the expected format for the UI
     const mappedItems = transactionsData.map(transaction => {
-      // Define a proper type for the inventory object instead of using {} type
+      // The inventory object could be null or empty, let's handle it safely
       const inventoryItem = transaction.inventory || {} as Record<string, any>;
       
       return {
         id: transaction.id,
         inventoryId: transaction.item_id,
-        skin_id: inventoryItem.skin_id || transaction.item_id,
+        skin_id: inventoryItem.skin_id || transaction.item_id || "",
         name: transaction.skin_name || inventoryItem.name || "Unknown Skin",
         weapon: transaction.weapon_name || inventoryItem.weapon || "Unknown Weapon",
         image: inventoryItem.image || "",
@@ -49,19 +48,19 @@ export const fetchSoldItems = async () => {
         user_id: transaction.user_id,
         isInUserInventory: false,
         is_in_user_inventory: false,
-        tradeLockDays: inventoryItem.trade_lock_days,
-        tradeLockUntil: inventoryItem.trade_lock_until,
+        tradeLockDays: inventoryItem.trade_lock_days || 0,
+        tradeLockUntil: inventoryItem.trade_lock_until || null,
         // Calculate profit
         profit: (transaction.price || 0) - (inventoryItem.purchase_price || 0),
         currency: transaction.currency_code || 'USD',
-        floatValue: inventoryItem.float_value,
-        isStatTrak: inventoryItem.is_stat_trak,
+        floatValue: inventoryItem.float_value || null,
+        isStatTrak: inventoryItem.is_stat_trak || false,
         wear: inventoryItem.wear || "",
         // For sold items, we use these fields
         date_sold: transaction.date,
         sold_price: transaction.price,
         sold_marketplace: inventoryItem.marketplace || transaction.notes || "Unknown",
-        sold_fee_percentage: inventoryItem.fee_percentage
+        sold_fee_percentage: inventoryItem.fee_percentage || 0
       };
     });
     

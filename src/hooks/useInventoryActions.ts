@@ -66,14 +66,14 @@ export const useInventoryActions = () => {
     }
   };
 
-  const handleMarkAsSold = async (item: InventoryItem | string, sellData: SellData) => {
+  const handleMarkAsSold = async (item: InventoryItem | string, sellData: SellData): Promise<void> => {
     try {
       // Handle both item object and direct itemId string
       const itemId = typeof item === 'string' ? item : item.id || item.inventoryId;
       
       if (!itemId) {
         console.error("Cannot mark as sold - no item ID found");
-        return false;
+        return;
       }
       
       console.log("Marking item as sold:", { itemId, sellData });
@@ -89,8 +89,6 @@ export const useInventoryActions = () => {
       invalidateInventory();
       invalidateTransactions();
       handleClose();
-      
-      return true;
     } catch (error) {
       console.error("Error marking item as sold:", error);
       toast({
@@ -98,7 +96,6 @@ export const useInventoryActions = () => {
         description: "Failed to mark the skin as sold.",
         variant: "destructive"
       });
-      return false;
     }
   };
   

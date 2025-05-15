@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useInventory } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
@@ -104,16 +105,13 @@ export default function Inventory() {
   const soldCount = soldItems?.length || 0;
 
   // Enhanced handler to refetch sold items after marking item as sold
-  const handleItemSell = async (itemId: string, sellData: any) => {
+  const handleItemSell = async (itemId: string, sellData: any): Promise<void> => {
     console.log("Inventory page: handling sell item request", { itemId, sellData });
-    const success = await handleMarkAsSold(itemId, sellData);
+    await handleMarkAsSold(itemId, sellData);
     
     // Force refetch sold items to update the list
-    if (success) {
-      console.log("Sale successful, refetching sold items");
-      await refetchSoldItems();
-    }
-    return success;
+    console.log("Sale processed, refetching sold items");
+    await refetchSoldItems();
   };
   
   if (isLoading) {
@@ -226,7 +224,7 @@ export default function Inventory() {
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
               onSell={handleItemSell}
-              onDuplicate={handleItemDuplicate}
+              onDuplicate={handleDuplicate}
             />
           ) : (
             <InventoryTable 
@@ -235,7 +233,7 @@ export default function Inventory() {
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
               onSell={handleItemSell}
-              onDuplicate={handleItemDuplicate}
+              onDuplicate={handleDuplicate}
             />
           )}
         </TabsContent>

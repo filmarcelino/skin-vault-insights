@@ -53,8 +53,9 @@ export const InventoryTableActions = ({
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();
-            // Just open the sell modal, don't directly trigger selling
-            onEdit(item);
+            // Open the sell modal but with sell mode
+            const itemToSell = { ...item, isInUserInventory: true };
+            onEdit({ ...itemToSell, __sellMode: true });
           }}
         >
           <DollarSign className="mr-2 h-4 w-4" />
