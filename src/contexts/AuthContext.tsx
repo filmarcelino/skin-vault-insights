@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         console.log("Auth state changed:", event, "user:", newSession?.user?.email);
         
         // Update session and user state
@@ -275,7 +275,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfileError(false);
     
     try {
-      // Using the correct authentication method without the persistSession option
+      // Using the correct authentication method
       const response = await supabase.auth.signInWithPassword({ 
         email, 
         password
