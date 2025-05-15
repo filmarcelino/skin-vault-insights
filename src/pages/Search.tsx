@@ -18,7 +18,7 @@ import { defaultSkin } from '@/utils/default-objects';
 
 export default function Search() {
   // Use the useSkins hook but destructure properly
-  const { data: skins, isLoading: loading, error } = useSkins();
+  const { data: allSkins, isLoading: loading, error } = useSkins();
   const { isSubscribed, isTrial } = useSubscription();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -31,7 +31,7 @@ export default function Search() {
   // Filters
   const [weaponFilter, setWeaponFilter] = useState<string>('');
   const [rarityFilter, setRarityFilter] = useState<string>('');
-  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [minPriceFilter, setMinPriceFilter] = useState<number | null>(null);
   const [maxPriceFilter, setMaxPriceFilter] = useState<number | null>(null);
 
@@ -43,16 +43,16 @@ export default function Search() {
   
   // Apply filters
   useEffect(() => {
-    if (loading || !skins) return;
+    if (loading || !allSkins) return;
     
-    let results = [...skins];
+    let results = [...(allSkins as Skin[])];
     
     // Apply search query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       results = results.filter(skin => 
-        skin.name.toLowerCase().includes(query) || 
-        skin.weapon?.toLowerCase().includes(query)
+        (skin.name?.toLowerCase().includes(query) || 
+        skin.weapon?.toLowerCase().includes(query))
       );
     }
     
@@ -66,9 +66,9 @@ export default function Search() {
       results = results.filter(skin => skin.rarity === rarityFilter);
     }
     
-    // Apply type filter
-    if (typeFilter) {
-      results = results.filter(skin => skin.type === typeFilter);
+    // Apply category filter
+    if (categoryFilter) {
+      results = results.filter(skin => skin.category === categoryFilter);
     }
     
     // Apply price filters
@@ -80,9 +80,9 @@ export default function Search() {
       results = results.filter(skin => (skin.price || 0) <= (maxPriceFilter || 0));
     }
     
-    setFilteredSkins(results);
+    setFilteredSkins(results as Skin[]);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [skins, searchQuery, weaponFilter, rarityFilter, typeFilter, minPriceFilter, maxPriceFilter, loading]);
+  }, [allSkins, searchQuery, weaponFilter, rarityFilter, categoryFilter, minPriceFilter, maxPriceFilter, loading]);
   
   // Calculate pagination
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -101,7 +101,7 @@ export default function Search() {
   const handleResetFilters = () => {
     setWeaponFilter('');
     setRarityFilter('');
-    setTypeFilter('');
+    setCategoryFilter('');
     setMinPriceFilter(null);
     setMaxPriceFilter(null);
     setSearchQuery('');

@@ -78,6 +78,14 @@ export const useInventoryActions = () => {
         return null;
       }
 
+      // Make sure we have all required properties for a Skin
+      const validSkin: Skin = {
+        ...skin,
+        rarity: skin.rarity || "Common",
+        price: skin.price || 0,
+        category: skin.category || "Normal"
+      };
+      
       const purchaseInfo = {
         purchasePrice: skin.price || 0,
         marketplace: "Steam Market",
@@ -86,7 +94,7 @@ export const useInventoryActions = () => {
         currency: "USD"
       };
       
-      const newItem = await addSkin.mutateAsync({ skin, purchaseInfo });
+      const newItem = await addSkin.mutateAsync({ skin: validSkin, purchaseInfo });
       
       if (newItem) {
         toast({

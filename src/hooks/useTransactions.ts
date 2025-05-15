@@ -1,23 +1,11 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { getUserTransactions } from "@/services/inventory/transactions-service";
-import { TRANSACTIONS_QUERY_KEY } from "@/hooks/use-skins";
+import { fetchTransactions } from "@/services/inventory/transactions-service";
+import { Transaction } from "@/types/skin";
 
-/**
- * Hook to fetch and manage user transaction data
- */
 export const useTransactions = () => {
   return useQuery({
-    queryKey: [TRANSACTIONS_QUERY_KEY],
-    queryFn: async () => {
-      try {
-        const transactions = await getUserTransactions();
-        return transactions;
-      } catch (error) {
-        console.error("Error fetching transactions:", error);
-        return [];
-      }
-    },
-    retry: 1,
+    queryKey: ["transactions"],
+    queryFn: fetchTransactions,
   });
 };

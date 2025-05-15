@@ -2,6 +2,7 @@
 import { FC, ReactNode } from "react";
 import { Header } from "./header";
 import { TopNav } from "./top-nav";
+import { MobileNav } from "@/components/ui/mobile-nav";
 
 interface LayoutProps {
   children: ReactNode;
