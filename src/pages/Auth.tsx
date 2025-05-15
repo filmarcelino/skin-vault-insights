@@ -364,7 +364,7 @@ const Auth = () => {
                         onClick={() => setShowResetPassword(true)}
                         disabled={isSubmitting}
                       >
-                        {t("auth.forgot_password")}
+                        {t("auth.forgotPassword")}
                       </Button>
                     </div>
                     
@@ -470,12 +470,11 @@ const Auth = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="USD">USD ({t("currencies.usd")})</SelectItem>
-                              <SelectItem value="BRL">BRL ({t("currencies.brl")})</SelectItem>
-                              <SelectItem value="RUB">RUB ({t("currencies.rub")})</SelectItem>
-                              <SelectItem value="CNY">CNY ({t("currencies.cny")})</SelectItem>
-                              <SelectItem value="EUR">EUR ({t("currencies.eur")})</SelectItem>
-                              <SelectItem value="GBP">GBP ({t("currencies.gbp")})</SelectItem>
+                              {Object.entries(CURRENCIES).map(([code, name]) => (
+                                <SelectItem key={code} value={code}>
+                                  {code} ({t(`currencies.${code.toLowerCase()}`)})
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />

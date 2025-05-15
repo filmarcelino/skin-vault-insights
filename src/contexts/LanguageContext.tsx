@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 // Define supported languages
@@ -72,6 +73,22 @@ const translations: Translations = {
     "auth.logout_success_description": "You have been logged out from your account",
     "auth.logout_error": "Logout error",
     "auth.logout_error_description": "There was a problem logging you out",
+    
+    // Validation
+    "validation.required": "This field is required",
+    "validation.invalid_email": "Please enter a valid email address",
+    "validation.password_min_length": "Password must be at least 6 characters",
+    "validation.username_min_length": "Username must be at least 3 characters",
+    "validation.full_name_required": "Full name is required",
+    "validation.passwords_dont_match": "Passwords don't match",
+    
+    // Currencies
+    "currencies.usd": "US Dollar",
+    "currencies.brl": "Brazilian Real",
+    "currencies.rub": "Russian Ruble",
+    "currencies.cny": "Chinese Yuan",
+    "currencies.eur": "Euro",
+    "currencies.gbp": "British Pound",
     
     // Dashboard
     "dashboard.title": "Dashboard",
@@ -227,6 +244,22 @@ const translations: Translations = {
     "auth.logout_error": "Erro ao sair",
     "auth.logout_error_description": "Houve um problema ao desconectar você",
     
+    // Validation
+    "validation.required": "Este campo é obrigatório",
+    "validation.invalid_email": "Por favor, insira um endereço de email válido",
+    "validation.password_min_length": "A senha deve ter pelo menos 6 caracteres",
+    "validation.username_min_length": "O nome de usuário deve ter pelo menos 3 caracteres",
+    "validation.full_name_required": "O nome completo é obrigatório",
+    "validation.passwords_dont_match": "As senhas não coincidem",
+    
+    // Currencies
+    "currencies.usd": "Dólar Americano",
+    "currencies.brl": "Real Brasileiro",
+    "currencies.rub": "Rublo Russo",
+    "currencies.cny": "Yuan Chinês",
+    "currencies.eur": "Euro",
+    "currencies.gbp": "Libra Esterlina",
+    
     // Dashboard
     "dashboard.title": "Painel",
     "dashboard.welcome": "Bem-vindo ao CS Skin Vault",
@@ -380,6 +413,22 @@ const translations: Translations = {
     "auth.logout_success_description": "Has cerrado sesión en tu cuenta",
     "auth.logout_error": "Error al cerrar sesión",
     "auth.logout_error_description": "Hubo un problema al cerrar sesión",
+    
+    // Validation
+    "validation.required": "Este campo es obligatorio",
+    "validation.invalid_email": "Por favor, introduce una dirección de email válida",
+    "validation.password_min_length": "La contraseña debe tener al menos 6 caracteres",
+    "validation.username_min_length": "El nombre de usuario debe tener al menos 3 caracteres",
+    "validation.full_name_required": "El nombre completo es obligatorio",
+    "validation.passwords_dont_match": "Las contraseñas no coinciden",
+    
+    // Currencies
+    "currencies.usd": "Dólar Estadounidense",
+    "currencies.brl": "Real Brasileño",
+    "currencies.rub": "Rublo Ruso",
+    "currencies.cny": "Yuan Chino",
+    "currencies.eur": "Euro",
+    "currencies.gbp": "Libra Esterlina",
     
     // Dashboard
     "dashboard.title": "Panel",
