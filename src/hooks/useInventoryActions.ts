@@ -77,7 +77,7 @@ export const useInventoryActions = () => {
     try {
       // Basic purchase info for duplication
       const purchaseInfo = {
-        purchasePrice: item.price || 0,
+        purchasePrice: ('price' in item && typeof item.price === 'number') ? item.price : 0,
         marketplace: "Duplicated",
         feePercentage: 0,
         currency: "USD"

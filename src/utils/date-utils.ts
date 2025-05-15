@@ -1,30 +1,40 @@
 
-/**
- * Returns the current date as a string in ISO format
- */
+// Date utility functions
+
+// Format a date to ISO string
+export const formatDateToISO = (date: Date): string => {
+  return date.toISOString();
+};
+
+// Get current date as ISO string
 export const getCurrentDateAsString = (): string => {
   return new Date().toISOString();
 };
 
-/**
- * Formats a date as a readable string
- */
-export const formatDateString = (dateString: string): string => {
-  const options: Intl.DateTimeFormatOptions = { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  };
+// Format a date to local format
+export const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
   
-  return new Date(dateString).toLocaleDateString(undefined, options);
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pt-BR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+  }
 };
 
-/**
- * Calculates the number of days between today and a given date
- */
-export const daysSince = (dateString: string): number => {
-  const date = new Date(dateString);
-  const today = new Date();
-  const diffTime = today.getTime() - date.getTime();
-  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+// Calculate days between two dates
+export const daysBetween = (date1: string | Date, date2: string | Date): number => {
+  const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
+  const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
+  
+  const diffTime = Math.abs(d2.getTime() - d1.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
 };

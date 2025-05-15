@@ -9,8 +9,3 @@ interface Window {
     fixItem: (itemId: string) => void;
   };
 }
-
-// Add specific UUID module declaration for ES modules
-declare module 'uuid' {
-  export function v4(): string;
-}

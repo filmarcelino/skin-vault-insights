@@ -41,7 +41,7 @@ export interface InventoryItem {
   skin_name?: string;
   weapon_name?: string;
   image_url?: string;
-  rarity: string; // Changed from optional to required to match Skin interface
+  rarity: string;
   price?: number;
   purchase_price?: number;
   acquired_date?: string;
@@ -55,6 +55,10 @@ export interface InventoryItem {
   date_sold?: string;
   profit?: number;
   currency?: string;
+  // Sales related properties
+  sold_price?: number;
+  sold_marketplace?: string;
+  sold_fee_percentage?: number;
   // Also include Skin properties
   id: string;
   name: string;
