@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +36,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Logo } from "@/components/ui/logo";
 import { toast } from "sonner";
 import { CURRENCIES } from "@/contexts/CurrencyContext";
+import { AlertCircle } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -65,15 +67,16 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 const Auth = () => {
-  const { user, signIn, signUp, resetPassword, isLoading } = useAuth();
+  const { user, signIn, signUp, resetPassword, isLoading, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(
     location.state?.tab === "register" ? "register" : "login"
   );
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  console.log("Auth component rendering. User:", user, "isLoading:", isLoading);
+  console.log("Auth component rendering. User:", user, "isLoading:", isLoading, "Session:", session ? "Present" : "None");
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -107,51 +110,104 @@ const Auth = () => {
 
   useEffect(() => {
     console.log("Auth useEffect triggered. User:", user);
-    if (user) {
+    
+    // Check if user is already authenticated
+    if (user && session) {
       console.log("User is authenticated, navigating to dashboard");
-      navigate("/dashboard");
+      
+      // Get the intended destination or fallback to dashboard
+      const destination = location.state?.from || "/dashboard";
+      navigate(destination);
     }
-  }, [user, navigate]);
+  }, [user, session, navigate, location.state?.from]);
 
   const handleLoginSubmit = async (data: LoginFormValues) => {
     console.log("Login attempt with:", data.email);
-    const { error } = await signIn(data.email, data.password, data.rememberMe);
-    if (!error) {
-      console.log("Login successful");
-      toast.success("Login successful");
-      navigate("/dashboard");
-    } else {
-      console.error("Login error:", error);
+    setAuthError(null);
+    
+    try {
+      const { error } = await signIn(data.email, data.password, data.rememberMe);
+      
+      if (error) {
+        console.error("Login error:", error);
+        setAuthError(error.message);
+        
+        // Handle common error cases with friendly messages
+        if (error.message.includes("Invalid login credentials")) {
+          setAuthError("Email ou senha incorretos. Tente novamente.");
+        } else if (error.message.includes("Email not confirmed")) {
+          setAuthError("Por favor, confirme seu email antes de entrar.");
+        }
+      } else {
+        console.log("Login successful");
+        toast.success("Login successful");
+        
+        // Navigate to the intended destination or dashboard
+        const destination = location.state?.from || "/dashboard";
+        navigate(destination);
+      }
+    } catch (err) {
+      console.error("Unexpected login error:", err);
+      setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
     }
   };
 
   const handleRegisterSubmit = async (data: RegisterFormValues) => {
     console.log("Register attempt with:", data.email);
-    const { error } = await signUp({
-      email: data.email,
-      password: data.password,
-      username: data.username,
-      full_name: data.fullName,
-      city: data.city,
-      country: data.country,
-      preferred_currency: data.preferredCurrency,
-    });
+    setAuthError(null);
     
-    if (!error) {
-      console.log("Registration successful");
-      toast.success("Account created successfully");
-      navigate("/dashboard");
-    } else {
-      console.error("Registration error:", error);
+    try {
+      const { error } = await signUp({
+        email: data.email,
+        password: data.password,
+        username: data.username,
+        full_name: data.fullName,
+        city: data.city,
+        country: data.country,
+        preferred_currency: data.preferredCurrency,
+      });
+      
+      if (error) {
+        console.error("Registration error:", error);
+        setAuthError(error.message);
+        
+        // Handle common error cases with friendly messages
+        if (error.message.includes("User already registered")) {
+          setAuthError("Este email já está registrado. Tente fazer login.");
+        }
+      } else {
+        console.log("Registration successful");
+        toast.success("Account created successfully");
+        
+        // Navigate to dashboard or intended destination
+        const destination = location.state?.from || "/dashboard";
+        navigate(destination);
+      }
+    } catch (err) {
+      console.error("Unexpected registration error:", err);
+      setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
     }
   };
 
   const handleResetPasswordSubmit = async (data: ResetPasswordFormValues) => {
     console.log("Password reset attempt for:", data.email);
-    await resetPassword(data.email);
-    setShowResetPassword(false);
-    loginForm.setValue("email", data.email);
-    setActiveTab("login");
+    setAuthError(null);
+    
+    try {
+      const { error } = await resetPassword(data.email);
+      
+      if (error) {
+        console.error("Password reset error:", error);
+        setAuthError(error.message);
+      } else {
+        setShowResetPassword(false);
+        loginForm.setValue("email", data.email);
+        setActiveTab("login");
+      }
+    } catch (err) {
+      console.error("Unexpected password reset error:", err);
+      setAuthError("Ocorreu um erro inesperado. Tente novamente mais tarde.");
+    }
   };
 
   return (
@@ -173,6 +229,14 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Display auth error if present */}
+          {authError && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-800 dark:text-red-300 p-3 rounded-md mb-4 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+              <p>{authError}</p>
+            </div>
+          )}
+          
           {showResetPassword ? (
             <Form {...resetPasswordForm}>
               <form onSubmit={resetPasswordForm.handleSubmit(handleResetPasswordSubmit)} className="space-y-4">
@@ -415,7 +479,7 @@ const Auth = () => {
                     <div className="rounded-md bg-blue-50 dark:bg-blue-950 p-3 text-sm text-blue-800 dark:text-blue-300">
                       <p className="flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                        New accounts will automatically receive 70 starter skins in their inventory!
+                        New accounts will automatically receive a 7-day trial of Premium features!
                       </p>
                     </div>
                     

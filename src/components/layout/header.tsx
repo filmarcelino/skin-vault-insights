@@ -8,16 +8,31 @@ import { LanguageSelector } from "@/components/ui/language-selector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Bell, User, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, session } = useAuth();
   const { isSubscribed, isTrial, trialDaysRemaining } = useSubscription();
   const { t } = useLanguage();
   const navigate = useNavigate();
   
   const handleLogout = async () => {
-    await signOut();
-    navigate("/");
+    try {
+      await signOut();
+      toast.success(t("auth.logout_success"), {
+        description: t("auth.logout_success_description")
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error(t("auth.logout_error"), {
+        description: t("auth.logout_error_description")
+      });
+    }
+  };
+
+  const handleLogin = () => {
+    navigate("/auth");
   };
   
   return (
@@ -29,7 +44,7 @@ export function Header() {
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSelector />
-            {user ? (
+            {user && session ? (
               <>
                 {/* Subscription Badge */}
                 {isSubscribed && (
@@ -61,7 +76,7 @@ export function Header() {
                 </Button>
               </>
             ) : (
-              <Button variant="secondary" onClick={() => navigate("/auth")}>
+              <Button variant="secondary" onClick={handleLogin}>
                 {t("auth.login")}
               </Button>
             )}
