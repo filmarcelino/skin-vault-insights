@@ -1,55 +1,54 @@
 
-import { supabase } from "@/lib/supabase";
 import { InventoryItem, Transaction } from "@/types/skin";
+import { supabase } from "@/integrations/supabase/client"; // Fixed import path
 
-// Map database inventory item to frontend InventoryItem
-export const mapInventoryItem = (item: any): InventoryItem => {
+/**
+ * Maps a Supabase database row to an InventoryItem
+ */
+export const mapSupabaseToInventoryItem = (item: any): InventoryItem => {
+  if (!item) return null;
+  
   return {
-    id: item.id,
-    inventoryId: item.inventory_id,
-    name: item.name,
-    weapon: item.weapon,
-    image: item.image,
-    rarity: item.rarity,
-    price: item.price ? parseFloat(item.price) : 0,
-    purchasePrice: item.purchase_price ? parseFloat(item.purchase_price) : 0,
-    acquiredDate: item.acquired_date,
-    tradeLockDays: item.trade_lock_days,
-    tradeLockUntil: item.trade_lock_until,
-    isStatTrak: item.is_stat_trak,
-    notes: item.notes,
-    userId: item.user_id,
-    isInUserInventory: item.is_in_user_inventory,
-    skin_id: item.skin_id,
-    wear: item.wear,
-    floatValue: item.float_value,
-    fee_percentage: item.fee_percentage,
-    marketplace: item.marketplace,
-    currency: item.currency_code,
+    id: item.id || "",
+    inventoryId: item.inventory_id || `inv_${Math.random().toString(36).slice(2, 11)}`,
+    name: item.name || "",
+    weapon: item.weapon || "",
+    image: item.image || "",
+    rarity: item.rarity || "",
+    price: parseFloat(item.price) || 0,
+    purchasePrice: parseFloat(item.purchase_price) || 0,
+    currentPrice: parseFloat(item.current_price) || parseFloat(item.price) || 0,
+    acquiredDate: item.acquired_date || new Date().toISOString(),
+    isStatTrak: !!item.is_stat_trak,
+    wear: item.wear || "",
+    floatValue: parseFloat(item.float_value) || 0,
+    notes: item.notes || "",
+    userId: item.user_id || "",
+    isInUserInventory: !!item.is_in_user_inventory,
+    skin_id: item.skin_id || "",
+    marketplace: item.marketplace || "Steam",
+    fee_percentage: item.fee_percentage || 13,
+    tradeLockDays: item.trade_lock_days || 0,
+    tradeLockUntil: item.trade_lock_until || null,
   };
 };
 
-// Map frontend InventoryItem to database format for insertion/update
-export const mapToDbItem = (item: InventoryItem): any => {
+/**
+ * Maps a Supabase database row to a Transaction
+ */
+export const mapSupabaseToTransaction = (item: any): Transaction => {
+  if (!item) return null;
+  
   return {
-    inventory_id: item.inventoryId,
-    name: item.name,
-    weapon: item.weapon,
-    image: item.image,
-    rarity: item.rarity,
-    price: item.price,
-    purchase_price: item.purchasePrice,
-    acquired_date: item.acquiredDate,
-    trade_lock_days: item.tradeLockDays,
-    trade_lock_until: item.tradeLockUntil,
-    is_stat_trak: item.isStatTrak,
-    wear: item.wear,
-    float_value: item.floatValue,
-    notes: item.notes,
-    is_in_user_inventory: item.isInUserInventory,
-    skin_id: item.skin_id || item.id,
-    marketplace: item.marketplace,
-    fee_percentage: item.fee_percentage,
-    currency_code: item.currency || "USD"
+    id: item.transaction_id || item.id || "",
+    type: item.type || "add",
+    weaponName: item.weapon_name || "",
+    skinName: item.skin_name || "",
+    date: item.date || new Date().toISOString(),
+    price: parseFloat(item.price) || 0,
+    notes: item.notes || "",
+    itemId: item.item_id || "",
+    currency: item.currency_code || "USD",
+    userId: item.user_id || "",
   };
 };

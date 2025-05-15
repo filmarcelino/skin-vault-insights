@@ -1,4 +1,3 @@
-
 export interface Skin {
   id: string;
   name: string;
@@ -89,12 +88,13 @@ export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-W
 // Define Transaction type
 export interface Transaction {
   id: string;
-  type: 'add' | 'sell' | 'trade' | 'purchase';
+  type: 'add' | 'sell' | 'trade' | 'buy';
   weaponName: string;
   skinName: string;
   date: string;
-  price?: number;
-  user_id?: string;
+  price: number;
   notes?: string;
-  transaction_id?: string;
+  itemId: string;
+  currency?: string;
+  userId: string;
 }

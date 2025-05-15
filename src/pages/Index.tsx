@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSkins } from '@/hooks/use-skins';
 import { Layout } from '@/components/layout/layout';
@@ -12,7 +13,6 @@ import { InventorySkinModal } from '@/components/skins/inventory-skin-modal';
 import { SkinDetailModal } from '@/components/skins/skin-detail-modal';
 import { useViewMode } from '@/hooks/useViewMode';
 import { useInventoryFilter } from '@/hooks/useInventoryFilter';
-import { defaultSkin } from '@/utils/default-objects';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { InventoryItem, Skin } from '@/types/skin';
@@ -53,13 +53,13 @@ export default function Index() {
     setSortMethod,
     handleSearchChange,
     filterItems
-  } = useInventoryFilter(userInventory);
+  } = useInventoryFilter(userInventory as InventoryItem[]);
 
   // Calculate inventory statistics
   const inventoryStats = React.useMemo(() => {
     if (userInventory?.length === 0) return { totalValue: formatPrice(0) };
     
-    const totalValue = userInventory.reduce((acc, item) => 
+    const totalValue = userInventory.reduce((acc, item: any) => 
       acc + (item.currentPrice || item.price || 0), 0);
       
     return { totalValue: formatPrice(totalValue) };
@@ -67,7 +67,7 @@ export default function Index() {
 
   // Filter the inventory based on the current filters
   const filteredInventory = React.useMemo(() => {
-    return filterItems(userInventory || []);
+    return filterItems(userInventory as InventoryItem[] || []);
   }, [filterItems, userInventory]);
 
   // Filter skins based on searchQuery
