@@ -76,7 +76,7 @@ export const isInventoryPopulated = async (): Promise<boolean> => {
       .from('profiles')
       .select('inventory_populated')
       .eq('id', user.id)
-      .single();
+      .maybeSingle(); // Changed from single() to maybeSingle() to handle case when profile doesn't exist
     
     if (error) {
       console.error("Erro ao verificar status de inventário populado:", error);

@@ -241,7 +241,7 @@ const Auth = () => {
           {/* Display auth error if present */}
           {authError && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 text-red-800 dark:text-red-300 p-3 rounded-md mb-4 flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="h-5 w-4 mt-0.5 flex-shrink-0" />
               <p>{authError}</p>
             </div>
           )}
