@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSkins } from '@/hooks/use-skins';
 import { Layout } from '@/components/layout/layout';
@@ -15,7 +14,7 @@ import { useViewMode } from '@/hooks/useViewMode';
 import { useInventoryFilter } from '@/hooks/useInventoryFilter';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { InventoryItem, Skin } from '@/types/skin';
+import { InventoryItem, Skin, Transaction } from '@/types/skin';
 import { Loading } from "@/components/ui/loading";
 
 export default function Index() {
@@ -33,7 +32,7 @@ export default function Index() {
   // Fetch all skins for search
   const { data: allSkins = [], isLoading: isLoadingSkins } = useSkins();
   
-  // Fetch transactions
+  // Fix the transaction loading by providing a proper initial value
   const { data: transactions = [], isLoading: isTransactionsLoading } = useTransactions();
   
   const { 
@@ -155,10 +154,10 @@ export default function Index() {
           </TabsContent>
         </Tabs>
         
-        {/* Activity Section */}
+        {/* Activity Section with proper typing */}
         <ActivitySection 
           isLoading={isTransactionsLoading}
-          transactions={transactions}
+          transactions={transactions as Transaction[]}
         />
       </div>
       

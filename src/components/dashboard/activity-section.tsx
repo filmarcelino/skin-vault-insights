@@ -36,7 +36,7 @@ export const ActivitySection: React.FC<ActivitySectionProps> = ({
               <Skeleton className="h-4 w-16" />
             </div>
           ))
-        ) : transactions.length > 0 ? (
+        ) : transactions && transactions.length > 0 ? (
           transactions.slice(0, 5).map((item, index) => (
             <ActivityItem 
               key={item.id}
