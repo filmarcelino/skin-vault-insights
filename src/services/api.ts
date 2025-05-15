@@ -1,4 +1,5 @@
-import { Skin, SkinCollection, SkinFilter } from "@/types/skin";
+
+import { Skin, SkinCollection, SkinFilter, InventoryItem } from "@/types/skin";
 import { 
   getLocalWeapons, 
   getLocalCollections, 
@@ -152,7 +153,8 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
       image: item.image,
       rarity: item.rarity || "Unknown", // Ensure rarity is never undefined
       price: item.price || 0, // Ensure price is never undefined
-      category: item.category || "",
+      // Don't include category if it doesn't exist on the inventory item type
+      type: item.type || "",
       wear: item.wear,
       isStatTrak: item.isStatTrak,
       floatValue: item.floatValue,

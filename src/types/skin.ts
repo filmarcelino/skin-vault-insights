@@ -1,4 +1,3 @@
-
 export interface Skin {
   id: string;
   name: string;
@@ -64,6 +63,8 @@ export interface InventoryItem {
   name: string;
   weapon: string;
   image: string;
+  type?: string;
+  category?: string;
 }
 
 export interface SkinFilter {
