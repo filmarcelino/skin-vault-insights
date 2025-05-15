@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +17,8 @@ export interface UserProfile {
   avatar_url?: string;
   created_at: string;
   updated_at: string;
+  inventory_populated?: boolean;
+  is_admin?: boolean;
 }
 
 interface AuthContextType {
@@ -91,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
         console.log("Auth state changed:", event, "user:", newSession?.user?.email);
         
         // Update session and user state
@@ -272,8 +275,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfileError(false);
     
     try {
-      // Fix: The Supabase API expects different options structure
-      // Remove the persistSession from the options object
+      // Using the correct authentication method without the persistSession option
       const response = await supabase.auth.signInWithPassword({ 
         email, 
         password
