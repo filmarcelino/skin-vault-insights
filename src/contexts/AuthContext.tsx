@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 // Debug flag - set to true for detailed console logs
 const DEBUG_AUTH = true;
+
+// Standardize the admin email
+const ADMIN_EMAIL = "luizfelipemarcelino43@gmail.com";
 
 export interface UserProfile {
   id: string;
@@ -103,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const isAuthenticated = Boolean(user && session);
-  const isAdmin = Boolean(profile?.is_admin || (profile?.email === 'luisfelipemarcelino33@gmail.com'));
+  const isAdmin = Boolean(profile?.is_admin || (profile?.email === ADMIN_EMAIL));
 
   logDebug("AuthProvider rendering. isAuthLoading:", isAuthLoading, "user:", user?.email);
 
@@ -143,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         logDebug("Profile fetched:", data);
         setProfile(data as UserProfile);
+        console.log("Profile fetched");
         
         // Update preferred currency
         if (currencyUpdater && data.preferred_currency) {
@@ -318,6 +323,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (isAuthenticated) {
       logDebug("Auth loaded", { user: user?.email, isAdmin });
+      console.log("Auth loaded");
     }
   }, [user, isProfileLoading, isAuthenticated, isAdmin, logDebug]);
 

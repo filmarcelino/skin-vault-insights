@@ -8,7 +8,7 @@ import { PremiumCTA } from '@/components/search/PremiumCTA';
 import { useSkins } from '@/hooks/use-skins';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Skin } from '@/types/skin';
-import { Loading } from '@/components/ui/loading';
+import { Loading } from "@/components/ui/loading";
 import { useInventoryActions } from '@/hooks/useInventoryActions';
 import { InventorySkinModal } from '@/components/skins/inventory-skin-modal';
 import { useLanguage } from '@/contexts/LanguageContext';

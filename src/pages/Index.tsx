@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSkins } from '@/hooks/use-skins';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +16,7 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { InventoryItem, Skin, Transaction } from '@/types/skin';
 import { Loading } from "@/components/ui/loading";
+import { defaultSkin } from '@/utils/default-objects';
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("inventory");
@@ -37,7 +39,9 @@ export default function Index() {
   const { 
     handleAddToInventory, 
     handleViewDetails, 
-    selectedItem
+    selectedItem,
+    isModalOpen,
+    setIsModalOpen
   } = useInventoryActions();
 
   const {
@@ -94,6 +98,11 @@ export default function Index() {
   const handleInventorySkinClick = (item: InventoryItem) => {
     handleViewDetails(item);
   };
+
+  // Add a debug log to check component load
+  useEffect(() => {
+    console.log("Dashboard ready");
+  }, []);
 
   return (
     <div className="space-y-6 pb-8">
@@ -167,14 +176,12 @@ export default function Index() {
       />
       
       {/* Skin modal for inventory items */}
-      {selectedItem && (
-        <InventorySkinModal
-          open={!!selectedItem}
-          onOpenChange={() => handleViewDetails(null)}
-          item={selectedItem}
-          mode="view"
-        />
-      )}
+      <InventorySkinModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        skin={selectedItem || defaultSkin as Skin}
+        mode={selectedItem?.sellMode ? 'sell' : (selectedItem?.isInUserInventory ? 'edit' : 'add')}
+      />
     </div>
   );
 }

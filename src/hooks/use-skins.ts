@@ -1,201 +1,42 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  fetchSkins, 
-  fetchSkinById, 
-  fetchWeapons, 
-  fetchCollections, 
-  searchSkins,
-  fetchCategories
-} from "@/services/api";
-import { 
-  fetchUserInventory, 
+import { useQuery } from "@tanstack/react-query";
+import { Skin, InventoryItem } from "@/types/skin";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchSkins } from "@/services/api";
+import {
+  fetchUserInventory,
   addSkinToInventory,
-  removeInventoryItem,
   updateInventoryItem,
-  markItemAsSold
+  removeInventoryItem
 } from "@/services/inventory";
-import { Skin, SkinFilter, InventoryItem, SellData } from "@/types/skin";
 
-// Custom key for inventory data
-export const INVENTORY_QUERY_KEY = "user-inventory";
-export const SKINS_QUERY_KEY = "skins";
-export const CATEGORIES_QUERY_KEY = "categories";
-export const TRANSACTIONS_QUERY_KEY = "transactions";
+interface UseSkinOptions {
+  onlyUserInventory?: boolean;
+}
 
-export const useSkins = (filters?: SkinFilter) => {
-  const result = useQuery({
-    queryKey: filters?.onlyUserInventory ? [INVENTORY_QUERY_KEY] : [SKINS_QUERY_KEY, filters],
-    queryFn: async () => {
-      try {
-        // Se queremos apenas o inventário do usuário, buscamos do Supabase
-        if (filters?.onlyUserInventory) {
-          const inventory = await fetchUserInventory();
-          console.log("Retrieved inventory in useSkins hook:", inventory);
-          return Array.isArray(inventory) ? inventory : [];
-        }
-        // Caso contrário, buscamos da API
-        const result = await fetchSkins(filters);
-        return Array.isArray(result) ? result : [];
-      } catch (error) {
-        console.error("Error in useSkins:", error);
-        return [];
-      }
-    },
-    retry: 1,
-  });
-
-  // Add these properties to make it compatible with the code that uses this hook
-  return {
-    ...result,
-    skins: result.data || [],
-    loading: result.isLoading,
-    error: result.error
-  };
-};
-
-export const useCategories = () => {
-  return useQuery({
-    queryKey: [CATEGORIES_QUERY_KEY],
-    queryFn: async () => {
-      try {
-        // Buscamos as categorias disponíveis
-        const categories = await fetchCategories();
-        console.log("Retrieved categories:", categories);
-        return Array.isArray(categories) ? categories : [];
-      } catch (error) {
-        console.error("Error in useCategories:", error);
-        return [];
-      }
-    },
-    retry: 1,
-  });
-};
-
-export const useInventory = () => {
-  return useQuery({
-    queryKey: [INVENTORY_QUERY_KEY],
-    queryFn: async () => {
-      try {
-        console.log("Fetching inventory data...");
-        const inventory = await fetchUserInventory();
-        console.log("Loaded inventory:", inventory);
-        // Ensure we always return an array
-        const validInventory = Array.isArray(inventory) ? inventory : [];
-        
-        // Log inventory items with isInUserInventory status
-        validInventory.forEach(item => {
-          console.log(`Item ${item.name || 'Unknown'} isInUserInventory:`, item.isInUserInventory);
-        });
-        
-        return validInventory;
-      } catch (error) {
-        console.error("Error in useInventory:", error);
-        return [];
-      }
-    },
-    retry: 1,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    staleTime: 10000, // 10 seconds
-  });
-};
-
-export const useAddSkin = () => {
-  const queryClient = useQueryClient();
+export const useSkins = (options: UseSkinOptions = {}) => {
+  const { user, isAuthenticated } = useAuth();
+  const { onlyUserInventory = false } = options;
   
-  return useMutation({
-    mutationFn: async (data: {skin: Skin, purchaseInfo: any}) => {
-      console.log("Add skin mutation called with:", data);
-      
-      // Validate data before proceeding
-      if (!data.skin || !data.skin.name) {
-        throw new Error("Invalid skin data provided");
-      }
-      
-      const result = await addSkinToInventory(data.skin, data.purchaseInfo);
-      if (!result) {
-        throw new Error("Failed to add skin to inventory");
-      }
-      return result;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
-    },
-    onError: (error) => {
-      console.error("Error in addSkin mutation:", error);
+  console.log("useSkins hook called with options:", options);
+
+  const fetchSkinData = async (): Promise<Skin[] | InventoryItem[]> => {
+    // If only user inventory is requested and user is authenticated, fetch user inventory
+    if (onlyUserInventory && isAuthenticated && user) {
+      console.log("Fetching user inventory");
+      const inventory = await fetchUserInventory(user.id);
+      return inventory;
     }
-  });
-};
-
-export const useSellSkin = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: {itemId: string, sellData: SellData}) => 
-      markItemAsSold(data.itemId, data.sellData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
-    },
-  });
-};
-
-export const useUpdateSkin = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: {itemId: string, updates: Partial<InventoryItem>}) => 
-      updateInventoryItem(data.itemId, data.updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
-    },
-  });
-};
-
-export const useRemoveSkin = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: removeInventoryItem,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
-    },
-  });
-};
-
-export const useInvalidateInventory = () => {
-  const queryClient = useQueryClient();
-  
-  return () => {
-    queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    
+    // Otherwise, fetch all skins
+    console.log("Fetching all skins");
+    const allSkins = await fetchSkins();
+    return allSkins;
   };
-};
 
-export const useSkinById = (id: string) => {
   return useQuery({
-    queryKey: ["skin", id],
-    queryFn: () => fetchSkinById(id),
-    enabled: !!id,
-  });
-};
-
-export const useWeapons = () => {
-  return useQuery({
-    queryKey: ["weapons"],
-    queryFn: fetchWeapons,
-  });
-};
-
-export const useCollections = () => {
-  return useQuery({
-    queryKey: ["collections"],
-    queryFn: fetchCollections,
-  });
-};
-
-export const useSearchSkins = (query: string) => {
-  return useQuery({
-    queryKey: ["search", query],
-    queryFn: () => searchSkins(query),
-    enabled: query.length > 2, // Só busca com pelo menos 3 caracteres
+    queryKey: [onlyUserInventory ? "userInventory" : "allSkins", user?.id],
+    queryFn: fetchSkinData,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: onlyUserInventory ? isAuthenticated : true, // Only enable if not requiring auth or user is authenticated
   });
 };

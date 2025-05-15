@@ -35,7 +35,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
-  const { session, user, isAuthenticated, isAuthLoading } = useAuth();
+  const [hasCheckedOnce, setHasCheckedOnce] = useState<boolean>(false);
+  const { session, user, isAuthenticated, isAuthLoading, authStatus } = useAuth();
   
   const logDebug = (...args: any[]) => {
     if (DEBUG_SUBSCRIPTION) {
@@ -96,6 +97,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       
       // Update the last checked time
       setLastChecked(new Date());
+      setHasCheckedOnce(true);
       logDebug("Subscription status updated");
       console.log("Subscription ready");
     } catch (err) {
@@ -108,22 +110,23 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   // Check subscription when auth state changes
   useEffect(() => {
     // Don't try to check subscription until auth is loaded
-    if (isAuthLoading) {
+    if (isAuthLoading || authStatus === 'loading') {
       return;
     }
     
-    if (isAuthenticated && session) {
-      logDebug("Auth loaded, checking subscription");
+    if (isAuthenticated && session && !hasCheckedOnce) {
+      logDebug("Auth loaded, checking subscription once");
       checkSubscription();
-    } else {
+    } else if (!isAuthenticated) {
       // Reset state when logged out
       setIsSubscribed(false);
       setIsTrial(false);
       setTrialDaysRemaining(null);
       setSubscriptionEnd(null);
       setIsLoading(false);
+      setHasCheckedOnce(false);
     }
-  }, [isAuthenticated, session, isAuthLoading]);
+  }, [isAuthenticated, session, isAuthLoading, authStatus, hasCheckedOnce]);
 
   // Set up realtime subscription to subscribers table
   useEffect(() => {
