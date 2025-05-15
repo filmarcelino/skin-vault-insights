@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryItem, SellData, Skin, Transaction } from "@/types/skin";
 import { v4 as uuidv4 } from "uuid";
@@ -392,6 +391,60 @@ export const getUserTransactions = async (userId: string): Promise<Transaction[]
     }));
   } catch (error) {
     console.error("Exception fetching user transactions:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetches sold items for the current user
+ * @returns Promise with array of sold items
+ */
+export const fetchSoldItems = async (): Promise<InventoryItem[]> => {
+  try {
+    // Get the current session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No active session when fetching sold items");
+      return [];
+    }
+
+    const userId = session.user.id;
+
+    // Query transactions table for sold items
+    const { data: soldItems, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('type', 'sell')
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching sold items:", error);
+      return [];
+    }
+
+    // Transform sold items into InventoryItem format
+    return soldItems.map(transaction => ({
+      id: transaction.item_id,
+      inventoryId: transaction.id,
+      name: transaction.skin_name,
+      weapon: transaction.weapon_name,
+      image: transaction.image_url || '/placeholder-skin.png',
+      price: transaction.price,
+      purchasePrice: transaction.purchase_price || 0,
+      soldPrice: transaction.price,
+      soldDate: transaction.date,
+      acquiredDate: transaction.acquired_date || transaction.date,
+      isInUserInventory: false,
+      category: transaction.category || 'Normal',
+      rarity: transaction.rarity || 'Consumer Grade',
+      wear: transaction.wear || 'Factory New',
+      soldMarketplace: transaction.marketplace || 'Steam Market',
+      profit: transaction.profit || 0
+    }));
+  } catch (error) {
+    console.error("Error in fetchSoldItems:", error);
     return [];
   }
 };

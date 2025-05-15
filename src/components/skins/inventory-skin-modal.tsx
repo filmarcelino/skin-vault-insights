@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -30,8 +29,9 @@ import { formatDate } from "@/utils/format-utils";
 export interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  skin?: Skin;
+  skin?: Skin | InventoryItem;
   mode?: ModalMode;
+  onSellSkin?: (itemId: string, sellData: SellData) => Promise<void>;
 }
 
 export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
@@ -39,6 +39,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   onOpenChange,
   skin,
   mode = "view",
+  onSellSkin
 }) => {
   const { user } = useAuth();
   const { formatPrice, currency } = useCurrency();
@@ -46,16 +47,19 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   
+  // Extract properties with appropriate type safety
+  const skinItem = skin as InventoryItem;
+
   // Form state
-  const [purchasePrice, setPurchasePrice] = useState(skin?.price || 0);
-  const [acquiredDate, setAcquiredDate] = useState(skin?.acquiredDate || new Date().toISOString().split('T')[0]);
-  const [marketplace, setMarketplace] = useState(skin?.marketplace || "Steam Market");
-  const [feePercentage, setFeePercentage] = useState(skin?.feePercentage || 15);
-  const [isStatTrak, setIsStatTrak] = useState(skin?.isStatTrak || false);
-  const [wear, setWear] = useState(skin?.wear || "Factory New");
-  const [floatValue, setFloatValue] = useState<number | undefined>(skin?.floatValue);
-  const [notes, setNotes] = useState(skin?.notes || "");
-  const [tradeLockDays, setTradeLockDays] = useState(skin?.tradeLockDays || 0);
+  const [purchasePrice, setPurchasePrice] = useState(skinItem?.purchasePrice || skin?.price || 0);
+  const [acquiredDate, setAcquiredDate] = useState(skinItem?.acquiredDate || new Date().toISOString().split('T')[0]);
+  const [marketplace, setMarketplace] = useState(skinItem?.marketplace || "Steam Market");
+  const [feePercentage, setFeePercentage] = useState(skinItem?.feePercentage || 15);
+  const [isStatTrak, setIsStatTrak] = useState(skinItem?.isStatTrak || false);
+  const [wear, setWear] = useState(skinItem?.wear || skin?.wear || "Factory New");
+  const [floatValue, setFloatValue] = useState<number | undefined>(skinItem?.floatValue);
+  const [notes, setNotes] = useState(skinItem?.notes || "");
+  const [tradeLockDays, setTradeLockDays] = useState(skinItem?.tradeLockDays || 0);
   
   // Sell form state
   const [soldPrice, setSoldPrice] = useState(0);
@@ -66,7 +70,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   
   // Calculate fees and profit for sale
   const calculateSaleDetails = () => {
-    const origPrice = (skin?.purchasePrice || purchasePrice || 0);
+    const origPrice = (skinItem?.purchasePrice || purchasePrice || 0);
     const salePrice = soldPrice;
     const marketplaceFee = salePrice * (soldFeePercentage / 100);
     const netProceeds = salePrice - marketplaceFee;
@@ -127,25 +131,17 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
         });
         
         if (result.success) {
-          toast.success(t("inventory.item_added"), {
-            description: t("inventory.item_added_description", {
-              name: skin.name
-            })
-          });
+          toast.success(t("inventory.item_added"));
           
           // Refresh inventory data
           queryClient.invalidateQueries({ queryKey: ["userInventory"] });
           onOpenChange(false);
         } else {
-          toast.error(t("inventory.add_error"), {
-            description: result.error?.message || t("common.unexpected_error")
-          });
+          toast.error(t("inventory.add_error"));
         }
-      } else if (mode === "edit" && skin) {
+      } else if (mode === "edit" && skinItem && skinItem.inventoryId) {
         // Update existing inventory item
-        const inventoryItem = skin as InventoryItem;
-        
-        const result = await updateInventoryItem(user.id, inventoryItem, {
+        const result = await updateInventoryItem(user.id, skinItem.inventoryId, {
           purchasePrice,
           marketplace,
           feePercentage,
@@ -157,24 +153,16 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
         });
         
         if (result.success) {
-          toast.success(t("inventory.item_updated"), {
-            description: t("inventory.item_updated_description", {
-              name: skin.name
-            })
-          });
+          toast.success(t("inventory.item_updated"));
           
           // Refresh inventory data
           queryClient.invalidateQueries({ queryKey: ["userInventory"] });
           onOpenChange(false);
         } else {
-          toast.error(t("inventory.update_error"), {
-            description: result.error?.message || t("common.unexpected_error")
-          });
+          toast.error(t("inventory.update_error"));
         }
-      } else if (mode === "sell" && skin) {
+      } else if (mode === "sell" && skinItem && skinItem.inventoryId) {
         // Mark item as sold
-        const inventoryItem = skin as InventoryItem;
-        
         const sellData: SellData = {
           soldPrice,
           soldMarketplace,
@@ -185,30 +173,28 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
           soldCurrency: currency.code
         };
         
-        const result = await markItemAsSold(user.id, inventoryItem.inventoryId, sellData);
-        
-        if (result.success) {
-          toast.success(t("inventory.item_sold"), {
-            description: t("inventory.item_sold_description", {
-              price: formatPrice(soldPrice)
-            })
-          });
-          
-          // Refresh inventory and transactions data
-          queryClient.invalidateQueries({ queryKey: ["userInventory"] });
-          queryClient.invalidateQueries({ queryKey: ["transactions"] });
-          onOpenChange(false);
+        if (onSellSkin) {
+          // Use the provided sell handler if available
+          await onSellSkin(skinItem.inventoryId, sellData);
         } else {
-          toast.error(t("inventory.sell_error"), {
-            description: result.error?.message || t("common.unexpected_error")
-          });
+          // Otherwise, use the default implementation
+          const result = await markItemAsSold(user.id, skinItem.inventoryId, sellData);
+          
+          if (result.success) {
+            toast.success(t("inventory.item_sold"));
+            
+            // Refresh inventory and transactions data
+            queryClient.invalidateQueries({ queryKey: ["userInventory"] });
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+            onOpenChange(false);
+          } else {
+            toast.error(t("inventory.sell_error"));
+          }
         }
       }
     } catch (error) {
       console.error("Error saving inventory item:", error);
-      toast.error(t("inventory.action_error"), {
-        description: t("common.unexpected_error")
-      });
+      toast.error(t("inventory.action_error"));
     } finally {
       setIsLoading(false);
     }
@@ -227,7 +213,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
             <div>
               <Label className="text-muted-foreground">{t("skin.purchase_price")}</Label>
-              <div className="font-medium">{formatPrice(skin.purchasePrice || 0)}</div>
+              <div className="font-medium">{formatPrice(skinItem?.purchasePrice || 0)}</div>
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.current_price")}</Label>
@@ -235,26 +221,26 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.acquired_date")}</Label>
-              <div className="font-medium">{formatDate(skin.acquiredDate || new Date().toISOString())}</div>
+              <div className="font-medium">{formatDate(skinItem?.acquiredDate || new Date().toISOString())}</div>
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.marketplace")}</Label>
-              <div className="font-medium">{skin.marketplace || "Steam Market"}</div>
+              <div className="font-medium">{skinItem?.marketplace || "Steam Market"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.wear")}</Label>
-              <div className="font-medium">{skin.wear || "Factory New"}</div>
+              <div className="font-medium">{skinItem?.wear || "Factory New"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.float_value")}</Label>
-              <div className="font-medium">{skin.floatValue || "N/A"}</div>
+              <div className="font-medium">{skinItem?.floatValue || "N/A"}</div>
             </div>
           </div>
           
-          {skin.notes && (
+          {skinItem?.notes && (
             <div>
               <Label className="text-muted-foreground">{t("skin.notes")}</Label>
-              <div className="font-medium whitespace-pre-line">{skin.notes}</div>
+              <div className="font-medium whitespace-pre-line">{skinItem?.notes}</div>
             </div>
           )}
           
@@ -519,14 +505,14 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
         <DialogHeader>
           <DialogTitle>
             {mode === "view" ? skin.name : 
-             mode === "add" ? t("inventory.add_to_inventory", { name: skin.name }) : 
-             mode === "edit" ? t("inventory.edit_item", { name: skin.name }) : 
-             mode === "sell" ? t("inventory.sell_item", { name: skin.name }) : ""
+             mode === "add" ? t("inventory.add_to_inventory") : 
+             mode === "edit" ? t("inventory.edit_item") : 
+             mode === "sell" ? t("inventory.sell_item") : ""
             }
           </DialogTitle>
           <div className="flex items-center text-sm text-muted-foreground">
             {skin.weapon} | {skin.wear || skin.rarity}
-            {skin.isStatTrak && <span className="ml-1 text-amber-500">★ StatTrak™</span>}
+            {skinItem?.isStatTrak && <span className="ml-1 text-amber-500">★ StatTrak™</span>}
           </div>
         </DialogHeader>
         <div className="flex flex-col sm:flex-row gap-4">

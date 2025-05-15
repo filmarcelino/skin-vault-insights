@@ -10,6 +10,11 @@ export const defaultSkin: Skin = {
   rarity: "Consumer Grade",
   price: 0,
   category: "Normal",
+  // Add optional properties to avoid type errors
+  collection: undefined,
+  collections: [],
+  type: "Normal",
+  wear: "Factory New",
 };
 
 // Default inventory item to use as a fallback
@@ -26,6 +31,16 @@ export const defaultInventoryItem: InventoryItem = {
   isInUserInventory: false,
   category: "Normal",
   sellMode: false,
+  // Add optional properties 
+  isStatTrak: false,
+  wear: "Factory New",
+  marketplace: "Steam Market",
+  feePercentage: 15,
+  floatValue: undefined,
+  notes: "",
+  tradeLockDays: 0,
+  collection: undefined,
+  collections: []
 };
 
 // Default transaction object to use as a fallback

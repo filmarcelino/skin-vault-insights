@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useSkins } from '@/hooks/use-skins';
+import { useSkins, useInventory } from '@/hooks/use-skins';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ export default function Index() {
   const { formatPrice } = useCurrency();
 
   // Fetch inventory data
-  const { data: userInventory = [], isLoading: isLoadingInventory } = useSkins({ onlyUserInventory: true });
+  const { data: userInventory = [], isLoading: isLoadingInventory } = useInventory();
   
   // Fetch all skins for search
   const { data: allSkins = [], isLoading: isLoadingSkins } = useSkins();
@@ -41,6 +41,7 @@ export default function Index() {
     handleViewDetails, 
     selectedItem,
     isModalOpen,
+    modalMode,
     setIsModalOpen
   } = useInventoryActions();
 
@@ -59,7 +60,7 @@ export default function Index() {
 
   // Calculate inventory statistics
   const inventoryStats = React.useMemo(() => {
-    if (userInventory?.length === 0) return { totalValue: formatPrice(0) };
+    if (!Array.isArray(userInventory) || userInventory.length === 0) return { totalValue: formatPrice(0) };
     
     const totalValue = userInventory.reduce((acc, item: any) => 
       acc + (item.currentPrice || item.price || 0), 0);
@@ -74,7 +75,7 @@ export default function Index() {
 
   // Filter skins based on searchQuery
   const filteredSkins = React.useMemo(() => {
-    if (!searchQuery) return [];
+    if (!searchQuery || !Array.isArray(allSkins)) return [];
     
     return allSkins.filter(skin => {
       const fullName = `${skin.weapon || ""} ${skin.name || ""}`.toLowerCase();
@@ -179,8 +180,8 @@ export default function Index() {
       <InventorySkinModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        skin={selectedItem || defaultSkin as Skin}
-        mode={selectedItem?.sellMode ? 'sell' : (selectedItem?.isInUserInventory ? 'edit' : 'add')}
+        skin={selectedItem || defaultSkin}
+        mode={modalMode}
       />
     </div>
   );

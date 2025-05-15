@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skin, InventoryItem } from "@/types/skin";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchSkins } from "@/services/api";
@@ -13,6 +14,7 @@ interface UseSkinOptions {
   onlyUserInventory?: boolean;
 }
 
+// Main hook to fetch skins data (either all skins or user inventory)
 export const useSkins = (options: UseSkinOptions = {}) => {
   const { user, isAuthenticated } = useAuth();
   const { onlyUserInventory = false } = options;
@@ -39,4 +41,19 @@ export const useSkins = (options: UseSkinOptions = {}) => {
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: onlyUserInventory ? isAuthenticated : true, // Only enable if not requiring auth or user is authenticated
   });
+};
+
+// Alias for useSkins with onlyUserInventory=true for better semantics
+export const useInventory = () => {
+  return useSkins({ onlyUserInventory: true });
+};
+
+// Hook to invalidate inventory cache
+export const useInvalidateInventory = () => {
+  const queryClient = useQueryClient();
+  
+  return () => {
+    console.log("Invalidating inventory cache");
+    queryClient.invalidateQueries({ queryKey: ["userInventory"] });
+  };
 };

@@ -11,14 +11,17 @@ import { addSkinToInventory, updateInventoryItem, markItemAsSold } from "@/servi
 export const useInventoryActions = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+  const [modalMode, setModalMode] = useState<"add" | "edit" | "view" | "sell">("view");
+  
   const { user } = useAuth();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-  const { formatCurrency } = useCurrency();
+  const { formatPrice } = useCurrency();
 
   const handleViewDetails = (item: InventoryItem | null) => {
     setSelectedItem(item);
-    setIsModalOpen(!!item);
+    setIsDetailModalOpen(!!item);
   };
 
   const handleAddToInventory = (skin: Skin) => {
@@ -43,7 +46,41 @@ export const useInventoryActions = () => {
     };
 
     setSelectedItem(inventoryItem);
+    setModalMode("add");
     setIsModalOpen(true);
+  };
+
+  const handleEditItem = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setModalMode("edit");
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteItem = async (item: InventoryItem) => {
+    if (!user || !item.inventoryId) {
+      toast.error(t("errors.general"));
+      return;
+    }
+    
+    try {
+      const result = await removeInventoryItem(user.id, item.inventoryId);
+      
+      if (result.success) {
+        toast.success(t("inventory.item_removed"), {
+          description: t("inventory.item_removed_description", { name: item.name })
+        });
+        
+        // Refresh inventory data
+        queryClient.invalidateQueries({ queryKey: ["userInventory"] });
+      } else {
+        toast.error(t("inventory.remove_error"), {
+          description: result.error?.message || t("common.unexpected_error")
+        });
+      }
+    } catch (error) {
+      console.error("Error removing item:", error);
+      toast.error(t("inventory.remove_error"));
+    }
   };
 
   const handleSellItem = (item: InventoryItem) => {
@@ -52,10 +89,11 @@ export const useInventoryActions = () => {
       ...item,
       sellMode: true
     });
+    setModalMode("sell");
     setIsModalOpen(true);
   };
 
-  const handleSaveSellTransaction = async (itemId: string, sellData: SellData) => {
+  const handleMarkAsSold = async (itemId: string, sellData: SellData) => {
     if (!user) {
       toast.error(t("auth.login_required"));
       return;
@@ -67,37 +105,85 @@ export const useInventoryActions = () => {
       if (success) {
         toast.success(t("inventory.item_sold_success"), {
           description: t("inventory.item_sold_description", { 
-            price: formatCurrency(sellData.soldPrice) 
+            price: formatPrice(sellData.soldPrice) 
           })
         });
         
         // Refresh inventory and transactions data
         queryClient.invalidateQueries({ queryKey: ["userInventory"] });
         queryClient.invalidateQueries({ queryKey: ["transactions"] });
+        queryClient.invalidateQueries({ queryKey: ["sold-items"] });
         
         // Close the modal
         setIsModalOpen(false);
         setSelectedItem(null);
+
+        return { success: true };
       } else {
         toast.error(t("inventory.sell_error"), {
           description: error?.message || t("common.unexpected_error")
         });
+        return { success: false, error };
       }
     } catch (error) {
       console.error("Error selling item:", error);
       toast.error(t("inventory.sell_error"), {
         description: t("common.unexpected_error")
       });
+      return { success: false, error };
+    }
+  };
+
+  const handleDuplicate = (item: InventoryItem) => {
+    if (!user) {
+      toast.error(t("auth.login_required"));
+      return;
+    }
+    
+    // Make a copy but remove the inventoryId so a new one will be generated
+    const duplicatedItem: InventoryItem = {
+      ...item,
+      inventoryId: "", // Will be generated when saved
+      isInUserInventory: false,
+      acquiredDate: new Date().toISOString()
+    };
+    
+    setSelectedItem(duplicatedItem);
+    setModalMode("add");
+    setIsModalOpen(true);
+  };
+
+  const handleClose = (open: boolean) => {
+    if (!open) {
+      setIsModalOpen(false);
+      // Small delay to prevent flicker when changing items
+      setTimeout(() => setSelectedItem(null), 300);
+    }
+  };
+
+  const handleCloseDetail = (open: boolean) => {
+    if (!open) {
+      setIsDetailModalOpen(false);
+      // Small delay to prevent flicker when changing items
+      setTimeout(() => setSelectedItem(null), 300);
     }
   };
 
   return {
     selectedItem,
     isModalOpen,
+    isDetailModalOpen,
+    modalMode,
     setIsModalOpen,
+    setIsDetailModalOpen,
     handleViewDetails,
     handleAddToInventory,
+    handleEditItem,
+    handleDeleteItem,
     handleSellItem,
-    handleSaveSellTransaction
+    handleMarkAsSold,
+    handleDuplicate,
+    handleClose,
+    handleCloseDetail
   };
 };

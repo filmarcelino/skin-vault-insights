@@ -13,14 +13,14 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
-import { defaultSkin } from "@/utils/default-objects";
-import { Skin, InventoryItem } from "@/types/skin";
+import { defaultInventoryItem } from "@/utils/default-objects";
+import { InventoryItem } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { fetchSoldItems } from "@/services/inventory/inventory-service";
+import { fetchSoldItems } from "@/services/inventory";
 
 export default function Inventory() {
   const { t } = useLanguage();
@@ -31,7 +31,7 @@ export default function Inventory() {
   const { viewMode, setViewMode } = useViewMode("grid"); 
   
   const { 
-    data: inventory, 
+    data: inventory = [], 
     isLoading, 
     error, 
     isFetching 
@@ -50,8 +50,8 @@ export default function Inventory() {
     refetchOnWindowFocus: true
   });
   
-  console.log("Current inventory items:", inventory?.length || 0);
-  console.log("Sold items:", soldItems?.length || 0);
+  console.log("Current inventory items:", Array.isArray(inventory) ? inventory.length : 0);
+  console.log("Sold items:", Array.isArray(soldItems) ? soldItems.length : 0);
   
   const { 
     searchQuery, 
@@ -63,10 +63,10 @@ export default function Inventory() {
     sortMethod, 
     setSortMethod,
     updateFilter
-  } = useInventoryFilter(inventory || []);
+  } = useInventoryFilter(inventory as InventoryItem[] || []);
   
   // Apply filters to get the filtered items
-  const filteredItems = inventory ? inventory.filter(item => {
+  const filteredItems = Array.isArray(inventory) ? inventory.filter(item => {
     // Apply search filter
     if (searchQuery && !item.name?.toLowerCase().includes(searchQuery.toLowerCase()) && 
         !item.weapon?.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -103,7 +103,7 @@ export default function Inventory() {
     handleCloseDetail
   } = useInventoryActions();
   
-  const currentCount = inventory?.length || 0;
+  const currentCount = Array.isArray(inventory) ? inventory.length : 0;
   const soldCount = Array.isArray(soldItems) ? soldItems.length : 0;
 
   // Enhanced handler to refetch sold items after marking item as sold
@@ -149,12 +149,6 @@ export default function Inventory() {
     { id: "sort", label: t("filters.sort"), value: sortMethod }
   ];
   
-  // Helper function to bridge the interface gap
-  const openSellModal = (item: InventoryItem) => {
-    console.log("Opening sell modal for:", item);
-    handleSellItem(item);
-  };
-  
   return (
     <>
       <div className="flex justify-between items-center mb-4">
@@ -198,7 +192,7 @@ export default function Inventory() {
         </div>
         
         <TabsContent value="current" className="mt-4">
-          {inventory?.length === 0 ? (
+          {currentCount === 0 ? (
             <div className="text-center py-12 border rounded-lg bg-muted/10">
               <h3 className="text-lg font-medium">
                 {t("inventory.empty")}
@@ -225,7 +219,7 @@ export default function Inventory() {
               onViewDetails={handleViewDetails}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
-              onSell={handleItemSell}
+              onSell={handleSellItem}
               onDuplicate={handleDuplicate}
             />
           ) : (
@@ -243,7 +237,7 @@ export default function Inventory() {
         <TabsContent value="sold" className="mt-4">
           {isSoldItemsLoading ? (
             <Loading />
-          ) : Array.isArray(soldItems) && soldItems.length === 0 ? (
+          ) : soldCount === 0 ? (
             <div className="text-center py-12 border rounded-lg bg-muted/10">
               <h3 className="text-lg font-medium">
                 {t("inventory.noSoldItems")}
@@ -262,16 +256,15 @@ export default function Inventory() {
       <InventorySkinModal 
         open={isModalOpen}
         onOpenChange={handleClose}
-        skin={selectedItem || defaultSkin as Skin}
+        skin={selectedItem || defaultInventoryItem as InventoryItem}
         mode={modalMode}
-        onSellSkin={handleItemSell}
       />
       
       {/* Skin Detail View Modal */}
       <SkinDetailModal 
         open={isDetailModalOpen}
         onOpenChange={handleCloseDetail}
-        skin={selectedItem as Skin}
+        skin={selectedItem as InventoryItem}
       />
     </>
   );
