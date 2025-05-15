@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 // Define supported languages
@@ -9,13 +8,6 @@ export interface Translations {
   [key: string]: {
     [key: string]: string;
   };
-}
-
-// Language context interface
-interface LanguageContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
 }
 
 // Default translations
@@ -42,6 +34,44 @@ const translations: Translations = {
     "auth.email": "Email",
     "auth.password": "Password",
     "auth.forgotPassword": "Forgot Password?",
+    "auth.redirecting_to_login": "Redirecting to login",
+    "auth.please_login": "Please sign in to view this page",
+    "auth.invalid_credentials": "Invalid login credentials",
+    "auth.email_not_confirmed": "Email not confirmed",
+    "auth.unexpected_error": "An unexpected error occurred",
+    "auth.login_success": "Login successful",
+    "auth.welcome_back": "Welcome back!",
+    "auth.user_already_registered": "User already registered",
+    "auth.signup_success": "Sign up successful",
+    "auth.welcome_message": "Welcome to CS Skin Vault!",
+    "auth.reset_email_sent": "Reset email sent",
+    "auth.reset_email_check_inbox": "Please check your inbox for the password reset link",
+    "auth.enter_email_recover": "Enter your email to recover your password",
+    "auth.login_to_account": "Login to your account",
+    "auth.create_new_account": "Create a new account",
+    "auth.remember_me": "Remember me",
+    "auth.logging_in": "Logging in...",
+    "auth.registering": "Registering...",
+    "auth.sending": "Sending...",
+    "auth.send_recovery_link": "Send recovery link",
+    "auth.username": "Username",
+    "auth.username_placeholder": "Enter username",
+    "auth.full_name": "Full Name",
+    "auth.full_name_placeholder": "Enter your full name",
+    "auth.email_placeholder": "Enter your email",
+    "auth.city": "City",
+    "auth.city_placeholder": "Enter your city",
+    "auth.country": "Country",
+    "auth.country_placeholder": "Enter your country",
+    "auth.preferred_currency": "Preferred Currency",
+    "auth.select_currency": "Select a currency",
+    "auth.confirm_password": "Confirm Password",
+    "auth.trial_notice": "Sign up includes a 7-day free trial of premium features",
+    "auth.register": "Register",
+    "auth.logout_success": "Logged out successfully",
+    "auth.logout_success_description": "You have been logged out from your account",
+    "auth.logout_error": "Logout error",
+    "auth.logout_error_description": "There was a problem logging you out",
     
     // Dashboard
     "dashboard.title": "Dashboard",
@@ -158,6 +188,44 @@ const translations: Translations = {
     "auth.email": "Email",
     "auth.password": "Senha",
     "auth.forgotPassword": "Esqueceu a senha?",
+    "auth.redirecting_to_login": "Redirecionando para login",
+    "auth.please_login": "Por favor, faça login para ver esta página",
+    "auth.invalid_credentials": "Credenciais de login inválidas",
+    "auth.email_not_confirmed": "Email não confirmado",
+    "auth.unexpected_error": "Ocorreu um erro inesperado",
+    "auth.login_success": "Login bem-sucedido",
+    "auth.welcome_back": "Bem-vindo de volta!",
+    "auth.user_already_registered": "Usuário já registrado",
+    "auth.signup_success": "Cadastro bem-sucedido",
+    "auth.welcome_message": "Bem-vindo ao CS Skin Vault!",
+    "auth.reset_email_sent": "Email de redefinição enviado",
+    "auth.reset_email_check_inbox": "Verifique sua caixa de entrada para o link de redefinição de senha",
+    "auth.enter_email_recover": "Digite seu email para recuperar sua senha",
+    "auth.login_to_account": "Entre na sua conta",
+    "auth.create_new_account": "Crie uma nova conta",
+    "auth.remember_me": "Lembrar-me",
+    "auth.logging_in": "Entrando...",
+    "auth.registering": "Registrando...",
+    "auth.sending": "Enviando...",
+    "auth.send_recovery_link": "Enviar link de recuperação",
+    "auth.username": "Nome de usuário",
+    "auth.username_placeholder": "Digite seu nome de usuário",
+    "auth.full_name": "Nome completo",
+    "auth.full_name_placeholder": "Digite seu nome completo",
+    "auth.email_placeholder": "Digite seu email",
+    "auth.city": "Cidade",
+    "auth.city_placeholder": "Digite sua cidade",
+    "auth.country": "País",
+    "auth.country_placeholder": "Digite seu país",
+    "auth.preferred_currency": "Moeda preferida",
+    "auth.select_currency": "Selecione uma moeda",
+    "auth.confirm_password": "Confirmar senha",
+    "auth.trial_notice": "O cadastro inclui 7 dias de teste gratuito dos recursos premium",
+    "auth.register": "Registrar",
+    "auth.logout_success": "Desconectado com sucesso",
+    "auth.logout_success_description": "Você foi desconectado da sua conta",
+    "auth.logout_error": "Erro ao sair",
+    "auth.logout_error_description": "Houve um problema ao desconectar você",
     
     // Dashboard
     "dashboard.title": "Painel",
@@ -274,6 +342,44 @@ const translations: Translations = {
     "auth.email": "Email",
     "auth.password": "Contraseña",
     "auth.forgotPassword": "¿Olvidó su contraseña?",
+    "auth.redirecting_to_login": "Redireccionando al inicio de sesión",
+    "auth.please_login": "Por favor, inicie sesión para ver esta página",
+    "auth.invalid_credentials": "Credenciales de inicio de sesión inválidas",
+    "auth.email_not_confirmed": "Email no confirmado",
+    "auth.unexpected_error": "Ocurrió un error inesperado",
+    "auth.login_success": "Inicio de sesión exitoso",
+    "auth.welcome_back": "¡Bienvenido de nuevo!",
+    "auth.user_already_registered": "Usuario ya registrado",
+    "auth.signup_success": "Registro exitoso",
+    "auth.welcome_message": "¡Bienvenido a CS Skin Vault!",
+    "auth.reset_email_sent": "Email de restablecimiento enviado",
+    "auth.reset_email_check_inbox": "Por favor, revise su bandeja de entrada para el enlace de restablecimiento de contraseña",
+    "auth.enter_email_recover": "Ingrese su email para recuperar su contraseña",
+    "auth.login_to_account": "Iniciar sesión en su cuenta",
+    "auth.create_new_account": "Crear una nueva cuenta",
+    "auth.remember_me": "Recordarme",
+    "auth.logging_in": "Iniciando sesión...",
+    "auth.registering": "Registrando...",
+    "auth.sending": "Enviando...",
+    "auth.send_recovery_link": "Enviar enlace de recuperación",
+    "auth.username": "Nombre de usuario",
+    "auth.username_placeholder": "Ingrese su nombre de usuario",
+    "auth.full_name": "Nombre completo",
+    "auth.full_name_placeholder": "Ingrese su nombre completo",
+    "auth.email_placeholder": "Ingrese su email",
+    "auth.city": "Ciudad",
+    "auth.city_placeholder": "Ingrese su ciudad",
+    "auth.country": "País",
+    "auth.country_placeholder": "Ingrese su país",
+    "auth.preferred_currency": "Moneda preferida",
+    "auth.select_currency": "Seleccione una moneda",
+    "auth.confirm_password": "Confirmar contraseña",
+    "auth.trial_notice": "El registro incluye una prueba gratuita de 7 días de funciones premium",
+    "auth.register": "Registrarse",
+    "auth.logout_success": "Sesión cerrada con éxito",
+    "auth.logout_success_description": "Has cerrado sesión en tu cuenta",
+    "auth.logout_error": "Error al cerrar sesión",
+    "auth.logout_error_description": "Hubo un problema al cerrar sesión",
     
     // Dashboard
     "dashboard.title": "Panel",
@@ -369,6 +475,13 @@ const translations: Translations = {
     "pwa.understood": "Entendido",
   }
 };
+
+// Language context interface
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+}
 
 // Create context with default values
 const LanguageContext = createContext<LanguageContextType>({
