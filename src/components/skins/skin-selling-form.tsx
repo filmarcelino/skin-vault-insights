@@ -76,12 +76,10 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Safely check if inventoryId exists with type guard
-    const inventoryId = 'inventoryId' in skinData ? 
-      typeof skinData.inventoryId === 'string' ? skinData.inventoryId : 
-      (skinData.id || '') : (skinData.id || '');
+    // Safely get the inventory ID for the item
+    const itemId = skinData.inventoryId || skinData.id;
     
-    if (!soldPrice || !inventoryId) return;
+    if (!soldPrice || !itemId) return;
     
     const sellData: SellData = {
       soldDate: soldDate.toISOString(),
@@ -93,8 +91,8 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
       soldCurrency
     };
     
-    console.log("Selling skin with data:", { inventoryId, sellData });
-    onSellSkin(inventoryId, sellData);
+    console.log("Selling skin with data:", { itemId, sellData });
+    onSellSkin(itemId, sellData);
   };
 
   return (

@@ -106,7 +106,6 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
               <SkinSellingForm 
                 item={skinData as InventoryItem} 
                 onSellSkin={handleSellSkin} 
-                onCancel={() => setActiveTab("details")}
               />
             </TabsContent>
           )}

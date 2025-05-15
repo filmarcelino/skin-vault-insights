@@ -16,7 +16,7 @@ export const fetchSoldItems = async () => {
     // Fetch sold items from transactions table instead of inventory
     const { data: transactionsData, error: transactionsError } = await supabase
       .from('transactions')
-      .select('*, inventory(*)')
+      .select('*')
       .eq('user_id', userId)
       .eq('type', 'sell')
       .order('date', { ascending: false });
@@ -28,10 +28,24 @@ export const fetchSoldItems = async () => {
     
     console.log("Raw sold items data from transactions:", transactionsData);
     
+    // Get inventory data separately
+    const { data: inventoryItems } = await supabase
+      .from('inventory')
+      .select('*')
+      .in('id', transactionsData.map(t => t.item_id).filter(Boolean));
+    
+    // Create a map of inventory items by ID
+    const inventoryMap = new Map();
+    if (inventoryItems && Array.isArray(inventoryItems)) {
+      inventoryItems.forEach(item => {
+        inventoryMap.set(item.id, item);
+      });
+    }
+    
     // Map transaction data to the expected format for the UI
     const mappedItems = transactionsData.map(transaction => {
-      // The inventory object could be null or empty, let's handle it safely
-      const inventoryItem = transaction.inventory || {} as Record<string, any>;
+      // Get the related inventory item if available
+      const inventoryItem = inventoryMap.get(transaction.item_id) || {};
       
       return {
         id: transaction.id,

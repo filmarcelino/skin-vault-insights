@@ -31,8 +31,13 @@ export const useInventoryActions = () => {
   };
 
   const handleEditItem = (item: InventoryItem) => {
+    // Check if the item has sell mode flag
+    if (item.sellMode) {
+      setModalMode('sell');
+    } else {
+      setModalMode('edit');
+    }
     setSelectedItem(item);
-    setModalMode('edit');
     setIsModalOpen(true);
   };
   
@@ -66,11 +71,9 @@ export const useInventoryActions = () => {
     }
   };
 
-  const handleMarkAsSold = async (item: InventoryItem | string, sellData: SellData): Promise<void> => {
+  const handleMarkAsSold = async (itemId: string, sellData: SellData): Promise<void> => {
     try {
       // Handle both item object and direct itemId string
-      const itemId = typeof item === 'string' ? item : item.id || item.inventoryId;
-      
       if (!itemId) {
         console.error("Cannot mark as sold - no item ID found");
         return;

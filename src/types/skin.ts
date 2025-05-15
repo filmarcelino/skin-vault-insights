@@ -1,3 +1,4 @@
+
 export interface Skin {
   id: string;
   name: string;
@@ -65,6 +66,8 @@ export interface InventoryItem {
   image: string;
   type?: string;
   category?: string;
+  // Special property for sell mode
+  sellMode?: boolean;
 }
 
 export interface SkinFilter {
@@ -112,3 +115,4 @@ export interface LockStatus {
   daysLeft: number;
   tradeLockDate?: string;
 }
+
