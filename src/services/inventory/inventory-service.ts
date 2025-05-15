@@ -1,3 +1,4 @@
+
 // This function needs to be added or updated to ensure it returns items matching the InventoryItem interface
 export const fetchSoldItems = async () => {
   try {
@@ -110,7 +111,7 @@ export const fetchUserInventory = async () => {
       condition: item.condition,
       marketplace: item.marketplace,
       fee_percentage: item.fee_percentage,
-      feePercentage: item.feePercentage,
+      feePercentage: item.fee_percentage,
       currency: item.currency,
       currentPrice: item.current_price || item.price
     }));
@@ -122,9 +123,9 @@ export const fetchUserInventory = async () => {
   }
 };
 
+// Import using ES modules instead of require
+import { v4 as uuidv4 } from 'uuid';
 import { InventoryItem, SellData } from "@/types/skin";
-
-const { v4: uuidv4 } = require('uuid');
 
 export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<InventoryItem | null> => {
   try {
@@ -161,7 +162,7 @@ export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<
     const { data, error } = await supabase
       .from('inventory')
       .insert([newItem])
-      .select()
+      .select();
 
     if (error) {
       console.error("Error adding skin to inventory:", error);

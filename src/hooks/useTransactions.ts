@@ -1,11 +1,19 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUserTransactions } from "@/services/inventory/transactions-service";
-import { Transaction } from "@/types/skin";
 
 export const useTransactions = () => {
   return useQuery({
     queryKey: ["transactions"],
     queryFn: getUserTransactions,
   });
+};
+
+// Add a function to invalidate transactions cache
+export const useInvalidateTransactions = () => {
+  const queryClient = useQueryClient();
+  
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
+  };
 };
