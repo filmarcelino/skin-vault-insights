@@ -4,7 +4,6 @@ import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { MobileNav } from "@/components/ui/mobile-nav";
 import { LanguageSelector } from "@/components/ui/language-selector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Bell, User, LogOut } from "lucide-react";
@@ -66,7 +65,6 @@ export function Header() {
                 {t("auth.login")}
               </Button>
             )}
-            <MobileNav />
           </div>
         </div>
       </div>

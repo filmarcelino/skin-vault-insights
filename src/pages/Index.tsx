@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSkins } from '@/hooks/use-skins';
-import { Layout } from '@/components/layout/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -97,69 +96,67 @@ export default function Index() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6 pb-8">
-        {/* Tab navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="pb-6">
-          <TabsList className="w-full">
-            <TabsTrigger value="inventory" className="w-1/2">
-              My Inventory
-            </TabsTrigger>
-            <TabsTrigger value="search" className="w-1/2">
-              Search Skins
-            </TabsTrigger>
-          </TabsList>
+    <div className="space-y-6 pb-8">
+      {/* Tab navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="pb-6">
+        <TabsList className="w-full">
+          <TabsTrigger value="inventory" className="w-1/2">
+            My Inventory
+          </TabsTrigger>
+          <TabsTrigger value="search" className="w-1/2">
+            Search Skins
+          </TabsTrigger>
+        </TabsList>
           
-          {/* Search input */}
-          <div className="mt-4">
-            <div className="relative">
-              <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder={activeTab === 'inventory' ? "Filter inventory..." : "Search for skins..."}
-                className="pl-8"
-                value={activeTab === 'inventory' ? inventorySearchQuery : searchQuery}
-                onChange={activeTab === 'inventory' ? handleSearchChange : handleSearchInputChange}
-              />
-            </div>
+        {/* Search input */}
+        <div className="mt-4">
+          <div className="relative">
+            <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder={activeTab === 'inventory' ? "Filter inventory..." : "Search for skins..."}
+              className="pl-8"
+              value={activeTab === 'inventory' ? inventorySearchQuery : searchQuery}
+              onChange={activeTab === 'inventory' ? handleSearchChange : handleSearchInputChange}
+            />
           </div>
+        </div>
 
-          {/* Tab content */}
-          <TabsContent value="inventory" className="mt-6">
-            <InventorySection 
-              searchQuery={inventorySearchQuery}
-              onSearchChange={handleSearchChange}
-              weaponFilter={weaponFilter}
-              setWeaponFilter={setWeaponFilter}
-              rarityFilter={rarityFilter}
-              setRarityFilter={setRarityFilter}
-              sortMethod={sortMethod}
-              setSortMethod={setSortMethod}
-              viewMode={viewMode}
-              isLoading={isLoadingInventory}
-              filteredInventory={filteredInventory}
-              userInventory={userInventory as InventoryItem[]}
-              inventoryStats={inventoryStats}
-              handleSkinClick={handleInventorySkinClick}
-            />
-          </TabsContent>
+        {/* Tab content */}
+        <TabsContent value="inventory" className="mt-6">
+          <InventorySection 
+            searchQuery={inventorySearchQuery}
+            onSearchChange={handleSearchChange}
+            weaponFilter={weaponFilter}
+            setWeaponFilter={setWeaponFilter}
+            rarityFilter={rarityFilter}
+            setRarityFilter={setRarityFilter}
+            sortMethod={sortMethod}
+            setSortMethod={setSortMethod}
+            viewMode={viewMode}
+            isLoading={isLoadingInventory}
+            filteredInventory={filteredInventory}
+            userInventory={userInventory as InventoryItem[]}
+            inventoryStats={inventoryStats}
+            handleSkinClick={handleInventorySkinClick}
+          />
+        </TabsContent>
           
-          <TabsContent value="search" className="mt-6">
-            <SearchSection 
-              viewMode={viewMode}
-              isSkinsLoading={isLoadingSkins}
-              skins={filteredSkins as Skin[]}
-              searchQuery={searchQuery}
-              handleSkinClick={handleSkinClick}
-            />
-          </TabsContent>
-        </Tabs>
-        
-        {/* Activity Section with proper typing */}
-        <ActivitySection 
-          isLoading={isTransactionsLoading}
-          transactions={transactions as Transaction[]}
-        />
-      </div>
+        <TabsContent value="search" className="mt-6">
+          <SearchSection 
+            viewMode={viewMode}
+            isSkinsLoading={isLoadingSkins}
+            skins={filteredSkins as Skin[]}
+            searchQuery={searchQuery}
+            handleSkinClick={handleSkinClick}
+          />
+        </TabsContent>
+      </Tabs>
+      
+      {/* Activity Section with proper typing */}
+      <ActivitySection 
+        isLoading={isTransactionsLoading}
+        transactions={transactions as Transaction[]}
+      />
       
       {/* Skin detail modal for search items */}
       <SkinDetailModal 
@@ -178,6 +175,6 @@ export default function Index() {
           mode="view"
         />
       )}
-    </Layout>
+    </div>
   );
 }

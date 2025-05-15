@@ -55,48 +55,20 @@ const App = () => {
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       
-                      {/* Protected routes */}
-                      <Route path="/dashboard" element={
-                        <RequireAuth>
-                          <Layout><Index /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/inventory" element={
-                        <RequireAuth>
-                          <Layout><Inventory /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/add" element={
-                        <RequireAuth>
-                          <Layout><AddSkin /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/search" element={
-                        <RequireAuth>
-                          <Layout><SearchPage /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/analytics" element={
-                        <RequireAuth>
-                          <Layout><Analytics /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/profile" element={
-                        <RequireAuth>
-                          <Layout><Profile /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/settings" element={
-                        <RequireAuth>
-                          <Layout><Settings /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/subscription" element={
-                        <RequireAuth>
-                          <Layout><Subscription /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="*" element={<Layout><NotFound /></Layout>} />
+                      {/* Protected routes - wrapped in Layout only once */}
+                      <Route element={<RequireAuth><Layout /></RequireAuth>}>
+                        <Route path="/dashboard" element={<Index />} />
+                        <Route path="/inventory" element={<Inventory />} />
+                        <Route path="/add" element={<AddSkin />} />
+                        <Route path="/search" element={<SearchPage />} />
+                        <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/subscription" element={<Subscription />} />
+                      </Route>
+                      
+                      {/* Not found */}
+                      <Route path="*" element={<NotFound />} />
                     </Routes>
                   </BrowserRouter>
                 </div>
