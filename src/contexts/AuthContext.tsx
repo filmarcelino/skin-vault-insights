@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -273,14 +272,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfileError(false);
     
     try {
+      // Fix: The Supabase API expects different options structure
+      // Remove the persistSession from the options object
       const response = await supabase.auth.signInWithPassword({ 
         email, 
-        password,
-        options: {
-          // Set proper persistence based on rememberMe flag
-          persistSession: rememberMe
-        }
+        password
       });
+      
+      // Handle localStorage session persistence based on rememberMe flag
+      if (response.data.session && rememberMe) {
+        // Store session in localStorage if rememberMe is true
+        localStorage.setItem('supabase-auth', JSON.stringify({
+          timestamp: new Date().toISOString(),
+          session: response.data.session
+        }));
+      }
       
       if (response.error) {
         console.error("Sign in error:", response.error.message);
