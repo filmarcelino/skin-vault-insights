@@ -75,7 +75,7 @@ export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{formatDate(item.date_sold || item.updated_at)}</TableCell>
+                  <TableCell>{formatDate(item.date_sold)}</TableCell>
                   <TableCell>{formatPrice(item.purchasePrice || 0)}</TableCell>
                   <TableCell>{formatPrice(soldPrice)}</TableCell>
                   <TableCell>
