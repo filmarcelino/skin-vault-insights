@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { InventoryItem, SellData } from "@/types/skin";
 import { supabase } from '@/integrations/supabase/client'; // Direct import
@@ -19,7 +18,7 @@ export const fetchSoldItems = async () => {
       .select('*')
       .eq('user_id', userId)
       .eq('is_in_user_inventory', false)
-      .order('date_sold', { ascending: false });
+      .order('updated_at', { ascending: false });
       
     if (error) {
       console.error("Error fetching sold items:", error);
@@ -46,14 +45,16 @@ export const fetchSoldItems = async () => {
       is_in_user_inventory: false,
       tradeLockDays: item.trade_lock_days,
       tradeLockUntil: item.trade_lock_until,
-      profit: item.sold_price ? (item.sold_price - (item.purchase_price || 0)) : 0,
+      // Calculate profit safely
+      profit: item.price ? (item.price - (item.purchase_price || 0)) : 0,
       currency: item.currency_code || 'USD',
       floatValue: item.float_value,
       isStatTrak: item.is_stat_trak,
       wear: item.wear || "",
-      date_sold: item.date_sold,
-      sold_price: item.sold_price,
-      sold_marketplace: item.sold_marketplace
+      // Safely assign sold-related fields if they exist
+      date_sold: item.updated_at, // Use updated_at as a fallback for date_sold
+      sold_price: item.price, // Use price as a fallback for sold_price
+      sold_marketplace: item.marketplace || "Unknown" // Use marketplace as a fallback
     }));
     
     console.log("Mapped sold items:", mappedItems);
@@ -276,11 +277,10 @@ export const markItemAsSold = async (itemId: string, sellData: SellData): Promis
       .from('inventory')
       .update({
         is_in_user_inventory: false,
-        date_sold: soldDate,
-        sold_price: sellData.soldPrice,
-        sold_marketplace: sellData.soldMarketplace,
-        sold_fee_percentage: sellData.soldFeePercentage,
-        profit: calculatedProfit,
+        price: sellData.soldPrice, // Update price to sold price
+        updated_at: soldDate,  // Use updated_at to track when item was sold
+        marketplace: sellData.soldMarketplace, // Use marketplace for sold marketplace
+        fee_percentage: sellData.soldFeePercentage, // Use fee_percentage for sold fee
         currency_code: sellData.soldCurrency
       })
       .eq('id', itemId);
