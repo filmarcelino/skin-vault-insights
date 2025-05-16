@@ -4,9 +4,9 @@ import { fetchSkins } from "@/services/api";
 import { fetchUserInventory } from "@/services/inventory";
 
 // Hook to fetch all CS2 skins from the API
-export const useSkins = (params?: { weaponType?: string; search?: string }) => {
+export const useSkins = (params?: { weaponType?: string; search?: string; onlyUserInventory?: boolean }) => {
   return useQuery({
-    queryKey: ["skins", params?.weaponType || "all", params?.search || ""],
+    queryKey: ["skins", params?.weaponType || "all", params?.search || "", params?.onlyUserInventory || false],
     queryFn: () => fetchSkins(params?.weaponType, params?.search),
     staleTime: 1000 * 60 * 60, // 1 hour
   });
@@ -16,7 +16,7 @@ export const useSkins = (params?: { weaponType?: string; search?: string }) => {
 export const useUserInventory = () => {
   return useQuery({
     queryKey: ["inventory"],
-    queryFn: () => fetchUserInventory(),
+    queryFn: fetchUserInventory,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

@@ -4,6 +4,19 @@ import { Transaction } from "@/types/skin";
 import { v4 as uuidv4 } from 'uuid';
 
 /**
+ * Helper to convert DB type string to Transaction type enum
+ */
+const mapTransactionType = (type: string): "add" | "sell" | "trade" | "buy" => {
+  switch (type.toLowerCase()) {
+    case "add": return "add";
+    case "sell": return "sell";
+    case "trade": return "trade";
+    case "buy": return "buy";
+    default: return "buy"; // Default to "buy" for any unexpected values
+  }
+};
+
+/**
  * Fetches transactions for a user
  */
 export const getUserTransactions = async (userId?: string): Promise<Transaction[]> => {
@@ -38,17 +51,16 @@ export const getUserTransactions = async (userId?: string): Promise<Transaction[
       weaponName: item.weapon_name,
       date: item.date,
       price: item.price,
-      type: item.type,
+      type: mapTransactionType(item.type),
       notes: item.notes || "",
-      currencyCode: item.currency_code || "USD",
-      marketplace: item.marketplace || "Steam", // Add default value
-      createdAt: item.created_at
+      currency: item.currency_code || "USD",
+      marketplace: item.marketplace || "Steam" // Add default value
     }));
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return [];
   }
-}
+};
 
 /**
  * Adds a new transaction
@@ -75,9 +87,9 @@ export const addTransaction = async (transaction: Partial<Transaction>): Promise
         weapon_name: transaction.weaponName,
         date: transaction.date || new Date().toISOString(),
         price: transaction.price || 0,
-        type: transaction.type || 'SELL',
+        type: transaction.type || 'buy',
         notes: transaction.notes || '',
-        currency_code: transaction.currencyCode || 'USD',
+        currency_code: transaction.currency || 'USD',
         marketplace: transaction.marketplace || 'Steam' // Add default value
       })
       .select()
@@ -96,17 +108,16 @@ export const addTransaction = async (transaction: Partial<Transaction>): Promise
       weaponName: data.weapon_name,
       date: data.date,
       price: data.price,
-      type: data.type,
+      type: mapTransactionType(data.type),
       notes: data.notes || "",
-      currencyCode: data.currency_code || "USD",
-      marketplace: data.marketplace || "Steam", // Add default value
-      createdAt: data.created_at
+      currency: data.currency_code || "USD",
+      marketplace: data.marketplace || "Steam" // Add default value
     };
   } catch (error) {
     console.error("Error adding transaction:", error);
     return null;
   }
-}
+};
 
 /**
  * Gets a transaction by its ID
@@ -132,14 +143,13 @@ export const getTransactionById = async (transactionId: string): Promise<Transac
       weaponName: data.weapon_name,
       date: data.date,
       price: data.price,
-      type: data.type,
+      type: mapTransactionType(data.type),
       notes: data.notes || "",
-      currencyCode: data.currency_code || "USD",
-      marketplace: data.marketplace || "Steam", // Add default value
-      createdAt: data.created_at
+      currency: data.currency_code || "USD",
+      marketplace: data.marketplace || "Steam" // Add default value
     };
   } catch (error) {
     console.error("Error fetching transaction:", error);
     return null;
   }
-}
+};

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -15,7 +16,6 @@ import { formatPrice } from '@/utils/format-utils';
 import { toast } from "@/components/ui/sonner"
 import { removeInventoryItem, markItemAsSold } from '@/services/inventory';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SellItemForm } from './SellItemForm';
 
 interface InventorySkinModalProps {
@@ -32,7 +32,7 @@ export function InventorySkinModal({ inventoryItem, children, onClose }: Invento
     if (!inventoryItem?.inventoryId) return;
     
     try {
-      await markItemAsSold(inventoryItem.inventoryId, sellData);
+      await markItemAsSold({ inventoryId: inventoryItem.inventoryId }, sellData);
       toast.success("Item marked as sold!");
       onClose();
     } catch (error) {
@@ -45,7 +45,7 @@ export function InventorySkinModal({ inventoryItem, children, onClose }: Invento
     if (!inventoryItem?.inventoryId) return;
     
     try {
-      await removeInventoryItem(inventoryItem.inventoryId);
+      await removeInventoryItem({ inventoryId: inventoryItem.inventoryId });
       toast.success("Item removed from inventory!");
       onClose();
     } catch (error) {
@@ -63,7 +63,7 @@ export function InventorySkinModal({ inventoryItem, children, onClose }: Invento
         <DialogHeader>
           <DialogTitle>{inventoryItem.name}</DialogTitle>
           <DialogDescription>
-            {inventoryItem.weapon} - {inventoryItem.skin}
+            {inventoryItem.weapon} - {inventoryItem.name}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -80,7 +80,7 @@ export function InventorySkinModal({ inventoryItem, children, onClose }: Invento
             <Input id="wear" value={inventoryItem.wear || "Not specified"} className="col-span-3" disabled />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="price">Price ({currency})</Label>
+            <Label htmlFor="price">Price</Label>
             <Input id="price" value={formatPrice(inventoryItem.currentPrice || inventoryItem.price || 0)} className="col-span-3" disabled />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

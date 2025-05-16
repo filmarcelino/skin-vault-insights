@@ -66,7 +66,7 @@ export const useInventoryActions = () => {
   };
 
   // Handler for marking an item as sold
-  const handleSellItem = async (inventoryId: string, sellData: SellData) => {
+  const handleMarkAsSold = async (inventoryId: string, sellData: SellData) => {
     try {
       await markItemAsSold({ inventoryId }, sellData);
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
@@ -78,8 +78,13 @@ export const useInventoryActions = () => {
   };
 
   // Handler for removing an inventory item
-  const handleDeleteItem = async (inventoryId: string) => {
+  const handleDeleteItem = async (item: InventoryItem) => {
     try {
+      const inventoryId = item.inventoryId || "";
+      if (!inventoryId) {
+        toast.error("Invalid item ID");
+        return;
+      }
       await removeInventoryItem({ inventoryId });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast.success("Item removed from inventory!");
@@ -95,6 +100,20 @@ export const useInventoryActions = () => {
     delete duplicatedItem.inventoryId;
     
     addSkinMutation.mutate(duplicatedItem);
+  };
+
+  // Handlers for closing modals
+  const handleClose = (open: boolean) => {
+    setIsModalOpen(open);
+  };
+
+  const handleCloseDetail = (open: boolean) => {
+    setIsDetailModalOpen(open);
+  };
+
+  // Handler specifically for selling an item
+  const handleSellItem = (inventoryId: string, sellData: SellData) => {
+    handleMarkAsSold(inventoryId, sellData);
   };
 
   return {
@@ -114,5 +133,12 @@ export const useInventoryActions = () => {
     setIsDetailModalOpen,
     setSelectedItem,
     isLoading: addSkinMutation.isPending || updateItemMutation.isPending,
+    // Add the missing handlers
+    handleEditItem: handleEdit,
+    handleDeleteItem,
+    handleMarkAsSold,
+    handleSellItem,
+    handleClose,
+    handleCloseDetail
   };
 };

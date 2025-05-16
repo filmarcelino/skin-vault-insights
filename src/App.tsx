@@ -4,26 +4,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Layout } from "@/components/layout/layout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
 import MaintenancePage from "./pages/MaintenancePage";
-import Index from "./pages/Index";
-import Inventory from "./pages/Inventory";
-import Analytics from "./pages/Analytics";
-import AddSkin from "./pages/AddSkin";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import Subscription from "./pages/Subscription";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import RequireAuth from "./components/auth/require-auth";
-import SearchPage from "./pages/Search";
-import AdminConsole from "./pages/AdminConsole";
 
 // Set up React Query with 15 minutes staleTime for better caching
 const queryClient = new QueryClient({

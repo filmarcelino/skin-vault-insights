@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-import { useSkins } from "@/hooks/use-skins";
+import { useSkins, useUserInventory } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { SoldSkinsTable } from "@/components/inventory/SoldSkinsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,7 +36,7 @@ export default function Inventory() {
     isLoading, 
     error, 
     isFetching 
-  } = useSkins({ onlyUserInventory: true });
+  } = useUserInventory();
   
   // Type cast inventory data to InventoryItem[] to satisfy TypeScript
   const inventory = inventoryData as InventoryItem[];
@@ -100,7 +100,7 @@ export default function Inventory() {
     setIsModalOpen,
     setIsDetailModalOpen,
     handleViewDetails,
-    handleEditItem,
+    handleEdit: handleEditItem,
     handleDeleteItem,
     handleMarkAsSold,
     handleSellItem,
@@ -136,28 +136,11 @@ export default function Inventory() {
   };
 
   if (isLoading) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
   
   if (error) {
-    return (
-      <div className="text-center p-8">
-        <h2 className="text-xl font-bold text-red-500">
-          {t("errors.loadingError")}
-        </h2>
-        <p className="text-muted-foreground mt-2">
-          {t("errors.tryAgain")}
-        </p>
-        <Button 
-          className="mt-4" 
-          onClick={() => window.location.reload()}
-        >
-          {t("common.refresh")}
-        </Button>
-      </div>
-    );
+    return null;
   }
   
   // Create filters array for InventoryFilterBar
@@ -272,19 +255,23 @@ export default function Inventory() {
       </Tabs>
       
       {/* Inventory Item Edit/Sell Modal */}
-      <InventorySkinModal 
-        open={isModalOpen}
-        onOpenChange={handleClose}
-        skin={selectedItem || defaultInventoryItem}
-        mode={modalMode}
-      />
+      {selectedItem && (
+        <InventorySkinModal
+          inventoryItem={selectedItem} 
+          onClose={() => handleClose(false)}
+        >
+          <span>Open Modal</span>
+        </InventorySkinModal>
+      )}
       
       {/* Skin Detail View Modal */}
-      <SkinDetailModal 
-        open={isDetailModalOpen}
-        onOpenChange={handleCloseDetail}
-        skin={selectedItem || defaultInventoryItem}
-      />
+      {selectedItem && (
+        <SkinDetailModal 
+          open={isDetailModalOpen}
+          onOpenChange={handleCloseDetail}
+          skin={selectedItem}
+        />
+      )}
     </>
   );
 }

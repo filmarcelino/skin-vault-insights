@@ -108,7 +108,7 @@ export interface SellData {
 // Define SkinWear type
 export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';
 
-// Define Transaction type
+// Define Transaction type with a strictly defined 'type' field
 export interface Transaction {
   id: string;
   type: 'add' | 'sell' | 'trade' | 'buy';
@@ -132,3 +132,14 @@ export interface LockStatus {
 
 // Define modal mode type - include 'sell' as a valid mode
 export type ModalMode = 'view' | 'edit' | 'add' | 'sell';
+
+// New interface for the updated inventory skin modal
+export interface InventorySkinModalProps {
+  inventoryItem: InventoryItem;
+  children: React.ReactNode;
+  onClose: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  skin?: Skin | InventoryItem;
+  mode?: ModalMode;
+}
