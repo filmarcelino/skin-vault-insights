@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -123,33 +122,17 @@ export default function Inventory() {
     await refetchSoldItems();
   };
 
-  // Fix: Update adapter functions to use InventoryItem instead of string for IDs
-  const handleViewDetailsByIdAdapter = (inventoryId: string) => {
-    const item = inventory.find(item => item.inventoryId === inventoryId);
-    if (item) {
-      handleViewDetails(item);
-    }
+  // Fix: Create adapter functions to convert between item and ID parameters
+  const handleEditAdapter = (item: InventoryItem) => {
+    handleEditItem(item);
   };
-
-  const handleDeleteByIdAdapter = (inventoryId: string) => {
-    const item = inventory.find(item => item.inventoryId === inventoryId);
-    if (item) {
-      handleDeleteItem(item);
-    }
+  
+  const handleDeleteAdapter = (item: InventoryItem) => {
+    handleDeleteItem(item);
   };
-
-  const handleEditByIdAdapter = (inventoryId: string) => {
-    const item = inventory.find(item => item.inventoryId === inventoryId);
-    if (item) {
-      handleEditItem(item);
-    }
-  };
-
-  const handleDuplicateByIdAdapter = (inventoryId: string) => {
-    const item = inventory.find(item => item.inventoryId === inventoryId);
-    if (item) {
-      handleDuplicate(item);
-    }
+  
+  const handleDuplicateAdapter = (item: InventoryItem) => {
+    handleDuplicate(item);
   };
 
   if (isLoading) {
@@ -253,19 +236,19 @@ export default function Inventory() {
             <InventoryGrid 
               items={filteredItems}
               onViewDetails={handleViewDetails}
-              onEdit={handleEditItem}
-              onDelete={handleDeleteItem}
+              onEdit={handleEditAdapter}
+              onDelete={handleDeleteAdapter}
               onSell={handleSellItem}
-              onDuplicate={handleDuplicate}
+              onDuplicate={handleDuplicateAdapter}
             />
           ) : (
             <InventoryTable 
               items={filteredItems}
               onViewDetails={handleViewDetails}
-              onEdit={handleEditItem} 
-              onDelete={handleDeleteItem}
+              onEdit={handleEditAdapter}
+              onDelete={handleDeleteAdapter}
               onSell={handleItemSell}
-              onDuplicate={handleDuplicate}
+              onDuplicate={handleDuplicateAdapter}
             />
           )}
         </TabsContent>

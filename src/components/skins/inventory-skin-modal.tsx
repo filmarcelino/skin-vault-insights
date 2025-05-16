@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { addSkinToInventory, updateInventoryItem } from "@/services/inventory";
 import { useAuth } from "@/contexts/AuthContext";
@@ -77,7 +76,7 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
 
     try {
       if (mode === "add") {
-        // Fixed: Only pass the expected parameters
+        // Fixed parameters structure
         const result = await addSkinToInventory({
           userId: user.id, 
           skin: skin, 
@@ -105,7 +104,7 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
         }
       } 
       else if (mode === "edit" && isInventoryItem(skin)) {
-        // Fixed: Only pass the expected parameters
+        // Fixed parameters structure
         const result = await updateInventoryItem({
           itemId: skin.inventoryId,
           updates: {

@@ -74,7 +74,7 @@ export const useInventoryActions = () => {
     }
     
     try {
-      // Fixed: Pass the item's inventoryId as a single parameter object
+      // Fixed parameter format
       const result = await removeInventoryItem({
         inventoryId: item.inventoryId
       });
@@ -114,7 +114,7 @@ export const useInventoryActions = () => {
     }
 
     try {
-      // Fixed: Pass parameters as a single object
+      // Fixed parameter format
       const { success, error } = await markItemAsSold({
         itemId,
         sellData

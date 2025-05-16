@@ -1,43 +1,29 @@
 
-// Re-export all functions from inventory service for easier imports
+// Re-export all functions from the refactored services
 export {
   fetchUserInventory,
-  addSkinToInventory,
+  fetchSoldItems,
+  getCurrentDateAsString
+} from './inventory-fetch-service';
+
+export {
+  addSkinToInventory
+} from './inventory-add-service';
+
+export {
   updateInventoryItem,
   removeInventoryItem,
-  markItemAsSold,
-  fetchSoldItems,
-  getUserTransactions as fetchTransactions, 
-  getCurrentDateAsString
-} from './inventory-service';
+  markItemAsSold
+} from './inventory-update-service';
 
-// Re-export transaction-related functions
 export {
+  getUserTransactions as fetchTransactions,
   addTransaction,
+  getTransactionById
 } from './transactions-service';
 
-// Export utility functions for value calculation
-export const calculateItemValue = (item: any) => {
-  // Simple implementation for now
-  return item.price || item.purchasePrice || 0;
-};
-
-export const calculateCollectionValue = (items: any[]) => {
-  // Simple implementation for now
-  return items.reduce((total, item) => total + (item.price || item.purchasePrice || 0), 0);
-};
-
-// Add this simple function for inventory stats
-export const calculateInventoryStats = (items: any[]) => {
-  if (!Array.isArray(items)) return { totalItems: 0, totalValue: 0, averageValue: 0 };
-  
-  const totalItems = items.length;
-  const totalValue = items.reduce((sum, item) => sum + (item.price || item.purchasePrice || 0), 0);
-  const averageValue = totalItems > 0 ? totalValue / totalItems : 0;
-  
-  return {
-    totalItems,
-    totalValue,
-    averageValue
-  };
-};
+export {
+  calculateInventoryValue,
+  findMostValuableSkin,
+  calculateInventoryStats
+} from './value-service';

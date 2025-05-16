@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryItem } from "@/types/skin";
 import { mapSupabaseToInventoryItem } from "./inventory-mapper";
@@ -64,4 +65,19 @@ export const findMostValuableSkin = async (): Promise<InventoryItem | null> => {
     console.error("Error finding most valuable skin:", error);
     return null;
   }
+};
+
+// Add this simple function for inventory stats
+export const calculateInventoryStats = (items: any[]) => {
+  if (!Array.isArray(items)) return { totalItems: 0, totalValue: 0, averageValue: 0 };
+  
+  const totalItems = items.length;
+  const totalValue = items.reduce((sum, item) => sum + (item.price || item.purchasePrice || 0), 0);
+  const averageValue = totalItems > 0 ? totalValue / totalItems : 0;
+  
+  return {
+    totalItems,
+    totalValue,
+    averageValue
+  };
 };
