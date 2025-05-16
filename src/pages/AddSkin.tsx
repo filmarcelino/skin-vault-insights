@@ -20,7 +20,10 @@ export default function AddSkin() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
   // Fetch all skins for search
-  const { data: allSkins = [], isLoading } = useSkins();
+  const { data: allSkinsData = [], isLoading } = useSkins();
+  
+  // Cast to proper type to ensure Skin[]
+  const allSkins = allSkinsData as Skin[];
   
   const { handleAddToInventory } = useInventoryActions();
   
@@ -109,12 +112,14 @@ export default function AddSkin() {
         )}
       </div>
       
-      <SkinDetailModal 
-        skin={selectedSkin}
-        open={isDetailModalOpen}
-        onOpenChange={setIsDetailModalOpen}
-        onAddSkin={handleAddToInventory}
-      />
+      {selectedSkin && (
+        <SkinDetailModal 
+          skin={selectedSkin}
+          open={isDetailModalOpen}
+          onOpenChange={setIsDetailModalOpen}
+          onAddSkin={handleAddToInventory}
+        />
+      )}
     </div>
   );
 }

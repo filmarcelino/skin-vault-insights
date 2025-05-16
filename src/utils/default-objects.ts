@@ -11,10 +11,9 @@ export const defaultSkin: Skin = {
   price: 0,
   category: "Normal",
   // Add optional properties to avoid type errors
-  collection: undefined,
-  collections: [],
   type: "Normal",
   wear: "Factory New",
+  collections: [],
 };
 
 // Default inventory item to use as a fallback
@@ -39,14 +38,14 @@ export const defaultInventoryItem: InventoryItem = {
   floatValue: undefined,
   notes: "",
   tradeLockDays: 0,
-  collection: undefined,
+  // Remove the collection property as it doesn't exist in InventoryItem type
   collections: []
 };
 
 // Default transaction object to use as a fallback
 export const defaultTransaction = {
   id: "default",
-  type: "add",
+  type: "add" as "add" | "sell" | "trade" | "buy", // Use proper union type
   itemId: "default",
   skinName: "Default Skin",
   weaponName: "Unknown",

@@ -6,7 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQueryClient } from "@tanstack/react-query";
-import { addSkinToInventory, updateInventoryItem, markItemAsSold } from "@/services/inventory";
+import { 
+  addSkinToInventory, 
+  updateInventoryItem, 
+  markItemAsSold, 
+  removeInventoryItem 
+} from "@/services/inventory";
 
 export const useInventoryActions = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -63,6 +68,7 @@ export const useInventoryActions = () => {
     }
     
     try {
+      // Fixed to use removeInventoryItem properly
       const result = await removeInventoryItem(user.id, item.inventoryId);
       
       if (result.success) {

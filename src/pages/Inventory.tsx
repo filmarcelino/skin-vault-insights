@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
 import { defaultInventoryItem } from "@/utils/default-objects";
-import { InventoryItem } from "@/types/skin";
+import { InventoryItem, SellData } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -31,15 +31,18 @@ export default function Inventory() {
   const { viewMode, setViewMode } = useViewMode("grid"); 
   
   const { 
-    data: inventory = [], 
+    data: inventoryData = [], 
     isLoading, 
     error, 
     isFetching 
   } = useInventory();
   
+  // Type cast inventory data to InventoryItem[] to satisfy TypeScript
+  const inventory = inventoryData as InventoryItem[];
+  
   // Fetch sold items with a separate query
   const { 
-    data: soldItems = [], 
+    data: soldItemsData = [], 
     isLoading: isSoldItemsLoading,
     refetch: refetchSoldItems
   } = useQuery({
@@ -49,6 +52,9 @@ export default function Inventory() {
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true
   });
+  
+  // Type cast sold items to InventoryItem[]
+  const soldItems = soldItemsData as InventoryItem[];
   
   console.log("Current inventory items:", Array.isArray(inventory) ? inventory.length : 0);
   console.log("Sold items:", Array.isArray(soldItems) ? soldItems.length : 0);
@@ -63,7 +69,7 @@ export default function Inventory() {
     sortMethod, 
     setSortMethod,
     updateFilter
-  } = useInventoryFilter(inventory as InventoryItem[] || []);
+  } = useInventoryFilter(inventory);
   
   // Apply filters to get the filtered items
   const filteredItems = Array.isArray(inventory) ? inventory.filter(item => {
@@ -107,7 +113,7 @@ export default function Inventory() {
   const soldCount = Array.isArray(soldItems) ? soldItems.length : 0;
 
   // Enhanced handler to refetch sold items after marking item as sold
-  const handleItemSell = async (itemId: string, sellData: any): Promise<void> => {
+  const handleItemSell = async (itemId: string, sellData: SellData): Promise<void> => {
     console.log("Inventory page: handling sell item request", { itemId, sellData });
     await handleMarkAsSold(itemId, sellData);
     
@@ -247,7 +253,7 @@ export default function Inventory() {
               </p>
             </div>
           ) : (
-            <SoldSkinsTable items={soldItems as InventoryItem[]} />
+            <SoldSkinsTable items={soldItems} />
           )}
         </TabsContent>
       </Tabs>
@@ -256,7 +262,7 @@ export default function Inventory() {
       <InventorySkinModal 
         open={isModalOpen}
         onOpenChange={handleClose}
-        skin={selectedItem || defaultInventoryItem as InventoryItem}
+        skin={selectedItem || defaultInventoryItem} 
         mode={modalMode}
       />
       
@@ -264,7 +270,7 @@ export default function Inventory() {
       <SkinDetailModal 
         open={isDetailModalOpen}
         onOpenChange={handleCloseDetail}
-        skin={selectedItem as InventoryItem}
+        skin={selectedItem || defaultInventoryItem}
       />
     </>
   );

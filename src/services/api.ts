@@ -1,4 +1,3 @@
-
 // Import the fetchUserInventory function from the correct location
 import { fetchUserInventory } from "@/services/inventory/inventory-service";
 import { Skin } from "@/types/skin";
@@ -82,6 +81,35 @@ export const fetchSkins = async (): Promise<Skin[]> => {
     }
   }
 };
+
+// Add the searchSkins function used in use-skin-image-analysis
+export const searchSkins = async (query: string) => {
+  try {
+    const allSkins = await fetchSkins();
+    
+    // If no query, return empty array
+    if (!query) return [];
+    
+    // Simple search by name or weapon
+    return allSkins.filter(skin => {
+      const searchStr = `${skin.weapon} ${skin.name}`.toLowerCase();
+      return searchStr.includes(query.toLowerCase());
+    });
+  } catch (error) {
+    console.error('Error searching skins:', error);
+    return [];
+  }
+};
+
+// Add a DataSourceConfig type for json-settings.tsx
+export interface DataSourceConfig {
+  type: string;
+  url?: string;
+  fallbackUrl?: string;
+  isLocal?: boolean;
+  autoUpdate?: boolean;
+  lastUpdate?: string;
+}
 
 // Export the fetchUserInventory function for convenience
 export { fetchUserInventory };

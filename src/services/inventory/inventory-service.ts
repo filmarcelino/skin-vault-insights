@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { InventoryItem, SellData, Skin, Transaction } from "@/types/skin";
 import { v4 as uuidv4 } from "uuid";
@@ -42,9 +43,9 @@ export const fetchUserInventory = async (userId?: string): Promise<InventoryItem
       name: item.name,
       weapon: item.weapon,
       image: item.image,
-      rarity: item.rarity,
-      wear: item.wear,
-      type: item.type,
+      rarity: item.rarity || "Consumer Grade",
+      wear: item.wear || "Factory New",
+      type: item.type || "Normal",
       isStatTrak: item.is_stat_trak,
       floatValue: item.float_value,
       price: item.current_price || item.price || item.purchase_price || 0,
@@ -54,10 +55,9 @@ export const fetchUserInventory = async (userId?: string): Promise<InventoryItem
       marketplace: item.marketplace,
       feePercentage: item.fee_percentage,
       notes: item.notes,
-      category: item.category,
+      category: item.category || "Normal",
       tradeLockDays: item.trade_lock_days || 0,
-      tradeLockUntil: item.trade_lock_until,
-      currency: item.currency_code
+      tradeLockUntil: item.trade_lock_until
     }));
   } catch (error) {
     console.error("Exception fetching inventory:", error);
@@ -106,9 +106,9 @@ export const addSkinToInventory = async (
       weapon: skin.weapon,
       image: skin.image,
       rarity: skin.rarity,
-      type: skin.type,
-      category: skin.category,
-      wear: purchaseData.wear || skin.wear,
+      type: skin.type || "Normal",
+      category: skin.category || "Normal",
+      wear: purchaseData.wear || skin.wear || "Factory New",
       price: skin.price,
       current_price: skin.price,
       purchase_price: purchaseData.purchasePrice,
@@ -161,17 +161,17 @@ export const addSkinToInventory = async (
 // Update an existing inventory item
 export const updateInventoryItem = async (
   userId: string,
-  item: InventoryItem,
+  itemId: string,
   updates: Partial<InventoryItem>
 ): Promise<{ success: boolean; error?: any }> => {
   try {
-    console.log("Updating inventory item:", item.inventoryId);
+    console.log("Updating inventory item:", itemId);
     
     // Ensure the user is authorized to update this item
     const { data: existingItem, error: checkError } = await supabase
       .from("inventory")
       .select("*")
-      .eq("inventory_id", item.inventoryId)
+      .eq("inventory_id", itemId)
       .eq("user_id", userId)
       .single();
       
@@ -210,7 +210,7 @@ export const updateInventoryItem = async (
     const { error: updateError } = await supabase
       .from("inventory")
       .update(updateData)
-      .eq("inventory_id", item.inventoryId)
+      .eq("inventory_id", itemId)
       .eq("user_id", userId);
       
     if (updateError) {
@@ -377,8 +377,8 @@ export const getUserTransactions = async (userId: string): Promise<Transaction[]
     }
     
     return data.map(item => ({
-      id: item.id,
-      type: item.type,
+      id: item.id || item.transaction_id,
+      type: item.type as "add" | "sell" | "trade" | "buy", // Cast to the specific union type
       itemId: item.item_id,
       skinName: item.skin_name,
       weaponName: item.weapon_name,
@@ -387,7 +387,7 @@ export const getUserTransactions = async (userId: string): Promise<Transaction[]
       notes: item.notes,
       userId: item.user_id,
       currency: item.currency_code,
-      marketplace: item.marketplace || '' // Fix for marketplace issue
+      marketplace: item.marketplace || '' // Default value for marketplace
     }));
   } catch (error) {
     console.error("Exception fetching user transactions:", error);
@@ -424,24 +424,24 @@ export const fetchSoldItems = async (): Promise<InventoryItem[]> => {
       return [];
     }
 
-    // Transform sold items into InventoryItem format
+    // Transform sold items into InventoryItem format with default values for missing properties
     return soldItems.map(transaction => ({
       id: transaction.item_id,
-      inventoryId: transaction.id,
-      name: transaction.skin_name,
-      weapon: transaction.weapon_name,
-      image: transaction.image_url || '/placeholder-skin.png',
-      price: transaction.price,
-      purchasePrice: transaction.purchase_price || 0,
-      soldPrice: transaction.price,
+      inventoryId: transaction.id || transaction.transaction_id || '',
+      name: transaction.skin_name || '',
+      weapon: transaction.weapon_name || '',
+      image: '/placeholder-skin.png', // Default image
+      price: transaction.price || 0,
+      purchasePrice: 0, // Default value
+      soldPrice: transaction.price || 0,
       soldDate: transaction.date,
-      acquiredDate: transaction.acquired_date || transaction.date,
+      acquiredDate: transaction.date, // Use transaction date as fallback
       isInUserInventory: false,
-      category: transaction.category || 'Normal',
-      rarity: transaction.rarity || 'Consumer Grade',
-      wear: transaction.wear || 'Factory New',
-      soldMarketplace: transaction.marketplace || 'Steam Market',
-      profit: transaction.profit || 0
+      category: 'Normal', // Default category
+      rarity: 'Consumer Grade', // Default rarity
+      wear: 'Factory New', // Default wear
+      soldMarketplace: 'Steam Market', // Default marketplace
+      profit: 0 // Default profit
     }));
   } catch (error) {
     console.error("Error in fetchSoldItems:", error);

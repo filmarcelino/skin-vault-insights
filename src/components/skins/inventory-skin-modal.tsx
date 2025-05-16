@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Dialog,
@@ -47,16 +48,27 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   
-  // Extract properties with appropriate type safety
-  const skinItem = skin as InventoryItem;
+  // Ensure we have a valid skin object, defaulting if needed
+  const safeSkin = skin || { 
+    id: '', 
+    name: '', 
+    weapon: '', 
+    image: '', 
+    rarity: 'Consumer Grade', 
+    price: 0,
+    category: 'Normal'
+  };
+
+  // Type assertion to access inventory fields if available
+  const skinItem = safeSkin as InventoryItem;
 
   // Form state
-  const [purchasePrice, setPurchasePrice] = useState(skinItem?.purchasePrice || skin?.price || 0);
+  const [purchasePrice, setPurchasePrice] = useState(skinItem?.purchasePrice || safeSkin?.price || 0);
   const [acquiredDate, setAcquiredDate] = useState(skinItem?.acquiredDate || new Date().toISOString().split('T')[0]);
   const [marketplace, setMarketplace] = useState(skinItem?.marketplace || "Steam Market");
   const [feePercentage, setFeePercentage] = useState(skinItem?.feePercentage || 15);
   const [isStatTrak, setIsStatTrak] = useState(skinItem?.isStatTrak || false);
-  const [wear, setWear] = useState(skinItem?.wear || skin?.wear || "Factory New");
+  const [wear, setWear] = useState(skinItem?.wear || safeSkin?.wear || "Factory New");
   const [floatValue, setFloatValue] = useState<number | undefined>(skinItem?.floatValue);
   const [notes, setNotes] = useState(skinItem?.notes || "");
   const [tradeLockDays, setTradeLockDays] = useState(skinItem?.tradeLockDays || 0);
@@ -115,9 +127,9 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
     setIsLoading(true);
     
     try {
-      if (mode === "add" && skin) {
+      if (mode === "add" && safeSkin) {
         // Add new skin to inventory
-        const result = await addSkinToInventory(user.id, skin, {
+        const result = await addSkinToInventory(user.id, safeSkin as Skin, {
           purchasePrice,
           acquiredDate,
           marketplace,
@@ -217,7 +229,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.current_price")}</Label>
-              <div className="font-medium">{formatPrice(skin.price || 0)}</div>
+              <div className="font-medium">{formatPrice(safeSkin.price || 0)}</div>
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.acquired_date")}</Label>
@@ -229,7 +241,7 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.wear")}</Label>
-              <div className="font-medium">{skinItem?.wear || "Factory New"}</div>
+              <div className="font-medium">{skinItem?.wear || safeSkin.wear || "Factory New"}</div>
             </div>
             <div>
               <Label className="text-muted-foreground">{t("skin.float_value")}</Label>
@@ -504,22 +516,22 @@ export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {mode === "view" ? skin.name : 
+            {mode === "view" ? safeSkin.name : 
              mode === "add" ? t("inventory.add_to_inventory") : 
              mode === "edit" ? t("inventory.edit_item") : 
              mode === "sell" ? t("inventory.sell_item") : ""
             }
           </DialogTitle>
           <div className="flex items-center text-sm text-muted-foreground">
-            {skin.weapon} | {skin.wear || skin.rarity}
+            {safeSkin.weapon} | {safeSkin.wear || safeSkin.rarity}
             {skinItem?.isStatTrak && <span className="ml-1 text-amber-500">★ StatTrak™</span>}
           </div>
         </DialogHeader>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative bg-secondary rounded-md w-full sm:w-32 h-32 flex-shrink-0">
             <img
-              src={skin.image}
-              alt={skin.name}
+              src={safeSkin.image}
+              alt={safeSkin.name}
               className="absolute inset-0 w-full h-full object-contain p-2"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/placeholder-skin.png";

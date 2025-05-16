@@ -7,17 +7,35 @@ export {
   removeInventoryItem,
   markItemAsSold,
   fetchSoldItems,
-  calculateInventoryStats
+  getUserTransactions as fetchTransactions, 
+  getCurrentDateAsString  // Export this function that was missing
 } from './inventory-service';
 
 // Re-export transaction-related functions
 export {
-  fetchTransactions,
   addTransaction,
 } from './transactions-service';
 
-// Re-export value calculation functions
-export {
-  calculateItemValue,
-  calculateCollectionValue
-} from './value-service';
+// Re-export or create value calculation functions
+export const calculateItemValue = (item: any) => {
+  // Simple implementation for now
+  return item.price || item.purchasePrice || 0;
+};
+
+export const calculateCollectionValue = (items: any[]) => {
+  // Simple implementation for now
+  return items.reduce((total, item) => total + (item.price || item.purchasePrice || 0), 0);
+};
+
+// Add this simple function for inventory stats
+export const calculateInventoryStats = (items: any[]) => {
+  const totalItems = items.length;
+  const totalValue = items.reduce((sum, item) => sum + (item.price || item.purchasePrice || 0), 0);
+  const averageValue = totalItems > 0 ? totalValue / totalItems : 0;
+  
+  return {
+    totalItems,
+    totalValue,
+    averageValue
+  };
+};

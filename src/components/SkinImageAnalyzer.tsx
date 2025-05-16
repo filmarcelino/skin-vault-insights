@@ -1,16 +1,18 @@
+
 import React, { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Loader2, Camera, Save, Search, List } from 'lucide-react'
 import { useSkinImageAnalysis } from '@/hooks/use-skin-image-analysis'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { useAddSkin, useCategories } from '@/hooks/use-skins'
+import { useInventoryActions } from '@/hooks/useInventoryActions'
 import { SkinDetailModal } from '@/components/skins/skin-detail-modal'
 import { useNavigate } from 'react-router-dom'
 import { InventoryCard } from '@/components/dashboard/inventory-card'
 import { Skin } from '@/types/skin'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
+import { useSkins } from '@/hooks/use-skins'
 
 export const SkinImageAnalyzer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -19,11 +21,17 @@ export const SkinImageAnalyzer: React.FC = () => {
   const [showCategories, setShowCategories] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { analyzeSkinImage, isAnalyzing, analysisResult } = useSkinImageAnalysis()
-  const { data: categories, isLoading: isCategoriesLoading } = useCategories()
-  const addSkinMutation = useAddSkin()
+  const { data: allSkins, isLoading: isCategoriesLoading } = useSkins()
+  const { handleAddToInventory } = useInventoryActions()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const { toast } = useToast()
+
+  // Extract unique categories
+  const categories = React.useMemo(() => {
+    if (!allSkins || !Array.isArray(allSkins)) return [];
+    return [...new Set(allSkins.map(skin => skin.category).filter(Boolean))];
+  }, [allSkins]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -50,35 +58,18 @@ export const SkinImageAnalyzer: React.FC = () => {
     setDetailModalOpen(true)
   }
 
-  const handleAddSkin = (skinData: any) => {
+  const handleAddSkin = (skinData: Skin) => {
     console.log("Adicionando skin com dados:", skinData)
     
-    addSkinMutation.mutate({
-      skin: skinData,
-      purchaseInfo: {
-        purchasePrice: skinData.purchasePrice || 0,
-        marketplace: skinData.marketplace || "Steam Market",
-        feePercentage: skinData.feePercentage || 0,
-        notes: skinData.notes || ""
-      }
-    }, {
-      onSuccess: () => {
-        toast({
-          title: "Skin adicionada",
-          description: `${skinData.weapon} | ${skinData.name} foi adicionada ao seu inventário`
-        })
-        setDetailModalOpen(false)
-        navigate("/inventory")
-      },
-      onError: (error) => {
-        toast({
-          title: "Erro",
-          description: "Não foi possível adicionar a skin ao inventário",
-          variant: "destructive"
-        })
-        console.error("Erro ao adicionar skin:", error)
-      }
-    })
+    handleAddToInventory(skinData);
+    
+    toast({
+      title: "Skin adicionada",
+      description: `${skinData.weapon} | ${skinData.name} foi adicionada ao seu inventário`
+    });
+    
+    setDetailModalOpen(false);
+    navigate("/inventory");
   }
   
   const toggleCategoriesModal = () => {
