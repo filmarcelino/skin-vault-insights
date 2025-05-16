@@ -1,327 +1,188 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import { toast } from 'sonner';
-import { CURRENCIES } from '@/contexts/CurrencyContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { User } from '@/types/auth';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Profile } from "@/types/auth";
 
 export default function Profile() {
-  const { user, isLoading } = useAuth();
-  const navigate = useNavigate();
-  const { isSubscribed, isTrial, subscriptionEnd } = useSubscription();
-  const { currency, setCurrency } = useCurrency();
-  const { t, setLanguage, language } = useLanguage();
+  const { user, profile, signOut } = useAuth();
+  const { currencies, currency, setCurrency } = useCurrency();
+  const { t, language, setLanguage, languages } = useLanguage();
+  const [isUpdating, setIsUpdating] = useState(false);
   
-  const [profile, setProfile] = useState({
-    full_name: '',
-    username: '',
-    email: '',
-    city: '',
-    country: '',
-    preferred_currency: currency.code
+  // Profile form state
+  const [formState, setFormState] = useState({
+    fullName: "",
+    username: "",
+    currency: "",
+    language: ""
   });
   
-  const [isUpdating, setIsUpdating] = useState(false);
-
+  // Initialize form with user data
   useEffect(() => {
-    // Fetch user profile data
-    const fetchProfile = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-          
-        if (error) throw error;
-        
-        if (data) {
-          setProfile({
-            full_name: data.full_name || '',
-            username: data.username || '',
-            email: data.email || '',
-            city: data.city || '',
-            country: data.country || '',
-            preferred_currency: data.preferred_currency || currency.code
-          });
-          
-          // Update currency context if it's different
-          if (data.preferred_currency && data.preferred_currency !== currency.code) {
-            const currencyObj = CURRENCIES.find(c => c.code === data.preferred_currency);
-            if (currencyObj) {
-              setCurrency(currencyObj);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        toast.error(t('errors.profileLoadFailed'));
-      }
-    };
-    
-    fetchProfile();
-  }, [user, currency.code, setCurrency, t]);
+    if (user && profile) {
+      setFormState({
+        fullName: profile.full_name || "",
+        username: profile.username || "",
+        currency: profile.preferred_currency || "USD",
+        language: language
+      });
+    }
+  }, [user, profile, language]);
   
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) return;
-    
-    setIsUpdating(true);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormState(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleUpdateProfile = async () => {
+    if (!user || !profile) return;
     
     try {
+      setIsUpdating(true);
+      
+      // Update profile in Supabase
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: profile.full_name,
-          username: profile.username,
-          city: profile.city,
-          country: profile.country,
-          preferred_currency: profile.preferred_currency,
-          updated_at: new Date().toISOString()
+          username: formState.username,
+          full_name: formState.fullName,
+          preferred_currency: formState.currency,
         })
         .eq('id', user.id);
-        
+      
       if (error) throw error;
       
-      // Update currency if changed
-      if (profile.preferred_currency !== currency.code) {
-        const newCurrency = CURRENCIES.find(c => c.code === profile.preferred_currency);
-        if (newCurrency) {
-          setCurrency(newCurrency);
-        }
-      }
+      // Update language context
+      setLanguage(formState.language as "en" | "pt" | "es");
       
-      toast.success(t('profile.updateSuccess'));
+      // Update currency context
+      setCurrency(formState.currency);
+      
+      toast.success(t("profile.updateSuccess"));
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error(t('errors.profileUpdateFailed'));
+      console.error("Error updating profile:", error);
+      toast.error(t("profile.updateError"));
     } finally {
       setIsUpdating(false);
     }
   };
   
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast.error(t('errors.logoutFailed'));
-    }
-  };
-  
-  const handleLanguageChange = (value: string) => {
-    setLanguage(value);
-  };
-  
-  const handleCurrencyChange = (value: string) => {
-    setProfile({...profile, preferred_currency: value});
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[80vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (!user || !profile) {
+    return <div>{t("common.loading")}</div>;
   }
   
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
-          <p className="text-muted-foreground">{t('profile.subtitle')}</p>
-        </div>
-        
-        <Button variant="outline" onClick={handleLogout}>
-          {t('auth.logout')}
-        </Button>
-      </div>
+    <div className="max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">{t("profile.title")}</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Profile Card */}
         <Card>
-          <CardHeader>
-            <CardTitle>{t('profile.accountInfo')}</CardTitle>
+          <CardHeader className="text-center">
+            <Avatar className="w-24 h-24 mx-auto">
+              <AvatarImage src={profile.avatar_url || ""} />
+              <AvatarFallback>{profile.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <CardTitle className="mt-4">{profile.full_name}</CardTitle>
+            <CardDescription>{profile.username || user.email}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col items-center space-y-3">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src="/placeholder.svg" />
-                <AvatarFallback>
-                  {profile.full_name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center">
-                <h3 className="font-medium text-lg">{profile.full_name}</h3>
-                <p className="text-sm text-muted-foreground">@{profile.username}</p>
-              </div>
-            </div>
-            
-            <div className="pt-4 border-t space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('profile.memberSince')}</span>
-                <span>{new Date(user.created_at || Date.now()).toLocaleDateString()}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t('profile.plan')}</span>
-                <span className={isSubscribed ? "text-primary font-medium" : ""}>
-                  {isSubscribed ? t('subscription.premium') : t('subscription.free')}
-                  {isTrial && ` (${t('subscription.trial')})`}
-                </span>
-              </div>
-              {isSubscribed && subscriptionEnd && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t('subscription.renewsOn')}</span>
-                  <span>{new Date(subscriptionEnd).toLocaleDateString()}</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="pt-4 border-t">
-              <Button variant="outline" className="w-full">
-                {isSubscribed ? t('subscription.manageSubscription') : t('subscription.upgradeToPremium')}
-              </Button>
-            </div>
-          </CardContent>
+          <CardFooter>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => signOut()}
+            >
+              {t("auth.logout")}
+            </Button>
+          </CardFooter>
         </Card>
         
-        <div className="space-y-6">
-          <Tabs defaultValue="profile">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="profile">{t('profile.profileSettings')}</TabsTrigger>
-              <TabsTrigger value="preferences">{t('profile.preferences')}</TabsTrigger>
-            </TabsList>
+        {/* Edit Profile Card */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>{t("profile.editProfile")}</CardTitle>
+            <CardDescription>{t("profile.editProfileDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-2">
+              <Label htmlFor="fullName">{t("profile.fullName")}</Label>
+              <Input 
+                id="fullName" 
+                name="fullName"
+                value={formState.fullName} 
+                onChange={handleInputChange}
+                placeholder={t("profile.fullNamePlaceholder")}
+              />
+            </div>
             
-            <TabsContent value="profile" className="space-y-4 py-4">
-              <form onSubmit={handleProfileUpdate}>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="full-name">{t('profile.fullName')}</Label>
-                      <Input 
-                        id="full-name" 
-                        placeholder={t('profile.enterFullName')}
-                        value={profile.full_name}
-                        onChange={(e) => setProfile({...profile, full_name: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="username">{t('profile.username')}</Label>
-                      <Input 
-                        id="username" 
-                        placeholder={t('profile.enterUsername')}
-                        value={profile.username}
-                        onChange={(e) => setProfile({...profile, username: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t('profile.email')}</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      disabled
-                      value={profile.email}
-                    />
-                    <p className="text-xs text-muted-foreground">{t('profile.cantChangeEmail')}</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">{t('profile.city')}</Label>
-                      <Input 
-                        id="city" 
-                        placeholder={t('profile.enterCity')}
-                        value={profile.city}
-                        onChange={(e) => setProfile({...profile, city: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="country">{t('profile.country')}</Label>
-                      <Input 
-                        id="country" 
-                        placeholder={t('profile.enterCountry')} 
-                        value={profile.country}
-                        onChange={(e) => setProfile({...profile, country: e.target.value})}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isUpdating}>
-                      {isUpdating ? t('common.saving') : t('common.saveChanges')}
-                    </Button>
-                  </div>
-                </div>
-              </form>
-            </TabsContent>
+            <div className="grid gap-2">
+              <Label htmlFor="username">{t("profile.username")}</Label>
+              <Input 
+                id="username" 
+                name="username"
+                value={formState.username} 
+                onChange={handleInputChange}
+                placeholder={t("profile.usernamePlaceholder")}
+              />
+            </div>
             
-            <TabsContent value="preferences" className="space-y-4 py-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="language">{t('preferences.language')}</Label>
-                  <Select value={language} onValueChange={handleLanguageChange}>
-                    <SelectTrigger id="language">
-                      <SelectValue placeholder={t('preferences.selectLanguage')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="pt">Português</SelectItem>
-                      <SelectItem value="es">Español</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="currency">{t('preferences.currency')}</Label>
-                  <Select 
-                    value={profile.preferred_currency} 
-                    onValueChange={handleCurrencyChange}
-                  >
-                    <SelectTrigger id="currency">
-                      <SelectValue placeholder={t('preferences.selectCurrency')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CURRENCIES.map((curr) => (
-                        <SelectItem key={curr.code} value={curr.code}>
-                          {curr.symbol} {curr.name} ({curr.code})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button onClick={handleProfileUpdate} disabled={isUpdating}>
-                    {isUpdating ? t('common.saving') : t('common.saveChanges')}
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+            <div className="grid gap-2">
+              <Label htmlFor="currency">{t("profile.currency")}</Label>
+              <Select 
+                value={formState.currency} 
+                onValueChange={(value) => setFormState(prev => ({ ...prev, currency: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("profile.selectCurrency")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(currencies).map(([code, currencyInfo]) => (
+                    <SelectItem key={code} value={code}>
+                      {currencyInfo.symbol} {code} - {currencyInfo.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="language">{t("profile.language")}</Label>
+              <Select 
+                value={formState.language} 
+                onValueChange={(value) => setFormState(prev => ({ ...prev, language: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("profile.selectLanguage")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(languages).map(([code, name]) => (
+                    <SelectItem key={code} value={code}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button 
+              onClick={handleUpdateProfile} 
+              disabled={isUpdating}
+            >
+              {isUpdating ? t("common.updating") : t("common.saveChanges")}
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     </div>
   );

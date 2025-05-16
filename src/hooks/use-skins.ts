@@ -17,7 +17,10 @@ export const useSkins = (params?: { weaponType?: string; search?: string }) => {
 export const useUserInventory = () => {
   return useQuery({
     queryKey: ["inventory"],
-    queryFn: fetchUserInventory,
+    queryFn: async () => {
+      console.log("Fetching user inventory");
+      return fetchUserInventory();
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

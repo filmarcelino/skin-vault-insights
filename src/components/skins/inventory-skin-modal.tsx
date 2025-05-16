@@ -16,7 +16,7 @@ import { formatPrice } from '@/utils/format-utils';
 import { toast } from "sonner";
 import { removeInventoryItem, markItemAsSold } from '@/services/inventory';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import { SellItemForm } from './SellItemForm';
+import { SellItemForm } from '@/components/skins/SellItemForm';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface InventorySkinModalProps {

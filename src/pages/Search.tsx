@@ -15,6 +15,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { defaultSkin, defaultInventoryItem } from '@/utils/default-objects';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { SkinDetailModal } from '@/components/skins/skin-detail-modal';
 
 // Helper function to check item type
 const isInventoryItem = (item: any): item is InventoryItem => {
@@ -31,7 +32,9 @@ export default function Search() {
   const { 
     selectedItem, 
     isModalOpen, 
-    setIsModalOpen, 
+    setIsModalOpen,
+    isDetailModalOpen,
+    setIsDetailModalOpen, 
     handleViewDetails, 
     handleAddToInventory 
   } = useInventoryActions();
@@ -52,6 +55,10 @@ export default function Search() {
   
   const handleClose = () => {
     setIsModalOpen(false);
+  };
+
+  const handleCloseDetail = () => {
+    setIsDetailModalOpen(false);
   };
   
   // Get unique weapons, rarities, categories and collections for filter dropdowns
@@ -315,13 +322,24 @@ export default function Search() {
         </div>
       </div>
       
-      {selectedItem && (
+      {/* Inventory Modal */}
+      {selectedItem && isInventoryItem(selectedItem) && (
         <InventorySkinModal
-          inventoryItem={isInventoryItem(selectedItem) ? selectedItem : defaultInventoryItem}
+          inventoryItem={selectedItem}
           onClose={handleClose}
         >
           <span>Open Modal</span>
         </InventorySkinModal>
+      )}
+      
+      {/* Detail Modal */}
+      {selectedItem && (
+        <SkinDetailModal
+          skin={selectedItem}
+          open={isDetailModalOpen}
+          onOpenChange={handleCloseDetail}
+          onAddSkin={handleAddToInventory}
+        />
       )}
     </>
   );

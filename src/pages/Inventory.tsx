@@ -21,7 +21,8 @@ import { defaultInventoryItem } from "@/utils/default-objects";
 import { InventoryItem, SellData } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
-import { fetchSoldItems } from "@/services/inventory";
+import { fetchSoldItems, removeInventoryItem, markItemAsSold } from "@/services/inventory";
+import { toast } from "sonner";
 
 export default function Inventory() {
   const { t } = useLanguage();
@@ -36,7 +37,8 @@ export default function Inventory() {
     data: inventoryData = [], 
     isLoading, 
     error, 
-    isFetching 
+    isFetching,
+    refetch: refetchInventory
   } = useUserInventory();
   
   // Type cast inventory data to InventoryItem[] to satisfy TypeScript
@@ -59,6 +61,18 @@ export default function Inventory() {
   
   console.log("Current inventory items:", Array.isArray(inventory) ? inventory.length : 0);
   console.log("Sold items:", Array.isArray(soldItems) ? soldItems.length : 0);
+  
+  const { 
+    selectedItem, 
+    isModalOpen,
+    isDetailModalOpen,
+    modalMode,
+    setIsModalOpen,
+    setIsDetailModalOpen,
+    handleViewDetails,
+    handleEdit,
+    handleDuplicate
+  } = useInventoryActions();
   
   const { 
     searchQuery, 
@@ -93,32 +107,37 @@ export default function Inventory() {
     return true;
   }) : [];
   
-  const { 
-    selectedItem, 
-    isModalOpen,
-    isDetailModalOpen,
-    modalMode,
-    setIsModalOpen,
-    setIsDetailModalOpen,
-    handleViewDetails,
-    handleEdit,
-    handleDeleteItem,
-    handleMarkAsSold,
-    handleSellItem,
-    handleDuplicate
-  } = useInventoryActions();
-  
   const currentCount = Array.isArray(inventory) ? inventory.length : 0;
   const soldCount = Array.isArray(soldItems) ? soldItems.length : 0;
 
-  // Enhanced handler to refetch sold items after marking item as sold
-  const handleItemSell = async (itemId: string, sellData: SellData): Promise<void> => {
-    console.log("Inventory page: handling sell item request", { itemId, sellData });
-    await handleMarkAsSold(itemId, sellData);
+  // Handle deleting an item
+  const handleDeleteItem = async (item: InventoryItem) => {
+    if (!item.inventoryId) return;
     
-    // Force refetch sold items to update the list
-    console.log("Sale processed, refetching sold items");
-    await refetchSoldItems();
+    try {
+      await removeInventoryItem({ inventoryId: item.inventoryId });
+      toast.success(t("inventory.itemRemoved"));
+      refetchInventory();
+    } catch (error) {
+      console.error("Error removing item:", error);
+      toast.error(t("errors.removeItemFailed"));
+    }
+  };
+
+  // Enhanced handler to refetch sold items after marking item as sold
+  const handleSellItem = async (itemId: string, sellData: SellData): Promise<void> => {
+    console.log("Inventory page: handling sell item request", { itemId, sellData });
+    try {
+      await markItemAsSold({ inventoryId: itemId, sellData });
+      toast.success(t("inventory.itemSold"));
+      
+      // Force refetch both inventories to update the lists
+      await refetchInventory();
+      await refetchSoldItems();
+    } catch (error) {
+      console.error("Error selling item:", error);
+      toast.error(t("errors.sellItemFailed"));
+    }
   };
 
   // Close modal handlers
@@ -218,9 +237,7 @@ export default function Inventory() {
               onDelete={handleDeleteItem}
               onSell={(item) => {
                 // Adapter to convert the item-based API to an ID-based API
-                if (item.inventoryId) {
-                  handleViewDetails(item);
-                }
+                handleViewDetails(item);
               }}
               onDuplicate={handleDuplicate}
             />
@@ -230,7 +247,7 @@ export default function Inventory() {
               onViewDetails={handleViewDetails}
               onEdit={handleEdit}
               onDelete={handleDeleteItem}
-              onSell={handleItemSell}
+              onSell={handleSellItem}
               onDuplicate={handleDuplicate}
             />
           )}
