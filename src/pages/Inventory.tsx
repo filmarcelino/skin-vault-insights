@@ -1,6 +1,11 @@
 
 import { useState } from "react";
-import { useInventory } from "@/hooks/use-skins";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+import { useSkins } from "@/hooks/use-skins";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { SoldSkinsTable } from "@/components/inventory/SoldSkinsTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,16 +15,12 @@ import { InventoryGrid } from "@/components/inventory/InventoryGrid";
 import { useInventoryFilter } from "@/hooks/useInventoryFilter";
 import { useViewMode } from "@/hooks/useViewMode";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
 import { defaultInventoryItem } from "@/utils/default-objects";
-import { InventoryItem, SellData, Skin } from "@/types/skin";
+import { InventoryItem, SellData } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
 import { fetchSoldItems } from "@/services/inventory";
 
 export default function Inventory() {
@@ -30,12 +31,13 @@ export default function Inventory() {
   const [activeTab, setActiveTab] = useState<string>("current");
   const { viewMode, setViewMode } = useViewMode("grid"); 
   
+  // Get inventory data
   const { 
     data: inventoryData = [], 
     isLoading, 
     error, 
     isFetching 
-  } = useInventory();
+  } = useSkins({ onlyUserInventory: true });
   
   // Type cast inventory data to InventoryItem[] to satisfy TypeScript
   const inventory = inventoryData as InventoryItem[];
@@ -47,8 +49,7 @@ export default function Inventory() {
     refetch: refetchSoldItems
   } = useQuery({
     queryKey: ["sold-items"],
-    queryFn: fetchSoldItems,
-    // Ensure we always get fresh data
+    queryFn: () => fetchSoldItems(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true
   });
@@ -122,7 +123,14 @@ export default function Inventory() {
     await refetchSoldItems();
   };
 
-  // Adapter functions to match component interfaces
+  // Adapter functions to match component interfaces and handle type incompatibilities
+  const handleViewDetailsAdapter = (inventoryId: string) => {
+    const item = inventory.find(item => item.inventoryId === inventoryId);
+    if (item) {
+      handleViewDetails(item);
+    }
+  };
+
   const handleDeleteAdapter = (inventoryId: string) => {
     const item = inventory.find(item => item.inventoryId === inventoryId);
     if (item) {
@@ -137,24 +145,10 @@ export default function Inventory() {
     }
   };
 
-  const handleSellAdapter = (inventoryId: string) => {
-    const item = inventory.find(item => item.inventoryId === inventoryId);
-    if (item) {
-      handleSellItem(item);
-    }
-  };
-
   const handleDuplicateAdapter = (inventoryId: string) => {
     const item = inventory.find(item => item.inventoryId === inventoryId);
     if (item) {
       handleDuplicate(item);
-    }
-  };
-
-  const handleViewDetailsAdapter = (inventoryId: string) => {
-    const item = inventory.find(item => item.inventoryId === inventoryId);
-    if (item) {
-      handleViewDetails(item);
     }
   };
   
@@ -298,7 +292,7 @@ export default function Inventory() {
       <InventorySkinModal 
         open={isModalOpen}
         onOpenChange={handleClose}
-        skin={(selectedItem || defaultInventoryItem) as Skin}
+        skin={selectedItem || defaultInventoryItem}
         mode={modalMode}
       />
       
@@ -306,7 +300,7 @@ export default function Inventory() {
       <SkinDetailModal 
         open={isDetailModalOpen}
         onOpenChange={handleCloseDetail}
-        skin={(selectedItem || defaultInventoryItem) as Skin}
+        skin={selectedItem || defaultInventoryItem}
       />
     </>
   );

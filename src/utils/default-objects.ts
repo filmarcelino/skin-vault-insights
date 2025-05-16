@@ -37,7 +37,7 @@ export const defaultInventoryItem: InventoryItem = {
   feePercentage: 15,
   floatValue: undefined,
   notes: "",
-  tradeLockDays: 0
+  // Removed tradeLockDays as it's not in the type definition
 };
 
 // Default transaction object to use as a fallback

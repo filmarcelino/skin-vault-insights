@@ -13,6 +13,22 @@ import {
   removeInventoryItem 
 } from "@/services/inventory";
 
+// Define adapter functions to handle the different parameter formats
+const createInventoryItemFromSkin = (skin: Skin): InventoryItem => {
+  return {
+    ...skin,
+    id: skin.id,
+    inventoryId: "",
+    acquiredDate: new Date().toISOString(),
+    purchasePrice: skin.price || 0,
+    isInUserInventory: false,
+    isStatTrak: false,
+    wear: skin.wear || "Factory New",
+    rarity: skin.rarity || "Consumer Grade",
+    sellMode: false
+  };
+};
+
 export const useInventoryActions = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -38,18 +54,8 @@ export const useInventoryActions = () => {
     }
 
     // Convert Skin to InventoryItem for the modal
-    const inventoryItem: InventoryItem = {
-      ...skin,
-      inventoryId: "", // Will be generated when saved
-      acquiredDate: new Date().toISOString(),
-      purchasePrice: skin.price || 0,
-      isInUserInventory: false, // Not yet in inventory
-      isStatTrak: false,
-      wear: skin.wear || "Factory New",
-      rarity: skin.rarity || "Consumer Grade",
-      sellMode: false
-    };
-
+    const inventoryItem = createInventoryItemFromSkin(skin);
+    
     setSelectedItem(inventoryItem);
     setModalMode("add");
     setIsModalOpen(true);
@@ -68,7 +74,6 @@ export const useInventoryActions = () => {
     }
     
     try {
-      // Fixed to use removeInventoryItem properly with single argument
       const result = await removeInventoryItem(item.inventoryId);
       
       if (result.success) {
@@ -102,11 +107,10 @@ export const useInventoryActions = () => {
   const handleMarkAsSold = async (itemId: string, sellData: SellData) => {
     if (!user) {
       toast.error(t("auth.login_required"));
-      return;
+      return { success: false };
     }
 
     try {
-      // Fixed to use markItemAsSold with single argument
       const { success, error } = await markItemAsSold(itemId, sellData);
 
       if (success) {

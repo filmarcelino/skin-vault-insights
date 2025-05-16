@@ -10,25 +10,25 @@ interface AnalysisResult {
   error?: string;
 }
 
+// Helper function to search for skins by name or weapon
+export const searchSkins = async (query: string): Promise<Skin[]> => {
+  if (!query) return [];
+  
+  try {
+    const allSkins = await fetchSkins();
+    return allSkins.filter(skin => 
+      skin.name?.toLowerCase().includes(query.toLowerCase()) ||
+      skin.weapon?.toLowerCase().includes(query.toLowerCase())
+    );
+  } catch (error) {
+    console.error("Error searching skins:", error);
+    return [];
+  }
+};
+
 export const useSkinImageAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-
-  // Search for skins based on name
-  const searchSkins = async (query: string): Promise<Skin[]> => {
-    if (!query) return [];
-    
-    try {
-      const allSkins = await fetchSkins();
-      return allSkins.filter(skin => 
-        skin.name?.toLowerCase().includes(query.toLowerCase()) ||
-        skin.weapon?.toLowerCase().includes(query.toLowerCase())
-      );
-    } catch (error) {
-      console.error("Error searching skins:", error);
-      return [];
-    }
-  };
 
   const analyzeSkinImage = async (base64Image: string) => {
     setIsAnalyzing(true);
@@ -58,7 +58,7 @@ export const useSkinImageAnalysis = () => {
           price: 50,
           rarity: "Classified",
           category: "Normal",
-          collections: ["Operation Phoenix"]
+          collections: [] // Changed from string to empty array for type correctness
         },
         foundSkins: foundSkins.slice(0, 4),
         description: `Detected ${detectedWeapon} | ${detectedName}. This appears to be a popular skin from CS2.`

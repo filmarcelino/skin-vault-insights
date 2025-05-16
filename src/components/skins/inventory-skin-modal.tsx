@@ -1,546 +1,296 @@
-
-import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import { addSkinToInventory, updateInventoryItem } from "@/services/inventory";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { ModalMode, Skin, SkinWear } from "@/types/skin";
+import { useInvalidateInventory } from "@/hooks/use-skins";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { InventoryItem, Skin, SellData, ModalMode } from "@/types/skin";
-import { useQueryClient } from "@tanstack/react-query";
+import { SkinSellingForm } from "@/components/skins/skin-selling-form";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCurrency } from "@/contexts/CurrencyContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { addSkinToInventory, updateInventoryItem, markItemAsSold } from "@/services/inventory";
-import { formatDate } from "@/utils/format-utils";
 
-export interface InventorySkinModalProps {
+// Available skin wear types
+const WEAR_TYPES: SkinWear[] = [
+  "Factory New",
+  "Minimal Wear",
+  "Field-Tested",
+  "Well-Worn",
+  "Battle-Scarred"
+];
+
+// Props for the InventorySkinModal component
+interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  skin?: Skin | InventoryItem;
+  skin: Skin;
   mode?: ModalMode;
-  onSellSkin?: (itemId: string, sellData: SellData) => Promise<void>;
 }
 
-export const InventorySkinModal: React.FC<InventorySkinModalProps> = ({
-  open,
-  onOpenChange,
-  skin,
-  mode = "view",
-  onSellSkin
-}) => {
+export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: InventorySkinModalProps) {
   const { user } = useAuth();
-  const { formatPrice, currency } = useCurrency();
   const { t } = useLanguage();
-  const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(false);
+  const invalidateInventory = useInvalidateInventory();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Ensure we have a valid skin object, defaulting if needed
-  const safeSkin = skin || { 
-    id: '', 
-    name: '', 
-    weapon: '', 
-    image: '', 
-    rarity: 'Consumer Grade', 
-    price: 0,
-    category: 'Normal'
-  };
+  // State for form values
+  const [purchasePrice, setPurchasePrice] = useState<number>(skin.price || 0);
+  const [marketplace, setMarketplace] = useState<string>("Steam Market");
+  const [feePercentage, setFeePercentage] = useState<number>(13);
+  const [isStatTrak, setIsStatTrak] = useState<boolean>(false);
+  const [floatValue, setFloatValue] = useState<number | undefined>(undefined);
+  const [wear, setWear] = useState<SkinWear>("Factory New");
+  const [notes, setNotes] = useState<string>("");
 
-  // Type assertion to access inventory fields if available
-  const skinItem = safeSkin as InventoryItem;
+  // Update form values when skin changes
+  useEffect(() => {
+    if (skin) {
+      setPurchasePrice(skin.purchasePrice || skin.price || 0);
+      setMarketplace(skin.marketplace || "Steam Market");
+      setFeePercentage(skin.feePercentage || 13);
+      setIsStatTrak(skin.isStatTrak || false);
+      setFloatValue(skin.floatValue);
+      setWear(skin.wear as SkinWear || "Factory New");
+      setNotes(skin.notes || "");
+    }
+  }, [skin]);
 
-  // Form state
-  const [purchasePrice, setPurchasePrice] = useState(skinItem?.purchasePrice || safeSkin?.price || 0);
-  const [acquiredDate, setAcquiredDate] = useState(skinItem?.acquiredDate || new Date().toISOString().split('T')[0]);
-  const [marketplace, setMarketplace] = useState(skinItem?.marketplace || "Steam Market");
-  const [feePercentage, setFeePercentage] = useState(skinItem?.feePercentage || 15);
-  const [isStatTrak, setIsStatTrak] = useState(skinItem?.isStatTrak || false);
-  const [wear, setWear] = useState(skinItem?.wear || safeSkin?.wear || "Factory New");
-  const [floatValue, setFloatValue] = useState<number | undefined>(skinItem?.floatValue);
-  const [notes, setNotes] = useState(skinItem?.notes || "");
-  const [tradeLockDays, setTradeLockDays] = useState(skinItem?.tradeLockDays || 0);
-  
-  // Sell form state
-  const [soldPrice, setSoldPrice] = useState(0);
-  const [soldMarketplace, setSoldMarketplace] = useState("Steam Market");
-  const [soldFeePercentage, setSoldFeePercentage] = useState(15);
-  const [soldDate, setSoldDate] = useState(new Date().toISOString().split('T')[0]);
-  const [soldNotes, setSoldNotes] = useState("");
-  
-  // Calculate fees and profit for sale
-  const calculateSaleDetails = () => {
-    const origPrice = (skinItem?.purchasePrice || purchasePrice || 0);
-    const salePrice = soldPrice;
-    const marketplaceFee = salePrice * (soldFeePercentage / 100);
-    const netProceeds = salePrice - marketplaceFee;
-    const profit = netProceeds - origPrice;
-    
-    return {
-      originalPrice: origPrice,
-      salePrice,
-      marketplaceFee,
-      netProceeds,
-      profit
-    };
-  };
-  
-  // Available wear conditions
-  const wearConditions = [
-    "Factory New",
-    "Minimal Wear",
-    "Field-Tested",
-    "Well-Worn",
-    "Battle-Scarred"
-  ];
-  
-  // Available marketplaces
-  const marketplaces = [
-    "Steam Market",
-    "Skinport",
-    "DMarket",
-    "BitSkins",
-    "CS.MONEY",
-    "SkinBaron",
-    "Buff163",
-    "Other"
-  ];
-  
-  const handleSave = async () => {
+  // Handle form submission
+  const handleSubmit = async () => {
     if (!user) {
       toast.error(t("auth.login_required"));
       return;
     }
-    
-    setIsLoading(true);
-    
+
+    setIsSubmitting(true);
+
     try {
-      if (mode === "add" && safeSkin) {
+      if (mode === "add") {
         // Add new skin to inventory
-        const result = await addSkinToInventory(user.id, safeSkin as Skin, {
-          purchasePrice,
-          acquiredDate,
-          marketplace,
-          feePercentage,
-          isStatTrak,
-          wear,
-          floatValue,
-          notes,
-          tradeLockDays,
-          currencyCode: currency.code
-        });
-        
-        if (result.success) {
-          toast.success(t("inventory.item_added"));
-          
-          // Refresh inventory data
-          queryClient.invalidateQueries({ queryKey: ["userInventory"] });
-          onOpenChange(false);
-        } else {
-          toast.error(t("inventory.add_error"));
-        }
-      } else if (mode === "edit" && skinItem && skinItem.inventoryId) {
-        // Update existing inventory item
-        const result = await updateInventoryItem(user.id, skinItem.inventoryId, {
-          purchasePrice,
-          marketplace,
-          feePercentage,
-          isStatTrak,
-          wear,
-          floatValue,
-          notes,
-          tradeLockDays
-        });
-        
-        if (result.success) {
-          toast.success(t("inventory.item_updated"));
-          
-          // Refresh inventory data
-          queryClient.invalidateQueries({ queryKey: ["userInventory"] });
-          onOpenChange(false);
-        } else {
-          toast.error(t("inventory.update_error"));
-        }
-      } else if (mode === "sell" && skinItem && skinItem.inventoryId) {
-        // Mark item as sold
-        const sellData: SellData = {
-          soldPrice,
-          soldMarketplace,
-          soldFeePercentage,
-          soldDate: new Date(soldDate).toISOString(),
-          soldNotes,
-          profit: calculateSaleDetails().profit,
-          soldCurrency: currency.code
-        };
-        
-        if (onSellSkin) {
-          // Use the provided sell handler if available
-          await onSellSkin(skinItem.inventoryId, sellData);
-        } else {
-          // Otherwise, use the default implementation
-          const result = await markItemAsSold(user.id, skinItem.inventoryId, sellData);
-          
-          if (result.success) {
-            toast.success(t("inventory.item_sold"));
-            
-            // Refresh inventory and transactions data
-            queryClient.invalidateQueries({ queryKey: ["userInventory"] });
-            queryClient.invalidateQueries({ queryKey: ["transactions"] });
-            onOpenChange(false);
-          } else {
-            toast.error(t("inventory.sell_error"));
+        const result = await addSkinToInventory(
+          user.id, 
+          skin, 
+          {
+            purchasePrice,
+            marketplace,
+            feePercentage,
+            notes,
+            isStatTrak,
+            floatValue,
+            wear
           }
+        );
+
+        if (result.success) {
+          toast.success(t("inventory.skin_added"), {
+            description: t("inventory.skin_added_description", { name: skin.name })
+          });
+          invalidateInventory();
+          onOpenChange(false);
+        } else {
+          toast.error(t("inventory.add_error"), {
+            description: result.error?.message || t("common.unexpected_error")
+          });
+        }
+      } 
+      else if (mode === "edit" && skin.inventoryId) {
+        // Update existing inventory item
+        const result = await updateInventoryItem(
+          skin.inventoryId, 
+          {
+            ...skin,
+            purchasePrice,
+            marketplace,
+            feePercentage,
+            notes,
+            isStatTrak,
+            floatValue,
+            wear
+          }
+        );
+
+        if (result.success) {
+          toast.success(t("inventory.skin_updated"), {
+            description: t("inventory.skin_updated_description", { name: skin.name })
+          });
+          invalidateInventory();
+          onOpenChange(false);
+        } else {
+          toast.error(t("inventory.update_error"), {
+            description: result.error?.message || t("common.unexpected_error")
+          });
         }
       }
     } catch (error) {
-      console.error("Error saving inventory item:", error);
-      toast.error(t("inventory.action_error"));
+      console.error("Error in InventorySkinModal:", error);
+      toast.error(t("common.unexpected_error"));
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-  
-  if (!skin) {
-    return null;
-  }
-  
-  // Render form based on mode
-  const renderForm = () => {
-    // View mode - just display information
-    if (mode === "view") {
-      return (
-        <div className="grid gap-4">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            <div>
-              <Label className="text-muted-foreground">{t("skin.purchase_price")}</Label>
-              <div className="font-medium">{formatPrice(skinItem?.purchasePrice || 0)}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">{t("skin.current_price")}</Label>
-              <div className="font-medium">{formatPrice(safeSkin.price || 0)}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">{t("skin.acquired_date")}</Label>
-              <div className="font-medium">{formatDate(skinItem?.acquiredDate || new Date().toISOString())}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">{t("skin.marketplace")}</Label>
-              <div className="font-medium">{skinItem?.marketplace || "Steam Market"}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">{t("skin.wear")}</Label>
-              <div className="font-medium">{skinItem?.wear || safeSkin.wear || "Factory New"}</div>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">{t("skin.float_value")}</Label>
-              <div className="font-medium">{skinItem?.floatValue || "N/A"}</div>
-            </div>
-          </div>
-          
-          {skinItem?.notes && (
-            <div>
-              <Label className="text-muted-foreground">{t("skin.notes")}</Label>
-              <div className="font-medium whitespace-pre-line">{skinItem?.notes}</div>
-            </div>
-          )}
-          
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common.close")}
-            </Button>
-          </div>
-        </div>
-      );
-    }
-    
-    // Add or Edit mode - similar forms
-    if (mode === "add" || mode === "edit") {
-      return (
-        <div className="grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="purchasePrice">{t("skin.purchase_price")}</Label>
-              <Input
-                id="purchasePrice"
-                type="number"
-                value={purchasePrice}
-                onChange={(e) => setPurchasePrice(parseFloat(e.target.value))}
-                min="0"
-                step="0.01"
-              />
-            </div>
-            <div>
-              <Label htmlFor="acquiredDate">{t("skin.acquired_date")}</Label>
-              <Input
-                id="acquiredDate"
-                type="date"
-                value={acquiredDate.split('T')[0]}
-                onChange={(e) => setAcquiredDate(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="marketplace">{t("skin.marketplace")}</Label>
-              <Select value={marketplace} onValueChange={setMarketplace}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("skin.select_marketplace")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {marketplaces.map((marketplace) => (
-                    <SelectItem key={marketplace} value={marketplace}>
-                      {marketplace}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="feePercentage">{t("skin.fee_percentage")}</Label>
-              <Input
-                id="feePercentage"
-                type="number"
-                value={feePercentage}
-                onChange={(e) => setFeePercentage(parseFloat(e.target.value))}
-                min="0"
-                max="100"
-                step="0.01"
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="wear">{t("skin.wear")}</Label>
-              <Select value={wear} onValueChange={setWear}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("skin.select_wear")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {wearConditions.map((condition) => (
-                    <SelectItem key={condition} value={condition}>
-                      {condition}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="floatValue">{t("skin.float_value")}</Label>
-              <Input
-                id="floatValue"
-                type="number"
-                value={floatValue || ""}
-                onChange={(e) => setFloatValue(e.target.value ? parseFloat(e.target.value) : undefined)}
-                min="0"
-                max="1"
-                step="0.0001"
-                placeholder="0.0000"
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isStatTrak"
-                checked={isStatTrak}
-                onCheckedChange={(checked) => setIsStatTrak(!!checked)}
-              />
-              <Label htmlFor="isStatTrak" className="cursor-pointer">
-                {t("skin.stat_trak")}
-              </Label>
-            </div>
-            <div>
-              <Label htmlFor="tradeLockDays">{t("skin.trade_lock_days")}</Label>
-              <Input
-                id="tradeLockDays"
-                type="number"
-                value={tradeLockDays}
-                onChange={(e) => setTradeLockDays(parseInt(e.target.value))}
-                min="0"
-                max="30"
-                step="1"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="notes">{t("skin.notes")}</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t("skin.notes_placeholder")}
-              rows={3}
-            />
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? t("common.saving") : t("common.save")}
-            </Button>
-          </div>
-        </div>
-      );
-    }
-    
-    // Sell mode
-    if (mode === "sell") {
-      const { originalPrice, salePrice, marketplaceFee, netProceeds, profit } = calculateSaleDetails();
-      
-      return (
-        <div className="grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="soldPrice">{t("skin.sale_price")}</Label>
-              <Input
-                id="soldPrice"
-                type="number"
-                value={soldPrice}
-                onChange={(e) => setSoldPrice(parseFloat(e.target.value))}
-                min="0"
-                step="0.01"
-              />
-            </div>
-            <div>
-              <Label htmlFor="soldDate">{t("skin.sold_date")}</Label>
-              <Input
-                id="soldDate"
-                type="date"
-                value={soldDate}
-                onChange={(e) => setSoldDate(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="soldMarketplace">{t("skin.marketplace")}</Label>
-              <Select value={soldMarketplace} onValueChange={setSoldMarketplace}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("skin.select_marketplace")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {marketplaces.map((marketplace) => (
-                    <SelectItem key={marketplace} value={marketplace}>
-                      {marketplace}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="soldFeePercentage">{t("skin.fee_percentage")}</Label>
-              <Input
-                id="soldFeePercentage"
-                type="number"
-                value={soldFeePercentage}
-                onChange={(e) => setSoldFeePercentage(parseFloat(e.target.value))}
-                min="0"
-                max="100"
-                step="0.01"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="soldNotes">{t("skin.notes")}</Label>
-            <Textarea
-              id="soldNotes"
-              value={soldNotes}
-              onChange={(e) => setSoldNotes(e.target.value)}
-              placeholder={t("skin.sale_notes_placeholder")}
-              rows={2}
-            />
-          </div>
-          
-          <div className="mt-2 border rounded-md bg-muted/50 p-3 space-y-1">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t("skin.purchase_price")}</span>
-              <span>{formatPrice(originalPrice)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t("skin.sale_price")}</span>
-              <span>{formatPrice(salePrice)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t("skin.marketplace_fee")}</span>
-              <span>-{formatPrice(marketplaceFee)}</span>
-            </div>
-            <div className="flex justify-between font-medium border-t pt-1 mt-1">
-              <span>{t("skin.net_proceeds")}</span>
-              <span>{formatPrice(netProceeds)}</span>
-            </div>
-            <div className="flex justify-between font-medium">
-              <span>{t("skin.profit")}</span>
-              <span className={profit >= 0 ? "text-green-500" : "text-red-500"}>
-                {profit >= 0 ? "+" : ""}{formatPrice(profit)}
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? t("common.processing") : t("inventory.confirm_sell")}
-            </Button>
-          </div>
-        </div>
-      );
-    }
-    
-    return null;
-  };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {mode === "view" ? safeSkin.name : 
-             mode === "add" ? t("inventory.add_to_inventory") : 
-             mode === "edit" ? t("inventory.edit_item") : 
-             mode === "sell" ? t("inventory.sell_item") : ""
-            }
+            {mode === "add" && t("inventory.add_skin")}
+            {mode === "edit" && t("inventory.edit_skin")}
+            {mode === "view" && t("inventory.skin_details")}
+            {mode === "sell" && t("inventory.sell_skin")}
           </DialogTitle>
-          <div className="flex items-center text-sm text-muted-foreground">
-            {safeSkin.weapon} | {safeSkin.wear || safeSkin.rarity}
-            {skinItem?.isStatTrak && <span className="ml-1 text-amber-500">★ StatTrak™</span>}
-          </div>
         </DialogHeader>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative bg-secondary rounded-md w-full sm:w-32 h-32 flex-shrink-0">
-            <img
-              src={safeSkin.image}
-              alt={safeSkin.name}
-              className="absolute inset-0 w-full h-full object-contain p-2"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/placeholder-skin.png";
-              }}
-            />
+
+        {mode === "sell" && skin ? (
+          <SkinSellingForm 
+            skin={skin} 
+            onOpenChange={onOpenChange} 
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <div className="flex-shrink-0 w-20 h-20 bg-black/20 rounded-sm flex items-center justify-center">
+                {skin?.image ? (
+                  <img 
+                    src={skin.image} 
+                    alt={skin.name} 
+                    className="max-w-full max-h-full object-contain p-1"
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground">No image</span>
+                )}
+              </div>
+              <div>
+                <h3 className="font-medium text-lg">{skin.name}</h3>
+                <p className="text-muted-foreground text-sm">{skin.weapon}</p>
+                <p className={`text-xs inline-block px-1.5 py-0.5 rounded ${skin.rarity === "Covert" ? "bg-red-500/20 text-red-500" : 
+                  skin.rarity === "Classified" ? "bg-pink-500/20 text-pink-500" :
+                  skin.rarity === "Restricted" ? "bg-purple-500/20 text-purple-500" :
+                  skin.rarity === "Mil-Spec Grade" ? "bg-blue-500/20 text-blue-500" :
+                  "bg-gray-500/20 text-gray-500"}`}>
+                  {skin.rarity}
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid gap-3">
+              <div>
+                <Label htmlFor="purchasePrice">{t("inventory.purchase_price")}</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                  <Input
+                    id="purchasePrice"
+                    type="number"
+                    className="pl-7"
+                    value={purchasePrice}
+                    onChange={(e) => setPurchasePrice(Number(e.target.value))}
+                    disabled={mode === "view"}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="marketplace">{t("inventory.marketplace")}</Label>
+                <Input
+                  id="marketplace"
+                  value={marketplace}
+                  onChange={(e) => setMarketplace(e.target.value)}
+                  disabled={mode === "view"}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="feePercentage">{t("inventory.fee_percentage")}</Label>
+                <div className="relative">
+                  <Input
+                    id="feePercentage"
+                    type="number"
+                    className="pr-7"
+                    value={feePercentage}
+                    onChange={(e) => setFeePercentage(Number(e.target.value))}
+                    disabled={mode === "view"}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="wear">{t("inventory.wear")}</Label>
+                  <Select
+                    value={wear}
+                    onValueChange={(value) => setWear(value as SkinWear)}
+                    disabled={mode === "view"}
+                  >
+                    <SelectTrigger id="wear">
+                      <SelectValue placeholder={t("inventory.select_wear")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WEAR_TYPES.map((wearType) => (
+                        <SelectItem key={wearType} value={wearType}>
+                          {wearType}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="floatValue">{t("inventory.float_value")}</Label>
+                  <Input
+                    id="floatValue"
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    max="1"
+                    value={floatValue === undefined ? "" : floatValue}
+                    onChange={(e) => setFloatValue(e.target.value ? Number(e.target.value) : undefined)}
+                    disabled={mode === "view"}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isStatTrak"
+                  checked={isStatTrak}
+                  onCheckedChange={(checked) => setIsStatTrak(checked === true)}
+                  disabled={mode === "view"}
+                />
+                <Label htmlFor="isStatTrak">{t("inventory.stat_trak")}</Label>
+              </div>
+
+              <div>
+                <Label htmlFor="notes">{t("inventory.notes")}</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  disabled={mode === "view"}
+                  className="h-20"
+                />
+              </div>
+            </div>
+
+            {mode !== "view" && (
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  {t("common.cancel")}
+                </Button>
+                <Button onClick={handleSubmit} disabled={isSubmitting}>
+                  {isSubmitting ? t("common.submitting") : mode === "add" ? t("common.add") : t("common.update")}
+                </Button>
+              </div>
+            )}
           </div>
-          <div className="flex-1">{renderForm()}</div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
-};
+}

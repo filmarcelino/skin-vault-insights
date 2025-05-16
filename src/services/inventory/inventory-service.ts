@@ -43,7 +43,7 @@ export const fetchUserInventory = async (userId: string): Promise<InventoryItem[
       return mapSupabaseToInventoryItem({
         ...item,
         // Add defaults for any missing properties
-        type: "Normal", // This is necessary since item.type doesn't exist in DB
+        type: "Normal", // Add a default type property
         category: item.collection_name || "Normal" // Use collection_name as fallback for category
       });
     });
@@ -84,7 +84,7 @@ export const fetchSoldItems = async (userId?: string): Promise<InventoryItem[]> 
     return soldData?.map(item => mapSupabaseToInventoryItem({
       ...item,
       // Add defaults for any missing properties
-      type: "Normal", // Add type property
+      type: "Normal", // Add a default type property
       category: item.collection_name || "Normal" // Use collection_name as fallback for category
     })) || [];
   } catch (error) {
@@ -138,9 +138,10 @@ export const addSkinToInventory = async (
       fee_percentage: options.feePercentage || 15,
       notes: options.notes || "",
       currency_code: "USD", // Default currency
-      collection_name: Array.isArray(skin.collections) && skin.collections.length > 0 
-        ? skin.collections[0] 
-        : null,
+      collection_name: typeof skin.collections === 'string' ? 
+        skin.collections : 
+        Array.isArray(skin.collections) && skin.collections.length > 0 ? 
+          skin.collections[0].toString() : null,
     };
 
     // Insert the item into inventory
@@ -155,6 +156,7 @@ export const addSkinToInventory = async (
 
     // Create a transaction record
     await addTransaction({
+      id: uuidv4(),
       type: "add",
       itemId: inventoryId,
       skinName: skin.name,
@@ -295,6 +297,7 @@ export const markItemAsSold = async (
 
     // Create a transaction for the sale
     await addTransaction({
+      id: uuidv4(),
       type: "sell",
       itemId: itemId,
       skinName: itemData.name,
@@ -302,9 +305,9 @@ export const markItemAsSold = async (
       price: sellData.soldPrice,
       date: sellData.soldDate || getCurrentDateAsString(),
       userId: itemData.user_id,
-      currency: sellData.currency || "USD",
-      marketplace: sellData.marketplace || itemData.marketplace || "Steam Market",
-      notes: sellData.notes
+      currency: sellData.soldCurrency || "USD",
+      marketplace: sellData.soldMarketplace || itemData.marketplace || "Steam Market",
+      notes: sellData.soldNotes || ""
     });
 
     return { success: true };
@@ -346,10 +349,20 @@ export const getUserTransactions = async (userId?: string): Promise<Transaction[
     }
 
     // Convert from database schema to frontend model
-    return data.map(item => mapSupabaseToTransaction({
-      ...item,
-      marketplace: item.marketplace || "Steam Market" // Provide fallback
+    const transactions = data.map(item => ({
+      id: item.id,
+      type: item.type as "add" | "sell" | "trade" | "buy",
+      itemId: item.item_id,
+      skinName: item.skin_name || "",
+      weaponName: item.weapon_name || "",
+      price: item.price || 0,
+      date: item.date,
+      userId: item.user_id,
+      currency: item.currency_code || "USD",
+      marketplace: item.marketplace || "Unknown"
     }));
+
+    return transactions;
   } catch (error) {
     console.error("Exception in getUserTransactions:", error);
     return [];
@@ -380,16 +393,9 @@ export const getTransactionById = async (transactionId: string): Promise<Transac
       price: data.price || 0,
       date: data.date,
       userId: data.user_id,
-      image: null, // DB doesn't store this
-      purchasePrice: null, // Not stored in transactions table
-      acquiredDate: null, // Not stored in transactions table
-      category: null, // Not in transactions table
-      rarity: null, // Not in transactions table
-      wear: null, // Not in transactions table
-      marketplace: data.marketplace || "Unknown", // Providing default value
-      profit: null, // Would need to be calculated
-      notes: data.notes || "",
-      currency: data.currency_code || "USD"
+      currency: data.currency_code || "USD",
+      marketplace: data.marketplace || "Unknown",
+      notes: data.notes || ""
     };
   } catch (error) {
     console.error("Exception in getTransactionById:", error);

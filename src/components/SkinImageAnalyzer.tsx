@@ -10,7 +10,7 @@ import { SkinDetailModal } from '@/components/skins/skin-detail-modal'
 import { useNavigate } from 'react-router-dom'
 import { InventoryCard } from '@/components/dashboard/inventory-card'
 import { Skin } from '@/types/skin'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from "sonner";
 import { Badge } from '@/components/ui/badge'
 import { useSkins } from '@/hooks/use-skins'
 
@@ -25,12 +25,11 @@ export const SkinImageAnalyzer: React.FC = () => {
   const { handleAddToInventory } = useInventoryActions()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
-  const { toast } = useToast()
 
   // Extract unique categories
   const categories = React.useMemo(() => {
     if (!allSkins || !Array.isArray(allSkins)) return [];
-    return [...new Set(allSkins.map(skin => skin.category).filter(Boolean))];
+    return [...new Set(allSkins.map((skin: any) => skin.category).filter(Boolean))];
   }, [allSkins]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,7 +204,7 @@ export const SkinImageAnalyzer: React.FC = () => {
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {categories && categories.length > 0 ? (
-                  categories.map((category, index) => (
+                  categories.map((category: string, index: number) => (
                     <Badge key={index} variant="outline" className="text-xs">
                       {category}
                     </Badge>
