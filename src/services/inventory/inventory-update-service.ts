@@ -93,14 +93,14 @@ export const removeInventoryItem = async ({
 
 // Mark an inventory item as sold - update for consistent parameter object
 export const markItemAsSold = async ({
-  itemId, 
+  inventoryId, 
   sellData
 }: {
-  itemId: string,
+  inventoryId: string,
   sellData: SellData
 }): Promise<{ success: boolean; error?: any }> => {
   try {
-    if (!itemId || !sellData) {
+    if (!inventoryId || !sellData) {
       return { success: false, error: "Missing required parameters" };
     }
 
@@ -108,7 +108,7 @@ export const markItemAsSold = async ({
     const { data: itemData, error: fetchError } = await supabase
       .from("inventory")
       .select("*")
-      .eq("inventory_id", itemId)
+      .eq("inventory_id", inventoryId)
       .single();
 
     if (fetchError || !itemData) {
@@ -125,7 +125,7 @@ export const markItemAsSold = async ({
         // Add any other fields we want to update
         updated_at: getCurrentDateAsString()
       })
-      .eq("inventory_id", itemId);
+      .eq("inventory_id", inventoryId);
 
     if (updateError) {
       console.error("Error marking item as sold:", updateError);
@@ -136,14 +136,14 @@ export const markItemAsSold = async ({
     await addTransaction({
       id: uuidv4(),
       type: "sell",
-      itemId: itemId,
+      itemId: inventoryId,
       skinName: itemData.name,
       weaponName: itemData.weapon || "",
       price: sellData.soldPrice,
       date: sellData.soldDate || getCurrentDateAsString(),
       userId: itemData.user_id,
       currency: sellData.soldCurrency || "USD",
-      marketplace: sellData.soldMarketplace || "Steam Market", // Include marketplace
+      marketplace: sellData.soldMarketplace,
       notes: sellData.soldNotes || ""
     });
 

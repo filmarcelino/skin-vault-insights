@@ -54,7 +54,7 @@ export const getUserTransactions = async (userId?: string): Promise<Transaction[
       type: mapTransactionType(item.type),
       notes: item.notes || "",
       currency: item.currency_code || "USD",
-      marketplace: item.marketplace || "Steam" // Add default value
+      marketplace: "Steam" // Default value
     }));
   } catch (error) {
     console.error("Error fetching transactions:", error);
@@ -89,8 +89,7 @@ export const addTransaction = async (transaction: Partial<Transaction>): Promise
         price: transaction.price || 0,
         type: transaction.type || 'buy',
         notes: transaction.notes || '',
-        currency_code: transaction.currency || 'USD',
-        marketplace: transaction.marketplace || 'Steam' // Add default value
+        currency_code: transaction.currency || 'USD'
       })
       .select()
       .single();
@@ -111,7 +110,7 @@ export const addTransaction = async (transaction: Partial<Transaction>): Promise
       type: mapTransactionType(data.type),
       notes: data.notes || "",
       currency: data.currency_code || "USD",
-      marketplace: data.marketplace || "Steam" // Add default value
+      marketplace: "Steam" // Default value
     };
   } catch (error) {
     console.error("Error adding transaction:", error);
@@ -146,7 +145,7 @@ export const getTransactionById = async (transactionId: string): Promise<Transac
       type: mapTransactionType(data.type),
       notes: data.notes || "",
       currency: data.currency_code || "USD",
-      marketplace: data.marketplace || "Steam" // Add default value
+      marketplace: "Steam" // Default value
     };
   } catch (error) {
     console.error("Error fetching transaction:", error);

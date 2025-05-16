@@ -15,10 +15,10 @@ export function SellItemForm({ inventoryItem, onSubmit }: SellItemFormProps) {
     e.preventDefault();
     if (!price) return;
     
-    // Create minimal sell data - the full form will be implemented later
+    // Create minimal sell data
     const sellData: SellData = {
       soldPrice: parseFloat(price),
-      soldMarketplace: "steam",
+      soldMarketplace: "Steam Market",
       soldFeePercentage: 13,
       soldDate: new Date().toISOString()
     };

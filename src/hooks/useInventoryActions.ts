@@ -21,7 +21,6 @@ export const useInventoryActions = () => {
   const addSkinMutation = useMutation({
     mutationFn: (skinData: any) => addSkinToInventory(skinData),
     onSuccess: () => {
-      // Invalidate and refetch the inventory query on success
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast.success("Skin added to inventory!");
     },
@@ -35,7 +34,6 @@ export const useInventoryActions = () => {
   const updateItemMutation = useMutation({
     mutationFn: (itemData: any) => updateInventoryItem(itemData),
     onSuccess: () => {
-      // Invalidate and refetch the inventory query on success
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast.success("Item updated successfully!");
     },
@@ -68,7 +66,7 @@ export const useInventoryActions = () => {
   // Handler for marking an item as sold
   const handleMarkAsSold = async (inventoryId: string, sellData: SellData) => {
     try {
-      await markItemAsSold({ inventoryId }, sellData);
+      await markItemAsSold({ inventoryId, sellData });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast.success("Item marked as sold!");
     } catch (error) {
@@ -112,8 +110,10 @@ export const useInventoryActions = () => {
   };
 
   // Handler specifically for selling an item
-  const handleSellItem = (inventoryId: string, sellData: SellData) => {
-    handleMarkAsSold(inventoryId, sellData);
+  const handleSellItem = (item: InventoryItem, sellData: SellData) => {
+    if (item.inventoryId) {
+      handleMarkAsSold(item.inventoryId, sellData);
+    }
   };
 
   return {
@@ -133,7 +133,7 @@ export const useInventoryActions = () => {
     setIsDetailModalOpen,
     setSelectedItem,
     isLoading: addSkinMutation.isPending || updateItemMutation.isPending,
-    // Add the missing handlers
+    // Add handlers needed by components
     handleEditItem: handleEdit,
     handleDeleteItem,
     handleMarkAsSold,

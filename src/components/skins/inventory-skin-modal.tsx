@@ -32,7 +32,7 @@ export function InventorySkinModal({ inventoryItem, children, onClose }: Invento
     if (!inventoryItem?.inventoryId) return;
     
     try {
-      await markItemAsSold({ inventoryId: inventoryItem.inventoryId }, sellData);
+      await markItemAsSold({ inventoryId: inventoryItem.inventoryId, sellData });
       toast.success("Item marked as sold!");
       onClose();
     } catch (error) {
