@@ -32,7 +32,7 @@ export default function Index() {
   const { formatPrice } = useCurrency();
 
   // Fetch inventory data
-  const { data: userInventory = [], isLoading: isLoadingInventory } = useInventory();
+  const { data: userInventory = [], isLoading: isLoadingInventory } = useUserInventory();
   
   // Fetch all skins for search
   const { data: allSkins = [], isLoading: isLoadingSkins } = useSkins();

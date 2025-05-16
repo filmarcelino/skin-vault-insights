@@ -1,138 +1,145 @@
 
-import { Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
-import { mapSupabaseToTransaction } from "./inventory-mapper";
+import { Transaction } from "@/types/skin";
+import { v4 as uuidv4 } from 'uuid';
 
-// Get all transactions for a user
+/**
+ * Fetches transactions for a user
+ */
 export const getUserTransactions = async (userId?: string): Promise<Transaction[]> => {
   try {
-    // Get the current user if userId isn't provided
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
-      userId = user?.id;
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!userId) {
-        console.error("getUserTransactions: No user authenticated and no userId provided");
+      if (!session) {
+        console.error("No user session found");
         return [];
       }
+      
+      userId = session.user.id;
     }
-
-    // Get all transactions for this user
+    
     const { data, error } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("user_id", userId)
-      .order("date", { ascending: false });
-
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('date', { ascending: false });
+    
     if (error) {
       console.error("Error fetching transactions:", error);
       return [];
     }
-
-    // Return empty array if no transactions
-    if (!data || data.length === 0) {
-      return [];
-    }
-
-    // Convert from database schema to frontend model
-    const transactions = data.map(item => {
-      return {
-        id: item.id,
-        type: item.type as "add" | "sell" | "trade" | "buy",
-        itemId: item.item_id,
-        skinName: item.skin_name || "",
-        weaponName: item.weapon_name || "",
-        price: item.price || 0,
-        date: item.date,
-        userId: item.user_id,
-        currency: item.currency_code || "USD",
-        // Add marketplace with proper fallback
-        marketplace: item.marketplace || "Unknown", // Using field from database
-        notes: item.notes || ""
-      };
-    });
-
-    return transactions;
+    
+    return data.map(item => ({
+      id: item.transaction_id,
+      itemId: item.item_id,
+      userId: item.user_id,
+      skinName: item.skin_name,
+      weaponName: item.weapon_name,
+      date: item.date,
+      price: item.price,
+      type: item.type,
+      notes: item.notes || "",
+      currencyCode: item.currency_code || "USD",
+      marketplace: item.marketplace || "Steam", // Add default value
+      createdAt: item.created_at
+    }));
   } catch (error) {
-    console.error("Exception in getUserTransactions:", error);
+    console.error("Error fetching transactions:", error);
     return [];
   }
-};
+}
 
-// Get a transaction by ID
-export const getTransactionById = async (transactionId: string): Promise<Transaction | null> => {
-  try {
-    const { data, error } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("id", transactionId)
-      .single();
-
-    if (error || !data) {
-      console.error("Error fetching transaction:", error);
-      return null;
-    }
-
-    // Map database fields to our frontend model
-    return {
-      id: data.id,
-      type: data.type as "add" | "sell" | "trade" | "buy",
-      itemId: data.item_id,
-      skinName: data.skin_name || "",
-      weaponName: data.weapon_name || "",
-      price: data.price || 0,
-      date: data.date,
-      userId: data.user_id,
-      currency: data.currency_code || "USD",
-      marketplace: data.marketplace || "Unknown", // Using field from database
-      notes: data.notes || ""
-    };
-  } catch (error) {
-    console.error("Exception in getTransactionById:", error);
-    return null;
-  }
-};
-
-// Add transaction
-export const addTransaction = async (transaction: Transaction): Promise<boolean> => {
+/**
+ * Adds a new transaction
+ */
+export const addTransaction = async (transaction: Partial<Transaction>): Promise<Transaction | null> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
       console.error("No user session found");
-      return false;
+      return null;
     }
     
-    console.log("Adding transaction:", transaction);
+    // Create a new transaction ID if not provided
+    const transactionId = transaction.id || uuidv4();
     
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('transactions')
       .insert({
-        transaction_id: transaction.id,
+        transaction_id: transactionId,
         user_id: session.user.id,
-        type: transaction.type,
         item_id: transaction.itemId,
-        weapon_name: transaction.weaponName,
         skin_name: transaction.skinName,
-        date: transaction.date,
-        price: typeof transaction.price === 'string' ? parseFloat(transaction.price) : transaction.price,
-        notes: transaction.notes,
-        currency_code: transaction.currency || "USD",
-        marketplace: transaction.marketplace || "Unknown"
-      });
+        weapon_name: transaction.weaponName,
+        date: transaction.date || new Date().toISOString(),
+        price: transaction.price || 0,
+        type: transaction.type || 'SELL',
+        notes: transaction.notes || '',
+        currency_code: transaction.currencyCode || 'USD',
+        marketplace: transaction.marketplace || 'Steam' // Add default value
+      })
+      .select()
+      .single();
     
     if (error) {
       console.error("Error adding transaction:", error);
-      return false;
+      return null;
     }
     
-    console.log("Added transaction successfully");
-    return true;
+    return {
+      id: data.transaction_id,
+      itemId: data.item_id,
+      userId: data.user_id,
+      skinName: data.skin_name,
+      weaponName: data.weapon_name,
+      date: data.date,
+      price: data.price,
+      type: data.type,
+      notes: data.notes || "",
+      currencyCode: data.currency_code || "USD",
+      marketplace: data.marketplace || "Steam", // Add default value
+      createdAt: data.created_at
+    };
   } catch (error) {
     console.error("Error adding transaction:", error);
-    return false;
+    return null;
   }
-};
+}
 
-// Adding an alias for backward compatibility
-export const fetchTransactions = getUserTransactions;
+/**
+ * Gets a transaction by its ID
+ */
+export const getTransactionById = async (transactionId: string): Promise<Transaction | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('transaction_id', transactionId)
+      .single();
+    
+    if (error) {
+      console.error("Error fetching transaction:", error);
+      return null;
+    }
+    
+    return {
+      id: data.transaction_id,
+      itemId: data.item_id,
+      userId: data.user_id,
+      skinName: data.skin_name,
+      weaponName: data.weapon_name,
+      date: data.date,
+      price: data.price,
+      type: data.type,
+      notes: data.notes || "",
+      currencyCode: data.currency_code || "USD",
+      marketplace: data.marketplace || "Steam", // Add default value
+      createdAt: data.created_at
+    };
+  } catch (error) {
+    console.error("Error fetching transaction:", error);
+    return null;
+  }
+}

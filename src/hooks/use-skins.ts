@@ -1,106 +1,48 @@
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+
+import { useQuery } from "@tanstack/react-query";
+import { fetchSkinsFromApi } from "@/services/api";
 import { fetchUserInventory } from "@/services/inventory";
-import { useAuth } from "@/contexts/AuthContext";
-import { fetchSkins, fetchCollections } from "@/services/api";
-import { Skin, SkinFilter } from "@/types/skin";
 
-/**
- * Custom hook to fetch skins with optional filtering
- */
-export const useSkins = (filters: SkinFilter = {}) => {
-  const { user } = useAuth();
-  const userId = user?.id;
-
-  const {
-    search = "",
-    weapon = "",
-    rarity = "",
-    onlyUserInventory = false,
-    category = "",
-    collection = ""
-  } = filters;
-
-  // If we're looking for user's inventory only
-  if (onlyUserInventory && userId) {
-    return useQuery({
-      queryKey: ["userInventory", userId],
-      queryFn: async () => {
-        // Return user's inventory
-        return await fetchUserInventory(userId);
-      },
-      enabled: !!userId // Only fetch if we have a userId
-    });
-  }
-
-  // Otherwise fetch all skins with filtering
+// Hook to fetch all CS2 skins from the API
+export const useSkins = (params?: { weaponType?: string; search?: string }) => {
   return useQuery({
-    queryKey: ["skins", search, weapon, rarity, category, collection],
+    queryKey: ["skins", params?.weaponType || "all", params?.search || ""],
+    queryFn: () => fetchSkinsFromApi(params?.weaponType, params?.search),
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+};
+
+// Hook to fetch user inventory data
+export const useUserInventory = () => {
+  return useQuery({
+    queryKey: ["inventory"],
+    queryFn: () => fetchUserInventory(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+};
+
+// Used for analytics graphs
+export const useSkinPriceHistory = (skinId: string) => {
+  return useQuery({
+    queryKey: ["skinPriceHistory", skinId],
     queryFn: async () => {
-      // Fetch all skins
-      const allSkins = await fetchSkins();
+      // Mock price history data for now
+      const daysAgo = (days: number) => {
+        const date = new Date();
+        date.setDate(date.getDate() - days);
+        return date.toISOString().split("T")[0];
+      };
       
-      // If no filters, return all skins
-      if (!search && !weapon && !rarity && !category && !collection) {
-        return allSkins;
-      }
-      
-      // Apply filters
-      return allSkins.filter((skin: Skin) => {
-        if (search && !skin.name?.toLowerCase().includes(search.toLowerCase()) &&
-            !skin.weapon?.toLowerCase().includes(search.toLowerCase())) {
-          return false;
-        }
-        
-        if (weapon && skin.weapon !== weapon) {
-          return false;
-        }
-        
-        if (rarity && skin.rarity !== rarity) {
-          return false;
-        }
-        
-        if (category && skin.category !== category) {
-          return false;
-        }
-        
-        if (collection) {
-          if (!skin.collections) return false;
-          
-          if (typeof skin.collections === 'string') {
-            return skin.collections === collection;
-          }
-          
-          if (Array.isArray(skin.collections)) {
-            return skin.collections.some(col => col?.name === collection || col?.id === collection);
-          }
-          
-          return false;
-        }
-        
-        return true;
-      });
+      return [
+        { date: daysAgo(30), price: 100 },
+        { date: daysAgo(25), price: 105 },
+        { date: daysAgo(20), price: 102 },
+        { date: daysAgo(15), price: 110 },
+        { date: daysAgo(10), price: 115 },
+        { date: daysAgo(5), price: 112 },
+        { date: daysAgo(0), price: 118 },
+      ];
     },
-    staleTime: 5 * 60 * 1000 // 5 minutes
+    enabled: !!skinId,
   });
-};
-
-/**
- * Hook to fetch available collections
- */
-export const useCollections = () => {
-  return useQuery({
-    queryKey: ["collections"],
-    queryFn: fetchCollections,
-    staleTime: 60 * 60 * 1000 // 1 hour
-  });
-};
-
-/**
- * Helper hook to invalidate inventory cache
- */
-export const useInvalidateInventory = () => {
-  const queryClient = useQueryClient();
-  return () => {
-    queryClient.invalidateQueries({ queryKey: ["userInventory"] });
-  };
 };

@@ -1,256 +1,162 @@
-
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCurrency } from "@/contexts/CurrencyContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
-import { Loader2, UserRound } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "@/components/ui/sonner";
+import { useNavigate } from "react-router-dom";
+import { Separator } from "@/components/ui/separator";
+import { Currency, Language } from "@/types";
 
-// Define a simple interface for profile updates
-interface ProfileUpdate {
-  id: string;
-  full_name?: string;
-  username?: string;
-  city?: string;
-  country?: string;
-  preferred_currency?: string;
-}
-
-export default function Profile() {
-  const { user, profile } = useAuth();
+const Profile = () => {
+  const { user, updateUserProfile, logout } = useAuth();
   const { currency, setCurrency } = useCurrency();
-  const { t, language, setLanguage } = useLanguage();
-  
-  const [isLoading, setIsLoading] = useState(false);
-  const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("");
-  const [preferredCurrency, setPreferredCurrency] = useState("USD");
-  
-  // Define supported currencies
-  const supportedCurrencies = [
-    { code: "USD", name: "US Dollar" },
-    { code: "EUR", name: "Euro" },
-    { code: "GBP", name: "British Pound" },
-    { code: "BRL", name: "Brazilian Real" }
-  ];
-  
-  // Load profile data when component mounts
+  const { language, setLanguage } = useLanguage();
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [isEditing, setIsEditing] = useState(false);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || "");
-      setUsername(profile.username || "");
-      setCity(profile.city || "");
-      setCountry(profile.country || "");
-      setPreferredCurrency(profile.preferred_currency || "USD");
+    if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
     }
-  }, [profile]);
+  }, [user]);
 
-  // Function to update user profile
-  const updateUserProfile = async (profileData: ProfileUpdate) => {
+  const handleUpdateProfile = async () => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update(profileData)
-        .eq('id', profileData.id);
-        
-      if (error) throw error;
-      return { success: true };
+      await updateUserProfile({ name });
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      return { success: false, error };
+      toast.error("Failed to update profile");
     }
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!user) {
-      toast.error(t("auth.login_required"));
-      return;
-    }
-    
-    setIsLoading(true);
-    
+  const handleLogout = async () => {
     try {
-      // Update profile in database
-      const result = await updateUserProfile({
-        id: user.id,
-        full_name: fullName,
-        username,
-        city,
-        country,
-        preferred_currency: preferredCurrency,
-      });
-      
-      if (!result.success) {
-        throw new Error("Failed to update profile");
-      }
-      
-      // Also update currency in app state
-      setCurrency(preferredCurrency);
-      
-      toast.success(t("profile.saved"));
+      await logout();
+      navigate("/auth");
+      toast.success("Logged out successfully!");
     } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error(t("profile.save_error"));
-    } finally {
-      setIsLoading(false);
+      console.error("Error logging out:", error);
+      toast.error("Failed to log out");
     }
   };
-  
-  const handleLanguageChange = (newLanguage: string) => {
-    setLanguage(newLanguage);
-    toast.success(t("settings.language_changed"));
+
+  const handleCurrencyChange = (value: string) => {
+    // Convert string to Currency type
+    setCurrency(value as Currency);
   };
-  
-  if (!user || !profile) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">{t("common.loading")}</p>
-        </div>
-      </div>
-    );
+
+  const handleLanguageChange = (value: string) => {
+    // Convert string to Language type
+    setLanguage(value as Language);
+  };
+
+  if (!user) {
+    return <div>Loading...</div>;
   }
-  
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">{t("profile.title")}</h1>
-      
-      <div className="grid gap-6 md:grid-cols-[250px_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("profile.account")}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center text-center">
-            <Avatar className="h-24 w-24 mb-4">
-              <AvatarImage src={profile.avatar_url || ""} />
-              <AvatarFallback>
-                <UserRound className="h-12 w-12" />
-              </AvatarFallback>
-            </Avatar>
-            <h3 className="font-medium text-lg">{profile.full_name}</h3>
-            <p className="text-muted-foreground">{profile.username}</p>
-            <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
-            <div className="w-full border-t my-4" />
-            <div className="w-full text-left">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">{t("profile.email")}</span>
-                <span className="text-sm text-muted-foreground">
-                  {user.email}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{t("profile.member_since")}</span>
-                <span className="text-sm text-muted-foreground">
-                  {new Date(profile.created_at).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <form onSubmit={handleSaveProfile}>
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("profile.edit")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="fullName">{t("profile.full_name")}</Label>
-                <Input
-                  id="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder={t("profile.enter_full_name")}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="username">{t("profile.username")}</Label>
-                <Input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder={t("profile.enter_username")}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="city">{t("profile.city")}</Label>
-                  <Input
-                    id="city"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder={t("profile.enter_city")}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="country">{t("profile.country")}</Label>
-                  <Input
-                    id="country"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    placeholder={t("profile.enter_country")}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="currency">{t("profile.preferred_currency")}</Label>
-                <Select value={preferredCurrency} onValueChange={setPreferredCurrency}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("profile.select_currency")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {supportedCurrencies.map((curr) => (
-                      <SelectItem key={curr.code} value={curr.code}>
-                        {curr.code} - {curr.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="language">{t("profile.language")}</Label>
-                <Select value={language} onValueChange={handleLanguageChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("profile.select_language")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="pt">Português</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("common.saving")}
-                  </>
-                ) : (
-                  t("common.save")
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        </form>
+    <div className="container mx-auto py-10">
+      <Card className="max-w-lg mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl">Your Profile</CardTitle>
+          <CardDescription>
+            Manage your account settings and preferences.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          <div className="grid gap-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              type="text"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={!isEditing}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input type="email" id="email" value={email} disabled />
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Currency</Label>
+            <Select value={currency} onValueChange={handleCurrencyChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="BRL">BRL</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Language</Label>
+            <Select value={language} onValueChange={handleLanguageChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="pt">Português</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-between">
+            {isEditing ? (
+              <>
+                <Button type="button" variant="secondary" onClick={() => setIsEditing(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleUpdateProfile}>
+                  Save Changes
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button type="button" variant="outline" onClick={() => setIsEditing(true)}>
+                  Edit Profile
+                </Button>
+                <Button type="button" variant="destructive" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      <Separator className="my-6" />
+      <div className="text-center text-sm text-muted-foreground">
+        © 2024 CS Skin Vault. All rights reserved.
       </div>
     </div>
   );
-}
+};
+
+export default Profile;

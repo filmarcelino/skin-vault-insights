@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
+import MaintenancePage from "./pages/MaintenancePage";
 import Index from "./pages/Index";
 import Inventory from "./pages/Inventory";
 import Analytics from "./pages/Analytics";
@@ -21,7 +21,6 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import RequireAuth from "./components/auth/require-auth";
-import Landing from "./pages/Landing";
 import SearchPage from "./pages/Search";
 import AdminConsole from "./pages/AdminConsole";
 
@@ -52,12 +51,12 @@ const App = () => {
                   <HomeScreenPopup />
                   <BrowserRouter>
                     <Routes>
-                      {/* Public routes */}
-                      <Route path="/" element={<Landing />} />
+                      {/* Maintenance page as the main route */}
+                      <Route path="/" element={<MaintenancePage />} />
+                      
+                      {/* Other routes - accessible only to admins or developers */}
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
-                      
-                      {/* Redirect /login to /auth for convenience */}
                       <Route path="/login" element={<Navigate to="/auth" replace />} />
                       
                       {/* Protected routes with layout */}

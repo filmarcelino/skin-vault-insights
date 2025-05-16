@@ -68,7 +68,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                 onEdit={() => onEdit(item)}
                 onDuplicate={() => onDuplicate(item)}
                 onRemove={() => onDelete(item)}
-                onSell={(sellData: SellData) => onSell(item.inventoryId || "", sellData)}
+                onSell={(sellData) => onSell(item.inventoryId || "", sellData)}
               />
             </TableCell>
           </TableRow>

@@ -1,23 +1,61 @@
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getUserTransactions } from "@/services/inventory/transactions-service";
+import { useQuery } from "@tanstack/react-query";
+import { Transaction } from "@/types/skin";
+import { fetchTransactions } from "@/services/inventory";
 
-export const useTransactions = () => {
+/**
+ * Hook for fetching transaction data
+ */
+export function useTransactions() {
   return useQuery({
-    queryKey: ["transactions"],
-    queryFn: getUserTransactions,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true
+    queryKey: ['transactions'],
+    queryFn: () => fetchTransactions(),
+    staleTime: 1000 * 60 * 5 // 5 minutes cache
   });
-};
+}
 
-// Add a function to invalidate transactions cache
-export const useInvalidateTransactions = () => {
-  const queryClient = useQueryClient();
+/**
+ * Hook for fetching recent transactions
+ */
+export function useRecentTransactions(limit: number = 5) {
+  const { data, isLoading, error } = useTransactions();
   
-  return () => {
-    console.log("Invalidating transactions cache");
-    queryClient.invalidateQueries({ queryKey: ["transactions"] });
-    queryClient.invalidateQueries({ queryKey: ["sold-items"] });
+  const recentTransactions = data
+    ? [...data].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ).slice(0, limit)
+    : [];
+    
+  return { 
+    recentTransactions, 
+    isLoading, 
+    error 
   };
-};
+}
+
+/**
+ * Hook to get transaction stats
+ */
+export function useTransactionStats() {
+  const { data: transactions = [], isLoading, error } = useTransactions();
+  
+  // Calculate stats
+  const totalVolume = transactions.reduce((sum, transaction) => sum + transaction.price, 0);
+  const purchaseVolume = transactions
+    .filter(transaction => transaction.type === 'BUY')
+    .reduce((sum, transaction) => sum + transaction.price, 0);
+  const saleVolume = transactions
+    .filter(transaction => transaction.type === 'SELL')
+    .reduce((sum, transaction) => sum + transaction.price, 0);
+  const profit = saleVolume - purchaseVolume;
+  
+  return {
+    totalVolume,
+    purchaseVolume,
+    saleVolume,
+    profit,
+    transactionCount: transactions.length,
+    isLoading,
+    error
+  };
+}

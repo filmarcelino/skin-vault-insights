@@ -14,6 +14,7 @@ import { LineChart } from '@/components/ui/chart';
 import { StatsCards } from '@/components/analytics/stats-cards';
 import { useInventory } from '@/hooks/use-skins';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUserInventory } from "@/hooks/use-skins";
 
 interface InventoryStats {
   total_items: number;
@@ -225,7 +226,7 @@ const PremiumFeatureCard = () => {
 const Analytics = () => {
   const { formatPrice, currency } = useCurrency();
   const { user } = useAuth();
-  const { data: inventoryData } = useInventory();
+  const { data: inventoryData } = useUserInventory();
   const { t } = useLanguage();
   
   const { data: inventoryStats, isLoading } = useQuery({
