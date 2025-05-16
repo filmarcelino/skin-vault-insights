@@ -60,7 +60,7 @@ export const useInvalidateInventory = () => {
   };
 };
 
-// Add the missing useAddSkin hook
+// Add skin to inventory hook
 export const useAddSkin = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -96,7 +96,7 @@ export const useAddSkin = () => {
   });
 };
 
-// Add the useCategories hook
+// Categories hook
 export const useCategories = () => {
   return useQuery({
     queryKey: ["skinCategories"],

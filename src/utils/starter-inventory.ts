@@ -2,7 +2,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { Skin, InventoryItem } from "@/types/skin";
 
-// Import it directly from here instead
+// Define local getCurrentDateAsString function 
 const getCurrentDateAsString = (): string => {
   return new Date().toISOString();
 };

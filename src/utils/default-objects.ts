@@ -37,9 +37,7 @@ export const defaultInventoryItem: InventoryItem = {
   feePercentage: 15,
   floatValue: undefined,
   notes: "",
-  tradeLockDays: 0,
-  // Remove the collection property as it doesn't exist in InventoryItem type
-  collections: []
+  tradeLockDays: 0
 };
 
 // Default transaction object to use as a fallback

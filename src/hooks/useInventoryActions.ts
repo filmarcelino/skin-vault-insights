@@ -68,8 +68,8 @@ export const useInventoryActions = () => {
     }
     
     try {
-      // Fixed to use removeInventoryItem properly
-      const result = await removeInventoryItem(user.id, item.inventoryId);
+      // Fixed to use removeInventoryItem properly with single argument
+      const result = await removeInventoryItem(item.inventoryId);
       
       if (result.success) {
         toast.success(t("inventory.item_removed"), {
@@ -106,7 +106,8 @@ export const useInventoryActions = () => {
     }
 
     try {
-      const { success, error } = await markItemAsSold(user.id, itemId, sellData);
+      // Fixed to use markItemAsSold with single argument
+      const { success, error } = await markItemAsSold(itemId, sellData);
 
       if (success) {
         toast.success(t("inventory.item_sold_success"), {

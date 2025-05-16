@@ -8,7 +8,7 @@ export {
   markItemAsSold,
   fetchSoldItems,
   getUserTransactions as fetchTransactions, 
-  getCurrentDateAsString  // Export this function that was missing
+  getCurrentDateAsString
 } from './inventory-service';
 
 // Re-export transaction-related functions
@@ -16,7 +16,7 @@ export {
   addTransaction,
 } from './transactions-service';
 
-// Re-export or create value calculation functions
+// Create utility functions for value calculation
 export const calculateItemValue = (item: any) => {
   // Simple implementation for now
   return item.price || item.purchasePrice || 0;

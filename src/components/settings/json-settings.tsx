@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { DataSourceConfig } from "@/services/api";
+import { DataSourceConfig } from "@/services/api-config";
 import { useQueryClient } from "@tanstack/react-query";
 import { Shield } from "lucide-react";
 
@@ -67,7 +67,7 @@ export const JsonSettings = () => {
                 value={weaponsPath}
                 onChange={(e) => setWeaponsPath(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 Path relative to the public folder
               </p>
             </div>

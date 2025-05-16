@@ -13,9 +13,19 @@ import { Loader2, UserRound } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 
+// Define a simple interface for profile updates
+interface ProfileUpdate {
+  id: string;
+  full_name?: string;
+  username?: string;
+  city?: string;
+  country?: string;
+  preferred_currency?: string;
+}
+
 export default function Profile() {
-  const { user, profile, updateUserProfile } = useAuth();
-  const { currency, supportedCurrencies, setCurrency } = useCurrency();
+  const { user, profile } = useAuth();
+  const { currency, setCurrency } = useCurrency();
   const { t, language, setLanguage } = useLanguage();
   
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +34,14 @@ export default function Profile() {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [preferredCurrency, setPreferredCurrency] = useState("USD");
+  
+  // Define supported currencies
+  const supportedCurrencies = [
+    { code: "USD", name: "US Dollar" },
+    { code: "EUR", name: "Euro" },
+    { code: "GBP", name: "British Pound" },
+    { code: "BRL", name: "Brazilian Real" }
+  ];
   
   // Load profile data when component mounts
   useEffect(() => {
@@ -35,6 +53,22 @@ export default function Profile() {
       setPreferredCurrency(profile.preferred_currency || "USD");
     }
   }, [profile]);
+
+  // Function to update user profile
+  const updateUserProfile = async (profileData: ProfileUpdate) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('id', profileData.id);
+        
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      return { success: false, error };
+    }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +82,7 @@ export default function Profile() {
     
     try {
       // Update profile in database
-      await updateUserProfile({
+      const result = await updateUserProfile({
         id: user.id,
         full_name: fullName,
         username,
@@ -56,6 +90,10 @@ export default function Profile() {
         country,
         preferred_currency: preferredCurrency,
       });
+      
+      if (!result.success) {
+        throw new Error("Failed to update profile");
+      }
       
       // Also update currency in app state
       setCurrency(preferredCurrency);
@@ -69,8 +107,8 @@ export default function Profile() {
     }
   };
   
-  const handleLanguageChange = (lang: string) => {
-    setLanguage(lang);
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
     toast.success(t("settings.language_changed"));
   };
   

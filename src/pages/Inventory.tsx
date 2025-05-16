@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { InventorySkinModal } from "@/components/skins/inventory-skin-modal";
 import { useInventoryActions } from "@/hooks/useInventoryActions";
 import { defaultInventoryItem } from "@/utils/default-objects";
-import { InventoryItem, SellData } from "@/types/skin";
+import { InventoryItem, SellData, Skin } from "@/types/skin";
 import { Loading } from "@/components/ui/loading";
 import { SkinDetailModal } from "@/components/skins/skin-detail-modal";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -121,6 +121,42 @@ export default function Inventory() {
     console.log("Sale processed, refetching sold items");
     await refetchSoldItems();
   };
+
+  // Adapter functions to match component interfaces
+  const handleDeleteAdapter = (inventoryId: string) => {
+    const item = inventory.find(item => item.inventoryId === inventoryId);
+    if (item) {
+      handleDeleteItem(item);
+    }
+  };
+
+  const handleEditAdapter = (inventoryId: string) => {
+    const item = inventory.find(item => item.inventoryId === inventoryId);
+    if (item) {
+      handleEditItem(item);
+    }
+  };
+
+  const handleSellAdapter = (inventoryId: string) => {
+    const item = inventory.find(item => item.inventoryId === inventoryId);
+    if (item) {
+      handleSellItem(item);
+    }
+  };
+
+  const handleDuplicateAdapter = (inventoryId: string) => {
+    const item = inventory.find(item => item.inventoryId === inventoryId);
+    if (item) {
+      handleDuplicate(item);
+    }
+  };
+
+  const handleViewDetailsAdapter = (inventoryId: string) => {
+    const item = inventory.find(item => item.inventoryId === inventoryId);
+    if (item) {
+      handleViewDetails(item);
+    }
+  };
   
   if (isLoading) {
     return (
@@ -225,17 +261,17 @@ export default function Inventory() {
               onViewDetails={handleViewDetails}
               onEdit={handleEditItem}
               onDelete={handleDeleteItem}
-              onSell={handleSellItem}
+              onSell={handleSellItem} 
               onDuplicate={handleDuplicate}
             />
           ) : (
             <InventoryTable 
               items={filteredItems}
-              onViewDetails={handleViewDetails}
-              onEdit={handleEditItem}
-              onDelete={handleDeleteItem}
+              onViewDetails={handleViewDetailsAdapter}
+              onEdit={handleEditAdapter}
+              onDelete={handleDeleteAdapter}
               onSell={handleItemSell}
-              onDuplicate={handleDuplicate}
+              onDuplicate={handleDuplicateAdapter}
             />
           )}
         </TabsContent>
@@ -262,7 +298,7 @@ export default function Inventory() {
       <InventorySkinModal 
         open={isModalOpen}
         onOpenChange={handleClose}
-        skin={selectedItem || defaultInventoryItem} 
+        skin={(selectedItem || defaultInventoryItem) as Skin}
         mode={modalMode}
       />
       
@@ -270,7 +306,7 @@ export default function Inventory() {
       <SkinDetailModal 
         open={isDetailModalOpen}
         onOpenChange={handleCloseDetail}
-        skin={selectedItem || defaultInventoryItem}
+        skin={(selectedItem || defaultInventoryItem) as Skin}
       />
     </>
   );
