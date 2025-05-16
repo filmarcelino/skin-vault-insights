@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Skin, InventoryItem, SellData, Transaction } from "@/types/skin";
 import { v4 as uuidv4 } from "uuid";
@@ -360,7 +359,7 @@ export const getUserTransactions = async (userId?: string): Promise<Transaction[
         date: item.date,
         userId: item.user_id,
         currency: item.currency_code || "USD",
-        // Add fallback for marketplace field
+        // Add marketplace with fallback
         marketplace: item.marketplace || "Unknown",
         notes: item.notes || ""
       };

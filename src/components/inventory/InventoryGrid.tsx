@@ -1,13 +1,13 @@
 
-import { InventoryItem, SellData } from "@/types/skin";
+import { InventoryItem } from "@/types/skin";
 import { SkinCard } from "@/components/inventory/SkinCard";
 
 export interface InventoryGridProps {
   items: InventoryItem[];
   onEdit: (item: InventoryItem) => void;
-  onDelete: (inventoryId: string) => void;
-  onSell: (itemId: string, sellData: SellData) => void;
-  onDuplicate: (item: InventoryItem) => void;
+  onDelete: (item: InventoryItem) => void;  // Changed from string to InventoryItem
+  onSell: (item: InventoryItem) => void;    // Changed from string to InventoryItem
+  onDuplicate: (item: InventoryItem) => void; // Changed from string to InventoryItem
   onViewDetails: (item: InventoryItem) => void;
 }
 
@@ -27,8 +27,8 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
           item={item}
           onEdit={() => onEdit(item)}
           onDuplicate={() => onDuplicate(item)}
-          onRemove={() => onDelete(item.id)}
-          onSell={(itemId, sellData) => onSell(itemId, sellData)}
+          onRemove={() => onDelete(item)}  // Now passing the full item
+          onSell={() => onSell(item)}      // Now passing the full item
           onClick={() => onViewDetails(item)}
           className="animate-fade-in transition-transform duration-200"
         />

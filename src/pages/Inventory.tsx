@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -122,38 +123,54 @@ export default function Inventory() {
     await refetchSoldItems();
   };
 
-  // Adapter functions to match component interfaces and handle type incompatibilities
-  const handleViewDetailsAdapter = (inventoryId: string) => {
+  // Adapter functions to convert between InventoryItem and string ID formats
+  const handleViewDetailsAdapter = (item: InventoryItem) => {
+    handleViewDetails(item);
+  };
+
+  const handleDeleteAdapter = (item: InventoryItem) => {
+    handleDeleteItem(item);
+  };
+
+  const handleEditAdapter = (item: InventoryItem) => {
+    handleEditItem(item);
+  };
+
+  const handleDuplicateAdapter = (item: InventoryItem) => {
+    handleDuplicate(item);
+  };
+
+  const handleSellAdapter = (item: InventoryItem) => {
+    handleSellItem(item);
+  };
+
+  // For table component that still expects IDs
+  const handleViewDetailsByIdAdapter = (inventoryId: string) => {
     const item = inventory.find(item => item.inventoryId === inventoryId);
     if (item) {
       handleViewDetails(item);
     }
   };
 
-  const handleDeleteAdapter = (inventoryId: string) => {
+  const handleDeleteByIdAdapter = (inventoryId: string) => {
     const item = inventory.find(item => item.inventoryId === inventoryId);
     if (item) {
       handleDeleteItem(item);
     }
   };
 
-  const handleEditAdapter = (inventoryId: string) => {
+  const handleEditByIdAdapter = (inventoryId: string) => {
     const item = inventory.find(item => item.inventoryId === inventoryId);
     if (item) {
       handleEditItem(item);
     }
   };
 
-  const handleDuplicateAdapter = (inventoryId: string) => {
+  const handleDuplicateByIdAdapter = (inventoryId: string) => {
     const item = inventory.find(item => item.inventoryId === inventoryId);
     if (item) {
       handleDuplicate(item);
     }
-  };
-
-  // Specific handler for the InventoryTable component that receives itemId and sellData directly
-  const handleSellAdapter = (itemId: string, sellData: SellData) => {
-    return handleMarkAsSold(itemId, sellData);
   };
 
   if (isLoading) {
@@ -256,20 +273,20 @@ export default function Inventory() {
           ) : viewMode === 'grid' ? (
             <InventoryGrid 
               items={filteredItems}
-              onViewDetails={handleViewDetails}
-              onEdit={handleEditItem}
-              onDelete={handleDeleteItem}
-              onSell={handleSellItem} 
-              onDuplicate={handleDuplicate}
-            />
-          ) : (
-            <InventoryTable 
-              items={filteredItems}
               onViewDetails={handleViewDetailsAdapter}
               onEdit={handleEditAdapter}
               onDelete={handleDeleteAdapter}
               onSell={handleSellAdapter}
               onDuplicate={handleDuplicateAdapter}
+            />
+          ) : (
+            <InventoryTable 
+              items={filteredItems}
+              onViewDetails={handleViewDetailsByIdAdapter}
+              onEdit={handleEditByIdAdapter}
+              onDelete={handleDeleteByIdAdapter}
+              onSell={handleItemSell}
+              onDuplicate={handleDuplicateByIdAdapter}
             />
           )}
         </TabsContent>
@@ -300,7 +317,7 @@ export default function Inventory() {
         mode={modalMode}
       />
       
-      {/* Skin Detail View Modal - Now accepts InventoryItem */}
+      {/* Skin Detail View Modal */}
       <SkinDetailModal 
         open={isDetailModalOpen}
         onOpenChange={handleCloseDetail}

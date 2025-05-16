@@ -8,7 +8,7 @@ export const defaultSkin: Skin = {
   weapon: "Unknown",
   image: "/placeholder-skin.png",
   rarity: "Consumer Grade",
-  price: 0,
+  price: 0, // Price is now optional in Skin type but we provide a default
   category: "Normal",
   type: "Normal",
   wear: "Factory New",
@@ -54,5 +54,6 @@ export const defaultTransaction = {
   price: 0,
   date: new Date().toISOString(),
   userId: "",
-  currency: "USD"
+  currency: "USD",
+  marketplace: "Unknown"
 };

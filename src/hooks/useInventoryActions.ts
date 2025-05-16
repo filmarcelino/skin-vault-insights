@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { InventoryItem, Skin, SellData } from "@/types/skin";
 import { toast } from "sonner";
@@ -111,6 +110,7 @@ export const useInventoryActions = () => {
     }
 
     try {
+      // Fixed to pass only the expected parameters
       const { success, error } = await markItemAsSold(itemId, sellData);
 
       if (success) {

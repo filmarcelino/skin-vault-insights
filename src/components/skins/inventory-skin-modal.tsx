@@ -155,7 +155,6 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
         {mode === "sell" && isInventoryItem(skin) ? (
           <SkinSellingForm 
             skin={skin} 
-            onOpenChange={onOpenChange} 
           />
         ) : (
           <div className="space-y-4">

@@ -5,7 +5,7 @@ export interface Skin {
   weapon: string;
   image: string;
   rarity: string;
-  price: number;
+  price?: number; // Made optional to match InventoryItem
   type?: string;
   wear?: string;
   isStatTrak?: boolean;

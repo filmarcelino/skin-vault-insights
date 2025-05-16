@@ -10,7 +10,7 @@ import { SkinDetailModal } from '@/components/skins/skin-detail-modal'
 import { useNavigate } from 'react-router-dom'
 import { InventoryCard } from '@/components/dashboard/inventory-card'
 import { Skin } from '@/types/skin'
-import { toast } from "sonner";
+import { toast } from "sonner"
 import { Badge } from '@/components/ui/badge'
 import { useSkins } from '@/hooks/use-skins'
 
@@ -62,8 +62,9 @@ export const SkinImageAnalyzer: React.FC = () => {
     
     handleAddToInventory(skinData);
     
-    // Fix: Use the correct toast function signature without 'title'
+    // Fix: Use the correct toast function signature
     toast({
+      title: "Skin adicionada",
       description: `${skinData.weapon} | ${skinData.name} foi adicionada ao seu inventário`
     });
     
