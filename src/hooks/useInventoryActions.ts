@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   addSkinToInventory,
@@ -6,47 +7,68 @@ import {
   markItemAsSold
 } from "@/services/inventory";
 import { InventoryItem, SellData } from "@/types/skin";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export const useInventoryActions = () => {
   const queryClient = useQueryClient();
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
 
   // Mutation for adding a skin to the inventory
-  const addSkinMutation = useMutation(
-    (skinData: Omit<InventoryItem, 'inventoryId'>) => addSkinToInventory(skinData),
-    {
-      onSuccess: () => {
-        // Invalidate and refetch the inventory query on success
-        queryClient.invalidateQueries({ queryKey: ['inventory'] });
-        toast.success("Skin added to inventory!");
-      },
-      onError: (error) => {
-        console.error("Error adding skin to inventory:", error);
-        toast.error("Failed to add skin to inventory");
-      },
-    }
-  );
+  const addSkinMutation = useMutation({
+    mutationFn: (skinData: any) => addSkinToInventory(skinData),
+    onSuccess: () => {
+      // Invalidate and refetch the inventory query on success
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      toast.success("Skin added to inventory!");
+    },
+    onError: (error) => {
+      console.error("Error adding skin to inventory:", error);
+      toast.error("Failed to add skin to inventory");
+    },
+  });
 
   // Mutation for updating an inventory item
-  const updateItemMutation = useMutation(
-    (itemData: InventoryItem) => updateInventoryItem(itemData),
-    {
-      onSuccess: () => {
-        // Invalidate and refetch the inventory query on success
-        queryClient.invalidateQueries({ queryKey: ['inventory'] });
-        toast.success("Item updated successfully!");
-      },
-      onError: (error) => {
-        console.error("Error updating item:", error);
-        toast.error("Failed to update item");
-      },
-    }
-  );
+  const updateItemMutation = useMutation({
+    mutationFn: (itemData: any) => updateInventoryItem(itemData),
+    onSuccess: () => {
+      // Invalidate and refetch the inventory query on success
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      toast.success("Item updated successfully!");
+    },
+    onError: (error) => {
+      console.error("Error updating item:", error);
+      toast.error("Failed to update item");
+    },
+  });
 
-  // Mutation for marking an item as sold
+  // Handles opening the edit modal
+  const handleEdit = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  // Handles opening the detail modal
+  const handleViewDetails = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setIsDetailModalOpen(true);
+  };
+
+  // Handles adding a new skin
+  const handleAddToInventory = (skin: any) => {
+    setSelectedItem(skin);
+    setModalMode('add');
+    setIsModalOpen(true);
+  };
+
+  // Handler for marking an item as sold
   const handleSellItem = async (inventoryId: string, sellData: SellData) => {
     try {
-      await markItemAsSold(inventoryId, sellData);
+      await markItemAsSold({ inventoryId }, sellData);
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast.success("Item marked as sold!");
     } catch (error) {
@@ -55,10 +77,10 @@ export const useInventoryActions = () => {
     }
   };
 
-  // Mutation for removing an inventory item
+  // Handler for removing an inventory item
   const handleDeleteItem = async (inventoryId: string) => {
     try {
-      await removeInventoryItem(inventoryId);
+      await removeInventoryItem({ inventoryId });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
       toast.success("Item removed from inventory!");
     } catch (error) {
@@ -67,11 +89,30 @@ export const useInventoryActions = () => {
     }
   };
 
+  // Handler for duplicating an item
+  const handleDuplicate = (item: InventoryItem) => {
+    const duplicatedItem = { ...item };
+    delete duplicatedItem.inventoryId;
+    
+    addSkinMutation.mutate(duplicatedItem);
+  };
+
   return {
     addSkin: addSkinMutation.mutateAsync,
     updateItem: updateItemMutation.mutateAsync,
     sellItem: handleSellItem,
     deleteItem: handleDeleteItem,
-    isLoading: addSkinMutation.isLoading || updateItemMutation.isLoading,
+    handleEdit,
+    handleDuplicate,
+    handleViewDetails,
+    handleAddToInventory,
+    selectedItem,
+    isModalOpen,
+    isDetailModalOpen,
+    modalMode,
+    setIsModalOpen,
+    setIsDetailModalOpen,
+    setSelectedItem,
+    isLoading: addSkinMutation.isPending || updateItemMutation.isPending,
   };
 };

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,30 +53,11 @@ const App = () => {
                   <BrowserRouter>
                     <Routes>
                       {/* Maintenance page as the main route */}
-                      <Route path="/" element={<MaintenancePage />} />
+                      <Route path="*" element={<MaintenancePage />} />
                       
-                      {/* Other routes - accessible only to admins or developers */}
+                      {/* Admin-only access to authentication during maintenance */}
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
-                      <Route path="/login" element={<Navigate to="/auth" replace />} />
-                      
-                      {/* Protected routes with layout */}
-                      <Route element={<RequireAuth><Layout /></RequireAuth>}>
-                        <Route path="/dashboard" element={<Index />} />
-                        <Route path="/inventory" element={<Inventory />} />
-                        <Route path="/add" element={<AddSkin />} />
-                        <Route path="/search" element={<SearchPage />} />
-                        <Route path="/analytics" element={<Analytics />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/subscription" element={<Subscription />} />
-                      </Route>
-                      
-                      {/* Admin routes */}
-                      <Route path="/admin" element={<RequireAuth adminOnly><AdminConsole /></RequireAuth>} />
-                      
-                      {/* Not found - needs layout wrapper */}
-                      <Route path="*" element={<Layout><NotFound /></Layout>} />
                     </Routes>
                   </BrowserRouter>
                 </div>

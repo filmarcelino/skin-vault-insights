@@ -1,13 +1,13 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { fetchSkinsFromApi } from "@/services/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchSkins } from "@/services/api";
 import { fetchUserInventory } from "@/services/inventory";
 
 // Hook to fetch all CS2 skins from the API
 export const useSkins = (params?: { weaponType?: string; search?: string }) => {
   return useQuery({
     queryKey: ["skins", params?.weaponType || "all", params?.search || ""],
-    queryFn: () => fetchSkinsFromApi(params?.weaponType, params?.search),
+    queryFn: () => fetchSkins(params?.weaponType, params?.search),
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 };
@@ -19,6 +19,12 @@ export const useUserInventory = () => {
     queryFn: () => fetchUserInventory(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+};
+
+// Hook to invalidate inventory cache
+export const useInvalidateInventory = () => {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: ["inventory"] });
 };
 
 // Used for analytics graphs

@@ -31,25 +31,38 @@ const MaintenancePage = () => {
             </h1>
             
             <div className="space-y-4 text-[#F0F0F0] text-lg">
-              <p>
+              <p className="font-semibold">
                 Relax, folks… it's not a total wipe!
               </p>
               
               <p>
-                Yes, the bomb was planted — right in the heart of our servers. Turns out, launching a wildly popular skin manager with a retro setup from 1998 wasn't our brightest strategy.
+                Turns out… launching a high-traffic app on a retro PC setup from the early 2000s?
+                Yeah… not our brightest strategy.
+              </p>
+              
+              <p>
+                The launch blew up (literally) way bigger than expected — and our dusty rig just couldn't handle the heat.
               </p>
               
               <div className="border-l-4 border-[#FFCC00] pl-4 my-6">
-                <p className="font-semibold">But fear not:</p>
+                <p className="font-semibold">But breathe easy:</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Your skins, your vault, your glory — everything is safe.</li>
-                  <li>We're rebuilding, reinforcing, and maybe this time… using a computer with actual airflow.</li>
+                  <li>No data was lost. Your vault is safe. Your skins are intact.</li>
                 </ul>
               </div>
               
               <p>
-                We'll be back soon™ — stronger, faster, and with fewer explosions.<br />
-                In the meantime, grab a snack, hug your AK, and keep your eyes on the vault.
+                We're rebuilding with something slightly more modern — maybe even dual-core!<br />
+                We'll be back soon™ — stronger, faster, and less flammable.
+              </p>
+              
+              <p>
+                In the meantime, stay frosty… and maybe don't plant bombs near production servers.
+              </p>
+              
+              <p className="mt-4 text-[#FFCC00] font-medium">
+                — The Clutch Studios Team<br />
+                <span className="text-sm text-[#A3A3A3]">(Yeah, this is where the CS on the logo comes from.)</span>
               </p>
               
               <div className="pt-6">

@@ -42,10 +42,10 @@ export function useTransactionStats() {
   // Calculate stats
   const totalVolume = transactions.reduce((sum, transaction) => sum + transaction.price, 0);
   const purchaseVolume = transactions
-    .filter(transaction => transaction.type === 'BUY')
+    .filter(transaction => transaction.type === "buy")
     .reduce((sum, transaction) => sum + transaction.price, 0);
   const saleVolume = transactions
-    .filter(transaction => transaction.type === 'SELL')
+    .filter(transaction => transaction.type === "sell")
     .reduce((sum, transaction) => sum + transaction.price, 0);
   const profit = saleVolume - purchaseVolume;
   
