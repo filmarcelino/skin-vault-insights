@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -151,7 +150,12 @@ export default function Inventory() {
       handleDuplicate(item);
     }
   };
-  
+
+  // Specific handler for the InventoryTable component that receives itemId and sellData directly
+  const handleSellAdapter = (itemId: string, sellData: SellData) => {
+    return handleMarkAsSold(itemId, sellData);
+  };
+
   if (isLoading) {
     return (
       <Loading />
@@ -264,7 +268,7 @@ export default function Inventory() {
               onViewDetails={handleViewDetailsAdapter}
               onEdit={handleEditAdapter}
               onDelete={handleDeleteAdapter}
-              onSell={handleItemSell}
+              onSell={handleSellAdapter}
               onDuplicate={handleDuplicateAdapter}
             />
           )}
@@ -296,7 +300,7 @@ export default function Inventory() {
         mode={modalMode}
       />
       
-      {/* Skin Detail View Modal */}
+      {/* Skin Detail View Modal - Now accepts InventoryItem */}
       <SkinDetailModal 
         open={isDetailModalOpen}
         onOpenChange={handleCloseDetail}

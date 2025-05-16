@@ -62,8 +62,8 @@ export const SkinImageAnalyzer: React.FC = () => {
     
     handleAddToInventory(skinData);
     
+    // Fix: Use the correct toast function signature without 'title'
     toast({
-      title: "Skin adicionada",
       description: `${skinData.weapon} | ${skinData.name} foi adicionada ao seu inventário`
     });
     

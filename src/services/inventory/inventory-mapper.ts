@@ -27,7 +27,8 @@ export const mapSupabaseToInventoryItem = (item: any): InventoryItem => {
     feePercentage: item.fee_percentage || 13,
     tradeLockDays: item.trade_lock_days || 0,
     tradeLockUntil: item.trade_lock_until || null,
-    category: item.category || "Normal"
+    category: item.category || "Normal",
+    type: item.type || "Normal"
   };
 };
 
@@ -48,6 +49,6 @@ export const mapSupabaseToTransaction = (item: any): Transaction => {
     itemId: item.item_id || "",
     currency: item.currency_code || "USD",
     userId: item.user_id || "",
-    marketplace: item.marketplace || ""
+    marketplace: item.marketplace || "Unknown"
   };
 };

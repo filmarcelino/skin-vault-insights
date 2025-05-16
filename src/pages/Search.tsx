@@ -7,14 +7,19 @@ import { SearchPagination } from '@/components/search/SearchPagination';
 import { PremiumCTA } from '@/components/search/PremiumCTA';
 import { useSkins } from '@/hooks/use-skins';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { Skin } from '@/types/skin';
+import { Skin, InventoryItem } from '@/types/skin';
 import { Loading } from "@/components/ui/loading";
 import { useInventoryActions } from '@/hooks/useInventoryActions';
 import { InventorySkinModal } from '@/components/skins/inventory-skin-modal';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { defaultSkin } from '@/utils/default-objects';
+import { defaultSkin, defaultInventoryItem } from '@/utils/default-objects';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+
+// Helper function to check item type
+const isInventoryItem = (item: any): item is InventoryItem => {
+  return 'inventoryId' in item && !!item.inventoryId;
+};
 
 export default function Search() {
   console.log("Search page loading");
@@ -307,7 +312,7 @@ export default function Search() {
       <InventorySkinModal 
         open={isModalOpen} 
         onOpenChange={handleClose}
-        skin={selectedItem || defaultSkin as Skin}
+        skin={selectedItem || (isInventoryItem(selectedItem) ? defaultInventoryItem : defaultSkin)}
         mode={selectedItem?.sellMode ? 'sell' : (selectedItem?.isInUserInventory ? 'edit' : 'add')}
       />
     </>

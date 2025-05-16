@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSkins, useInventory } from '@/hooks/use-skins';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,7 +15,12 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { InventoryItem, Skin, Transaction } from '@/types/skin';
 import { Loading } from "@/components/ui/loading";
-import { defaultSkin } from '@/utils/default-objects';
+import { defaultSkin, defaultInventoryItem } from '@/utils/default-objects';
+
+// Helper function to check item type
+const isInventoryItem = (item: any): item is InventoryItem => {
+  return 'inventoryId' in item && !!item.inventoryId;
+};
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("inventory");
@@ -180,7 +184,7 @@ export default function Index() {
       <InventorySkinModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        skin={selectedItem || defaultSkin}
+        skin={selectedItem || (isInventoryItem(selectedItem) ? defaultInventoryItem : defaultSkin)}
         mode={modalMode}
       />
     </div>

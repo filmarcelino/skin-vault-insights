@@ -15,6 +15,17 @@ export interface Skin {
   collection?: SkinCollection;
   category?: string;
   floatValue?: number;
+  
+  // Optional inventory-related properties to improve compatibility
+  purchasePrice?: number;
+  marketplace?: string;
+  feePercentage?: number;
+  notes?: string;
+  inventoryId?: string;
+  acquiredDate?: string;
+  isInUserInventory?: boolean;
+  sellMode?: boolean;
+  userId?: string;
 }
 
 export interface SkinCollection {
@@ -24,7 +35,7 @@ export interface SkinCollection {
   image?: string;
 }
 
-export interface InventoryItem {
+export interface InventoryItem extends Skin {
   inventoryId: string;
   acquiredDate: string;
   purchasePrice: number;
@@ -66,10 +77,6 @@ export interface InventoryItem {
   soldCurrency?: string;
   soldNotes?: string;
   // Also include Skin properties
-  id: string;
-  name: string;
-  weapon: string;
-  image: string;
   type?: string;
   category?: string;
   // Special property for sell mode

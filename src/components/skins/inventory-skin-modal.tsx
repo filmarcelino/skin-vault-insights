@@ -1,8 +1,9 @@
+
 import { useEffect, useState } from "react";
 import { addSkinToInventory, updateInventoryItem } from "@/services/inventory";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { ModalMode, Skin, SkinWear } from "@/types/skin";
+import { ModalMode, Skin, SkinWear, InventoryItem } from "@/types/skin";
 import { useInvalidateInventory } from "@/hooks/use-skins";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,9 +29,14 @@ const WEAR_TYPES: SkinWear[] = [
 interface InventorySkinModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  skin: Skin;
+  skin: Skin | InventoryItem;
   mode?: ModalMode;
 }
+
+// Type guard to check if the skin is an InventoryItem
+const isInventoryItem = (item: Skin | InventoryItem): item is InventoryItem => {
+  return 'inventoryId' in item && !!item.inventoryId;
+};
 
 export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: InventorySkinModalProps) {
   const { user } = useAuth();
@@ -39,13 +45,13 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // State for form values
-  const [purchasePrice, setPurchasePrice] = useState<number>(skin.price || 0);
-  const [marketplace, setMarketplace] = useState<string>("Steam Market");
-  const [feePercentage, setFeePercentage] = useState<number>(13);
-  const [isStatTrak, setIsStatTrak] = useState<boolean>(false);
-  const [floatValue, setFloatValue] = useState<number | undefined>(undefined);
-  const [wear, setWear] = useState<SkinWear>("Factory New");
-  const [notes, setNotes] = useState<string>("");
+  const [purchasePrice, setPurchasePrice] = useState<number>(skin.purchasePrice || skin.price || 0);
+  const [marketplace, setMarketplace] = useState<string>(skin.marketplace || "Steam Market");
+  const [feePercentage, setFeePercentage] = useState<number>(skin.feePercentage || 13);
+  const [isStatTrak, setIsStatTrak] = useState<boolean>(skin.isStatTrak || false);
+  const [floatValue, setFloatValue] = useState<number | undefined>(skin.floatValue);
+  const [wear, setWear] = useState<SkinWear>((skin.wear as SkinWear) || "Factory New");
+  const [notes, setNotes] = useState<string>(skin.notes || "");
 
   // Update form values when skin changes
   useEffect(() => {
@@ -55,7 +61,7 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
       setFeePercentage(skin.feePercentage || 13);
       setIsStatTrak(skin.isStatTrak || false);
       setFloatValue(skin.floatValue);
-      setWear(skin.wear as SkinWear || "Factory New");
+      setWear((skin.wear as SkinWear) || "Factory New");
       setNotes(skin.notes || "");
     }
   }, [skin]);
@@ -71,7 +77,7 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
 
     try {
       if (mode === "add") {
-        // Add new skin to inventory
+        // Add new skin to inventory - Fixed function signature
         const result = await addSkinToInventory(
           user.id, 
           skin, 
@@ -98,8 +104,8 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
           });
         }
       } 
-      else if (mode === "edit" && skin.inventoryId) {
-        // Update existing inventory item
+      else if (mode === "edit" && isInventoryItem(skin)) {
+        // Update existing inventory item - Fixed function signature
         const result = await updateInventoryItem(
           skin.inventoryId, 
           {
@@ -146,7 +152,7 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
           </DialogTitle>
         </DialogHeader>
 
-        {mode === "sell" && skin ? (
+        {mode === "sell" && isInventoryItem(skin) ? (
           <SkinSellingForm 
             skin={skin} 
             onOpenChange={onOpenChange} 

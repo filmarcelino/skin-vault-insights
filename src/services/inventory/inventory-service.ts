@@ -141,7 +141,7 @@ export const addSkinToInventory = async (
       collection_name: typeof skin.collections === 'string' ? 
         skin.collections : 
         Array.isArray(skin.collections) && skin.collections.length > 0 ? 
-          skin.collections[0].toString() : null,
+          (skin.collections[0]?.name || null) : null,
     };
 
     // Insert the item into inventory
@@ -154,7 +154,7 @@ export const addSkinToInventory = async (
       return { success: false, error: inventoryError };
     }
 
-    // Create a transaction record
+    // Create a transaction record with marketplace
     await addTransaction({
       id: uuidv4(),
       type: "add",
@@ -165,8 +165,8 @@ export const addSkinToInventory = async (
       date: options.acquiredDate || now,
       userId,
       currency: "USD",
-      marketplace: options.marketplace,
-      notes: options.notes
+      marketplace: options.marketplace || "Steam Market",
+      notes: options.notes || ""
     });
 
     return { success: true, inventoryId };
@@ -295,7 +295,7 @@ export const markItemAsSold = async (
       return { success: false, error: updateError };
     }
 
-    // Create a transaction for the sale
+    // Create a transaction for the sale with proper marketplace field
     await addTransaction({
       id: uuidv4(),
       type: "sell",
@@ -306,7 +306,7 @@ export const markItemAsSold = async (
       date: sellData.soldDate || getCurrentDateAsString(),
       userId: itemData.user_id,
       currency: sellData.soldCurrency || "USD",
-      marketplace: sellData.soldMarketplace || itemData.marketplace || "Steam Market",
+      marketplace: sellData.soldMarketplace || "Steam Market",
       notes: sellData.soldNotes || ""
     });
 
@@ -349,18 +349,22 @@ export const getUserTransactions = async (userId?: string): Promise<Transaction[
     }
 
     // Convert from database schema to frontend model
-    const transactions = data.map(item => ({
-      id: item.id,
-      type: item.type as "add" | "sell" | "trade" | "buy",
-      itemId: item.item_id,
-      skinName: item.skin_name || "",
-      weaponName: item.weapon_name || "",
-      price: item.price || 0,
-      date: item.date,
-      userId: item.user_id,
-      currency: item.currency_code || "USD",
-      marketplace: item.marketplace || "Unknown"
-    }));
+    const transactions = data.map(item => {
+      return {
+        id: item.id,
+        type: item.type as "add" | "sell" | "trade" | "buy",
+        itemId: item.item_id,
+        skinName: item.skin_name || "",
+        weaponName: item.weapon_name || "",
+        price: item.price || 0,
+        date: item.date,
+        userId: item.user_id,
+        currency: item.currency_code || "USD",
+        // Add fallback for marketplace field
+        marketplace: item.marketplace || "Unknown",
+        notes: item.notes || ""
+      };
+    });
 
     return transactions;
   } catch (error) {

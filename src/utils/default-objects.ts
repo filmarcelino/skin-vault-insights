@@ -10,10 +10,16 @@ export const defaultSkin: Skin = {
   rarity: "Consumer Grade",
   price: 0,
   category: "Normal",
-  // Add optional properties to avoid type errors
   type: "Normal",
   wear: "Factory New",
   collections: [],
+  purchasePrice: 0,
+  inventoryId: "",
+  isInUserInventory: false,
+  marketplace: "Steam Market",
+  feePercentage: 15,
+  notes: "",
+  isStatTrak: false
 };
 
 // Default inventory item to use as a fallback
@@ -30,20 +36,18 @@ export const defaultInventoryItem: InventoryItem = {
   isInUserInventory: false,
   category: "Normal",
   sellMode: false,
-  // Add optional properties 
   isStatTrak: false,
   wear: "Factory New",
   marketplace: "Steam Market",
   feePercentage: 15,
   floatValue: undefined,
-  notes: "",
-  // Removed tradeLockDays as it's not in the type definition
+  notes: ""
 };
 
 // Default transaction object to use as a fallback
 export const defaultTransaction = {
   id: "default",
-  type: "add" as "add" | "sell" | "trade" | "buy", // Use proper union type
+  type: "add" as "add" | "sell" | "trade" | "buy", 
   itemId: "default",
   skinName: "Default Skin",
   weaponName: "Unknown",
