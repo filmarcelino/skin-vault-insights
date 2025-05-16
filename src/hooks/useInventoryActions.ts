@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { InventoryItem, Skin, SellData } from "@/types/skin";
 import { toast } from "sonner";
@@ -73,7 +74,10 @@ export const useInventoryActions = () => {
     }
     
     try {
-      const result = await removeInventoryItem(item.inventoryId);
+      // Fixed: Pass the item's inventoryId as a single parameter object
+      const result = await removeInventoryItem({
+        inventoryId: item.inventoryId
+      });
       
       if (result.success) {
         toast.success(t("inventory.item_removed"), {
@@ -110,8 +114,11 @@ export const useInventoryActions = () => {
     }
 
     try {
-      // Fixed to pass only the expected parameters
-      const { success, error } = await markItemAsSold(itemId, sellData);
+      // Fixed: Pass parameters as a single object
+      const { success, error } = await markItemAsSold({
+        itemId,
+        sellData
+      });
 
       if (success) {
         toast.success(t("inventory.item_sold_success"), {

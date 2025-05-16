@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Skin, InventoryItem, SellData, Transaction } from "@/types/skin";
 import { v4 as uuidv4 } from "uuid";
@@ -92,11 +93,15 @@ export const fetchSoldItems = async (userId?: string): Promise<InventoryItem[]> 
   }
 };
 
-// Add a skin to the user's inventory
-export const addSkinToInventory = async (
+// Add a skin to the user's inventory - update for consistent parameter object
+export const addSkinToInventory = async ({
+  userId,
+  skin,
+  options = {}
+}: {
   userId: string,
   skin: Skin,
-  options: {
+  options?: {
     purchasePrice?: number;
     marketplace?: string;
     feePercentage?: number;
@@ -105,8 +110,8 @@ export const addSkinToInventory = async (
     isStatTrak?: boolean;
     floatValue?: number;
     wear?: string;
-  } = {}
-): Promise<{ success: boolean; inventoryId?: string; error?: any }> => {
+  }
+}): Promise<{ success: boolean; inventoryId?: string; error?: any }> => {
   try {
     if (!userId || !skin) {
       console.error("addSkinToInventory: Missing required parameters");
@@ -175,11 +180,14 @@ export const addSkinToInventory = async (
   }
 };
 
-// Update an existing inventory item
-export const updateInventoryItem = async (
+// Update an existing inventory item - update for consistent parameter object
+export const updateInventoryItem = async ({
+  itemId,
+  updates
+}: {
   itemId: string,
   updates: Partial<InventoryItem>
-): Promise<{ success: boolean; error?: any }> => {
+}): Promise<{ success: boolean; error?: any }> => {
   try {
     if (!itemId) {
       return { success: false, error: "No inventory ID provided" };
@@ -229,10 +237,12 @@ export const updateInventoryItem = async (
   }
 };
 
-// Remove an item from inventory
-export const removeInventoryItem = async (
+// Remove an item from inventory - update for consistent parameter object
+export const removeInventoryItem = async ({
+  inventoryId
+}: {
   inventoryId: string
-): Promise<{ success: boolean; error?: any }> => {
+}): Promise<{ success: boolean; error?: any }> => {
   try {
     if (!inventoryId) {
       return { success: false, error: "No inventory ID provided" };
@@ -256,11 +266,14 @@ export const removeInventoryItem = async (
   }
 };
 
-// Mark an inventory item as sold
-export const markItemAsSold = async (
+// Mark an inventory item as sold - update for consistent parameter object
+export const markItemAsSold = async ({
+  itemId, 
+  sellData
+}: {
   itemId: string,
   sellData: SellData
-): Promise<{ success: boolean; error?: any }> => {
+}): Promise<{ success: boolean; error?: any }> => {
   try {
     if (!itemId || !sellData) {
       return { success: false, error: "Missing required parameters" };
@@ -305,7 +318,7 @@ export const markItemAsSold = async (
       date: sellData.soldDate || getCurrentDateAsString(),
       userId: itemData.user_id,
       currency: sellData.soldCurrency || "USD",
-      marketplace: sellData.soldMarketplace || "Steam Market",
+      marketplace: sellData.soldMarketplace || "Steam Market", // Include marketplace
       notes: sellData.soldNotes || ""
     });
 
@@ -359,8 +372,8 @@ export const getUserTransactions = async (userId?: string): Promise<Transaction[
         date: item.date,
         userId: item.user_id,
         currency: item.currency_code || "USD",
-        // Add marketplace with fallback
-        marketplace: item.marketplace || "Unknown",
+        // Add marketplace with proper fallback
+        marketplace: item.marketplace || "Unknown", // Using field from database
         notes: item.notes || ""
       };
     });
@@ -397,7 +410,7 @@ export const getTransactionById = async (transactionId: string): Promise<Transac
       date: data.date,
       userId: data.user_id,
       currency: data.currency_code || "USD",
-      marketplace: data.marketplace || "Unknown",
+      marketplace: data.marketplace || "Unknown", // Using field from database
       notes: data.notes || ""
     };
   } catch (error) {

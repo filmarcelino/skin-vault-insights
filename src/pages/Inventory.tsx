@@ -123,28 +123,7 @@ export default function Inventory() {
     await refetchSoldItems();
   };
 
-  // Adapter functions to convert between InventoryItem and string ID formats
-  const handleViewDetailsAdapter = (item: InventoryItem) => {
-    handleViewDetails(item);
-  };
-
-  const handleDeleteAdapter = (item: InventoryItem) => {
-    handleDeleteItem(item);
-  };
-
-  const handleEditAdapter = (item: InventoryItem) => {
-    handleEditItem(item);
-  };
-
-  const handleDuplicateAdapter = (item: InventoryItem) => {
-    handleDuplicate(item);
-  };
-
-  const handleSellAdapter = (item: InventoryItem) => {
-    handleSellItem(item);
-  };
-
-  // For table component that still expects IDs
+  // Fix: Update adapter functions to use InventoryItem instead of string for IDs
   const handleViewDetailsByIdAdapter = (inventoryId: string) => {
     const item = inventory.find(item => item.inventoryId === inventoryId);
     if (item) {
@@ -273,20 +252,20 @@ export default function Inventory() {
           ) : viewMode === 'grid' ? (
             <InventoryGrid 
               items={filteredItems}
-              onViewDetails={handleViewDetailsAdapter}
-              onEdit={handleEditAdapter}
-              onDelete={handleDeleteAdapter}
-              onSell={handleSellAdapter}
-              onDuplicate={handleDuplicateAdapter}
+              onViewDetails={handleViewDetails}
+              onEdit={handleEditItem}
+              onDelete={handleDeleteItem}
+              onSell={handleSellItem}
+              onDuplicate={handleDuplicate}
             />
           ) : (
             <InventoryTable 
               items={filteredItems}
-              onViewDetails={handleViewDetailsByIdAdapter}
-              onEdit={handleEditByIdAdapter}
-              onDelete={handleDeleteByIdAdapter}
+              onViewDetails={handleViewDetails}
+              onEdit={handleEditItem} 
+              onDelete={handleDeleteItem}
               onSell={handleItemSell}
-              onDuplicate={handleDuplicateByIdAdapter}
+              onDuplicate={handleDuplicate}
             />
           )}
         </TabsContent>

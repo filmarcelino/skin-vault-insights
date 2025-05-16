@@ -77,11 +77,11 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
 
     try {
       if (mode === "add") {
-        // Add new skin to inventory - Fixed function signature
-        const result = await addSkinToInventory(
-          user.id, 
-          skin, 
-          {
+        // Fixed: Only pass the expected parameters
+        const result = await addSkinToInventory({
+          userId: user.id, 
+          skin: skin, 
+          options: {
             purchasePrice,
             marketplace,
             feePercentage,
@@ -90,7 +90,7 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
             floatValue,
             wear
           }
-        );
+        });
 
         if (result.success) {
           toast.success(t("inventory.skin_added"), {
@@ -105,10 +105,10 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
         }
       } 
       else if (mode === "edit" && isInventoryItem(skin)) {
-        // Update existing inventory item - Fixed function signature
-        const result = await updateInventoryItem(
-          skin.inventoryId, 
-          {
+        // Fixed: Only pass the expected parameters
+        const result = await updateInventoryItem({
+          itemId: skin.inventoryId,
+          updates: {
             ...skin,
             purchasePrice,
             marketplace,
@@ -118,7 +118,7 @@ export function InventorySkinModal({ open, onOpenChange, skin, mode = "view" }: 
             floatValue,
             wear
           }
-        );
+        });
 
         if (result.success) {
           toast.success(t("inventory.skin_updated"), {

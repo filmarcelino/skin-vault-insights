@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -62,9 +61,8 @@ export const SkinImageAnalyzer: React.FC = () => {
     
     handleAddToInventory(skinData);
     
-    // Fix: Use the correct toast function signature
-    toast({
-      title: "Skin adicionada",
+    // Fix: Use the correct toast function signature from sonner
+    toast("Skin adicionada", {
       description: `${skinData.weapon} | ${skinData.name} foi adicionada ao seu inventário`
     });
     

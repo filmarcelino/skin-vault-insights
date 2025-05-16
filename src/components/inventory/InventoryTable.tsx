@@ -7,7 +7,7 @@ import { formatPrice } from "@/utils/format-utils";
 export interface InventoryTableProps {
   items: InventoryItem[];
   onEdit: (item: InventoryItem) => void;
-  onDelete: (inventoryId: string) => void;
+  onDelete: (item: InventoryItem) => void;
   onSell: (itemId: string, sellData: SellData) => void;
   onDuplicate: (item: InventoryItem) => void;
   onViewDetails: (item: InventoryItem) => void;
@@ -65,10 +65,10 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
             <TableCell>
               <InventoryTableActions
                 item={item}
-                onEdit={onEdit}
-                onDuplicate={onDuplicate}
-                onRemove={onDelete}
-                onSell={onSell}
+                onEdit={() => onEdit(item)}
+                onDuplicate={() => onDuplicate(item)}
+                onRemove={() => onDelete(item)}
+                onSell={(sellData) => onSell(item.inventoryId || "", sellData)}
               />
             </TableCell>
           </TableRow>
@@ -76,4 +76,4 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       </TableBody>
     </Table>
   );
-};
+}
