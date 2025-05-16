@@ -3,6 +3,7 @@ import { InventoryItem, SellData } from "@/types/skin";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InventoryTableActions } from "./InventoryTableActions";
 import { formatPrice } from "@/utils/format-utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface InventoryTableProps {
   items: InventoryItem[];
@@ -21,14 +22,16 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
   onDuplicate,
   onViewDetails,
 }) => {
+  const { t } = useLanguage();
+  
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Item</TableHead>
-          <TableHead>Wear</TableHead>
-          <TableHead>Acquired</TableHead>
-          <TableHead className="text-right">Price</TableHead>
+          <TableHead>{t("inventory.item")}</TableHead>
+          <TableHead>{t("inventory.wear")}</TableHead>
+          <TableHead>{t("inventory.acquired")}</TableHead>
+          <TableHead className="text-right">{t("inventory.price")}</TableHead>
           <TableHead></TableHead>
         </TableRow>
       </TableHeader>
@@ -55,7 +58,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                 </div>
               </div>
             </TableCell>
-            <TableCell>{item.wear || "Not specified"}</TableCell>
+            <TableCell>{item.wear || t("inventory.notSpecified")}</TableCell>
             <TableCell>
               {new Date(item.acquiredDate).toLocaleDateString()}
             </TableCell>
@@ -80,4 +83,4 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       </TableBody>
     </Table>
   );
-}
+};

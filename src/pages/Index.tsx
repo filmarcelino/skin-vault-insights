@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useSkins, useInventory } from '@/hooks/use-skins';
+import { useSkins, useUserInventory } from '@/hooks/use-skins';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { InventoryItem, Skin, Transaction } from '@/types/skin';
 import { Loading } from "@/components/ui/loading";
 import { defaultSkin, defaultInventoryItem } from '@/utils/default-objects';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Helper function to check item type
 const isInventoryItem = (item: any): item is InventoryItem => {
@@ -30,6 +32,9 @@ export default function Index() {
   
   const { viewMode, setViewMode } = useViewMode("grid");
   const { formatPrice } = useCurrency();
+  const { t } = useLanguage();
+
+  console.log("Dashboard: Rendering Index component");
 
   // Fetch inventory data
   const { data: userInventory = [], isLoading: isLoadingInventory } = useUserInventory();
@@ -115,10 +120,10 @@ export default function Index() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="pb-6">
         <TabsList className="w-full">
           <TabsTrigger value="inventory" className="w-1/2">
-            My Inventory
+            {t("inventory.title")}
           </TabsTrigger>
           <TabsTrigger value="search" className="w-1/2">
-            Search Skins
+            {t("search.skins")}
           </TabsTrigger>
         </TabsList>
           
@@ -127,7 +132,7 @@ export default function Index() {
           <div className="relative">
             <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder={activeTab === 'inventory' ? "Filter inventory..." : "Search for skins..."}
+              placeholder={activeTab === 'inventory' ? t("inventory.filterInventory") : t("search.searchSkins")}
               className="pl-8"
               value={activeTab === 'inventory' ? inventorySearchQuery : searchQuery}
               onChange={activeTab === 'inventory' ? handleSearchChange : handleSearchInputChange}
@@ -181,12 +186,14 @@ export default function Index() {
       />
       
       {/* Skin modal for inventory items */}
-      <InventorySkinModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        skin={selectedItem || (isInventoryItem(selectedItem) ? defaultInventoryItem : defaultSkin)}
-        mode={modalMode}
-      />
+      {selectedItem && (
+        <InventorySkinModal
+          inventoryItem={selectedItem}
+          onClose={() => setIsModalOpen(false)}
+        >
+          <span>Open Modal</span>
+        </InventorySkinModal>
+      )}
     </div>
   );
 }

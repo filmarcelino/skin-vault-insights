@@ -105,9 +105,7 @@ export default function Inventory() {
     handleDeleteItem,
     handleMarkAsSold,
     handleSellItem,
-    handleDuplicate,
-    handleClose,
-    handleCloseDetail
+    handleDuplicate
   } = useInventoryActions();
   
   const currentCount = Array.isArray(inventory) ? inventory.length : 0;
@@ -123,17 +121,13 @@ export default function Inventory() {
     await refetchSoldItems();
   };
 
-  // Fix: Create adapter functions to convert between item and ID parameters
-  const handleEditAdapter = (item: InventoryItem) => {
-    handleEdit(item);
+  // Close modal handlers
+  const handleClose = () => {
+    setIsModalOpen(false);
   };
-  
-  const handleDeleteAdapter = (item: InventoryItem) => {
-    handleDeleteItem(item);
-  };
-  
-  const handleDuplicateAdapter = (item: InventoryItem) => {
-    handleDuplicate(item);
+
+  const handleCloseDetail = () => {
+    setIsDetailModalOpen(false);
   };
 
   if (isLoading) {
@@ -220,25 +214,24 @@ export default function Inventory() {
             <InventoryGrid 
               items={filteredItems}
               onViewDetails={handleViewDetails}
-              onEdit={handleEditAdapter}
-              onDelete={handleDeleteAdapter}
+              onEdit={handleEdit}
+              onDelete={handleDeleteItem}
               onSell={(item) => {
                 // Adapter to convert the item-based API to an ID-based API
                 if (item.inventoryId) {
-                  // This is a stub - actual implementation would include a modal to input sell data
-                  console.log("Would sell item with ID:", item.inventoryId);
+                  handleViewDetails(item);
                 }
               }}
-              onDuplicate={handleDuplicateAdapter}
+              onDuplicate={handleDuplicate}
             />
           ) : (
             <InventoryTable 
               items={filteredItems}
               onViewDetails={handleViewDetails}
-              onEdit={handleEditAdapter}
-              onDelete={handleDeleteAdapter}
+              onEdit={handleEdit}
+              onDelete={handleDeleteItem}
               onSell={handleItemSell}
-              onDuplicate={handleDuplicateAdapter}
+              onDuplicate={handleDuplicate}
             />
           )}
         </TabsContent>
@@ -265,7 +258,7 @@ export default function Inventory() {
       {selectedItem && (
         <InventorySkinModal
           inventoryItem={selectedItem} 
-          onClose={() => handleClose(false)}
+          onClose={handleClose}
         >
           <span>Open Modal</span>
         </InventorySkinModal>

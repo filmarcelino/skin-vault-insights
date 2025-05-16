@@ -9,6 +9,7 @@ import {
 import { InventoryItem, SellData } from "@/types/skin";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const useInventoryActions = () => {
   const queryClient = useQueryClient();
@@ -16,17 +17,18 @@ export const useInventoryActions = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+  const { t } = useLanguage();
 
   // Mutation for adding a skin to the inventory
   const addSkinMutation = useMutation({
     mutationFn: (skinData: any) => addSkinToInventory(skinData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success("Skin added to inventory!");
+      toast.success(t("inventory.itemAdded"));
     },
     onError: (error) => {
       console.error("Error adding skin to inventory:", error);
-      toast.error("Failed to add skin to inventory");
+      toast.error(t("errors.addSkinFailed"));
     },
   });
 
@@ -35,16 +37,17 @@ export const useInventoryActions = () => {
     mutationFn: (itemData: any) => updateInventoryItem(itemData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success("Item updated successfully!");
+      toast.success(t("inventory.itemUpdated"));
     },
     onError: (error) => {
       console.error("Error updating item:", error);
-      toast.error("Failed to update item");
+      toast.error(t("errors.updateItemFailed"));
     },
   });
 
   // Handles opening the edit modal
   const handleEdit = (item: InventoryItem) => {
+    console.log("Editing item:", item);
     setSelectedItem(item);
     setModalMode('edit');
     setIsModalOpen(true);
@@ -52,12 +55,14 @@ export const useInventoryActions = () => {
 
   // Handles opening the detail modal
   const handleViewDetails = (item: InventoryItem) => {
+    console.log("Viewing details for item:", item);
     setSelectedItem(item);
     setIsDetailModalOpen(true);
   };
 
   // Handles adding a new skin
   const handleAddToInventory = (skin: any) => {
+    console.log("Adding skin to inventory:", skin);
     setSelectedItem(skin);
     setModalMode('add');
     setIsModalOpen(true);
@@ -66,12 +71,15 @@ export const useInventoryActions = () => {
   // Handler for marking an item as sold
   const handleMarkAsSold = async (inventoryId: string, sellData: SellData) => {
     try {
+      console.log("Marking item as sold:", { inventoryId, sellData });
       await markItemAsSold({ inventoryId, sellData });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success("Item marked as sold!");
+      toast.success(t("inventory.itemSold"));
+      return true;
     } catch (error) {
       console.error("Error selling item:", error);
-      toast.error("Failed to mark item as sold");
+      toast.error(t("errors.sellItemFailed"));
+      return false;
     }
   };
 
@@ -80,40 +88,37 @@ export const useInventoryActions = () => {
     try {
       const inventoryId = item.inventoryId || "";
       if (!inventoryId) {
-        toast.error("Invalid item ID");
-        return;
+        toast.error(t("errors.invalidItemId"));
+        return false;
       }
+      console.log("Removing item:", { inventoryId, item });
       await removeInventoryItem({ inventoryId });
       queryClient.invalidateQueries({ queryKey: ['inventory'] });
-      toast.success("Item removed from inventory!");
+      toast.success(t("inventory.itemRemoved"));
+      return true;
     } catch (error) {
       console.error("Error removing item:", error);
-      toast.error("Failed to remove item from inventory");
+      toast.error(t("errors.removeItemFailed"));
+      return false;
     }
   };
 
   // Handler for duplicating an item
   const handleDuplicate = (item: InventoryItem) => {
+    console.log("Duplicating item:", item);
     const duplicatedItem = { ...item };
     delete duplicatedItem.inventoryId;
     
     addSkinMutation.mutate(duplicatedItem);
   };
 
-  // Handlers for closing modals
-  const handleClose = (open: boolean) => {
-    setIsModalOpen(open);
-  };
-
-  const handleCloseDetail = (open: boolean) => {
-    setIsDetailModalOpen(open);
-  };
-
   // Handler specifically for selling an item
   const handleSellItem = (item: InventoryItem, sellData: SellData) => {
     if (item.inventoryId) {
-      handleMarkAsSold(item.inventoryId, sellData);
+      console.log("Calling handleMarkAsSold from handleSellItem");
+      return handleMarkAsSold(item.inventoryId, sellData);
     }
+    return Promise.resolve(false);
   };
 
   return {
@@ -125,6 +130,7 @@ export const useInventoryActions = () => {
     handleDuplicate,
     handleViewDetails,
     handleAddToInventory,
+    handleMarkAsSold,
     selectedItem,
     isModalOpen,
     isDetailModalOpen,
@@ -133,12 +139,7 @@ export const useInventoryActions = () => {
     setIsDetailModalOpen,
     setSelectedItem,
     isLoading: addSkinMutation.isPending || updateItemMutation.isPending,
-    // Add handlers needed by components
-    handleEditItem: handleEdit,
-    handleDeleteItem,
-    handleMarkAsSold,
-    handleSellItem,
-    handleClose,
-    handleCloseDetail
+    handleClose: () => setIsModalOpen(false),
+    handleCloseDetail: () => setIsDetailModalOpen(false)
   };
 };

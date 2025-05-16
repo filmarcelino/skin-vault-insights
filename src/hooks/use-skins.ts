@@ -2,12 +2,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSkins } from "@/services/api";
 import { fetchUserInventory } from "@/services/inventory";
+import { type InventoryItem, type Skin } from "@/types/skin";
 
 // Hook to fetch all CS2 skins from the API
 export const useSkins = (params?: { weaponType?: string; search?: string }) => {
   return useQuery({
     queryKey: ["skins", params?.weaponType || "all", params?.search || ""],
-    queryFn: () => fetchSkins(params?.weaponType, params?.search),
+    queryFn: () => fetchSkins(),
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 };
@@ -16,9 +17,7 @@ export const useSkins = (params?: { weaponType?: string; search?: string }) => {
 export const useUserInventory = () => {
   return useQuery({
     queryKey: ["inventory"],
-    queryFn: async () => {
-      return await fetchUserInventory();
-    },
+    queryFn: fetchUserInventory,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

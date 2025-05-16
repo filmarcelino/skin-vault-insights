@@ -28,7 +28,13 @@ export default function Search() {
   const { data: allSkins, isLoading: loading, error, refetch } = useSkins();
   const { isSubscribed, isTrial } = useSubscription();
   const { t } = useLanguage();
-  const { selectedItem, isModalOpen, setIsModalOpen, handleViewDetails, handleAddToInventory } = useInventoryActions();
+  const { 
+    selectedItem, 
+    isModalOpen, 
+    setIsModalOpen, 
+    handleViewDetails, 
+    handleAddToInventory 
+  } = useInventoryActions();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -309,12 +315,14 @@ export default function Search() {
         </div>
       </div>
       
-      <InventorySkinModal 
-        open={isModalOpen} 
-        onOpenChange={handleClose}
-        skin={selectedItem || (isInventoryItem(selectedItem) ? defaultInventoryItem : defaultSkin)}
-        mode={selectedItem?.sellMode ? 'sell' : (selectedItem?.isInUserInventory ? 'edit' : 'add')}
-      />
+      {selectedItem && (
+        <InventorySkinModal
+          inventoryItem={isInventoryItem(selectedItem) ? selectedItem : defaultInventoryItem}
+          onClose={handleClose}
+        >
+          <span>Open Modal</span>
+        </InventorySkinModal>
+      )}
     </>
   );
 }

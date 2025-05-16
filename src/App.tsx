@@ -1,61 +1,63 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { BrowserRouter as Router } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
-import MaintenancePage from "./pages/MaintenancePage";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
+import { MainApp } from "@/components/MainApp";
+import MaintenancePage from "@/components/MaintenancePage";
 
-// Set up React Query with 15 minutes staleTime for better caching
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 15, // 15 minutes
+      staleTime: 1000 * 60 * 5, // 5 minutes
       retry: 1,
-      refetchOnWindowFocus: false, // Disable automatic refetch on window focus
     },
   },
 });
 
-const App = () => {
-  console.log("App component rendering");
-  
+// App maintenance state
+const MAINTENANCE_MODE = false; // Set to true to show maintenance page
+
+export default function App() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    console.info("App component rendering");
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null; // Prevent SSR hydration issues
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <ThemeProvider>
         <LanguageProvider>
-          <AuthProvider>
-            <CurrencyProvider>
-              <SubscriptionProvider>
-                <div className="min-h-screen bg-background text-foreground antialiased">
-                  <Toaster />
-                  <Sonner />
-                  <HomeScreenPopup />
-                  <BrowserRouter>
-                    <Routes>
-                      {/* Maintenance page as the main route */}
-                      <Route path="*" element={<MaintenancePage />} />
-                      
-                      {/* Admin-only access to authentication during maintenance */}
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/reset-password" element={<ResetPassword />} />
-                    </Routes>
-                  </BrowserRouter>
-                </div>
-              </SubscriptionProvider>
-            </CurrencyProvider>
-          </AuthProvider>
+          <Router>
+            {MAINTENANCE_MODE ? (
+              <MaintenancePage />
+            ) : (
+              <AuthProvider>
+                <SubscriptionProvider>
+                  <CurrencyProvider>
+                    <MainApp />
+                    <Toaster position="bottom-right" />
+                  </CurrencyProvider>
+                </SubscriptionProvider>
+              </AuthProvider>
+            )}
+          </Router>
         </LanguageProvider>
-      </TooltipProvider>
+      </ThemeProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
-};
-
-export default App;
+}

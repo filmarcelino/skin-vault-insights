@@ -54,7 +54,7 @@ export const getUserTransactions = async (userId?: string): Promise<Transaction[
       type: mapTransactionType(item.type),
       notes: item.notes || "",
       currency: item.currency_code || "USD",
-      marketplace: "Steam" // Default value
+      marketplace: "Steam" // Default value since marketplace doesn't exist in DB schema
     }));
   } catch (error) {
     console.error("Error fetching transactions:", error);

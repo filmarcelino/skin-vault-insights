@@ -7,37 +7,57 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { InventoryItem, SellData } from '@/types/skin';
 import { formatPrice } from '@/utils/format-utils';
-import { toast } from "@/components/ui/sonner"
+import { toast } from "sonner";
 import { removeInventoryItem, markItemAsSold } from '@/services/inventory';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { SellItemForm } from './SellItemForm';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface InventorySkinModalProps {
   inventoryItem: InventoryItem;
   children: React.ReactNode;
   onClose: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function InventorySkinModal({ inventoryItem, children, onClose }: InventorySkinModalProps) {
-  const [open, setOpen] = useState(false);
+export function InventorySkinModal({ 
+  inventoryItem, 
+  children, 
+  onClose,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen
+}: InventorySkinModalProps) {
+  const [open, setOpen] = useState(controlledOpen !== undefined ? controlledOpen : false);
   const { currency } = useCurrency();
+  const { t } = useLanguage();
+
+  // Respect controlled or uncontrolled state
+  const handleOpenChange = (newOpen: boolean) => {
+    if (setControlledOpen) {
+      setControlledOpen(newOpen);
+    } else {
+      setOpen(newOpen);
+    }
+    if (!newOpen) onClose();
+  };
 
   const handleSellItem = async (sellData: SellData) => {
     if (!inventoryItem?.inventoryId) return;
     
     try {
       await markItemAsSold({ inventoryId: inventoryItem.inventoryId, sellData });
-      toast.success("Item marked as sold!");
+      toast.success(t("inventory.itemSold"));
       onClose();
     } catch (error) {
       console.error("Error selling item:", error);
-      toast.error("Failed to mark item as sold");
+      toast.error(t("errors.sellItemFailed"));
     }
   };
 
@@ -46,16 +66,19 @@ export function InventorySkinModal({ inventoryItem, children, onClose }: Invento
     
     try {
       await removeInventoryItem({ inventoryId: inventoryItem.inventoryId });
-      toast.success("Item removed from inventory!");
+      toast.success(t("inventory.itemRemoved"));
       onClose();
     } catch (error) {
       console.error("Error removing item:", error);
-      toast.error("Failed to remove item from inventory");
+      toast.error(t("errors.removeItemFailed"));
     }
   };
 
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : open;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -72,27 +95,29 @@ export function InventorySkinModal({ inventoryItem, children, onClose }: Invento
               src={inventoryItem.image} 
               alt={inventoryItem.name} 
               className="h-32 w-32 object-contain rounded-md"
-              onError={(e) => (e.currentTarget.src = '/placeholder.svg')}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="wear">Wear</Label>
-            <Input id="wear" value={inventoryItem.wear || "Not specified"} className="col-span-3" disabled />
+            <Label htmlFor="wear">{t("inventory.wear")}</Label>
+            <Input id="wear" value={inventoryItem.wear || t("inventory.notSpecified")} className="col-span-3" disabled />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="price">Price</Label>
+            <Label htmlFor="price">{t("inventory.price")}</Label>
             <Input id="price" value={formatPrice(inventoryItem.currentPrice || inventoryItem.price || 0)} className="col-span-3" disabled />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="acquired">Acquired</Label>
+            <Label htmlFor="acquired">{t("inventory.acquired")}</Label>
             <Input id="acquired" value={new Date(inventoryItem.acquiredDate).toLocaleDateString()} className="col-span-3" disabled />
           </div>
         </div>
         <SellItemForm inventoryItem={inventoryItem} onSubmit={handleSellItem} />
         <div className="flex justify-end">
-          <Button variant="destructive" onClick={handleDeleteItem}>Delete</Button>
+          <Button variant="destructive" onClick={handleDeleteItem}>{t("common.delete")}</Button>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
