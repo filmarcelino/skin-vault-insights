@@ -11,42 +11,58 @@ import { ExportOptions, ExportDataType } from "@/services/inventory/inventory-se
 import { InventoryItem, Transaction } from "@/types/skin";
 import { mapSupabaseToInventoryItem, mapSupabaseToTransaction } from "@/services/inventory/inventory-mapper";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Download } from "lucide-react";
 
-// Função para exportar dados completos de um usuário específico
-async function exportUserData(options: ExportOptions, userId: string): Promise<any> {
+// Função para exportar dados completos de todos os usuários ou de um usuário específico
+async function exportUserData(options: ExportOptions, userId?: string): Promise<any> {
   try {
-    console.log(`Exportando dados para o usuário ID: ${userId}`);
+    console.log(`Exportando dados ${userId ? `para o usuário ID: ${userId}` : 'para todos os usuários'}`);
     
-    // Buscar TODOS os itens de inventário do usuário (incluindo vendidos)
-    const inventoryQuery = await supabase
+    // Construir a query base para o inventário
+    let inventoryQuery = supabase
       .from('inventory')
       .select('*')
-      .eq('user_id', userId);
+      .order('created_at', { ascending: false });
     
-    if (inventoryQuery.error) {
-      console.error("Erro ao buscar inventário:", inventoryQuery.error);
-      throw new Error(`Erro ao buscar inventário: ${inventoryQuery.error.message}`);
+    // Se um ID de usuário específico foi fornecido, filtrar por ele
+    if (userId) {
+      inventoryQuery = inventoryQuery.eq('user_id', userId);
     }
     
-    console.log(`Itens no inventário encontrados: ${inventoryQuery.data?.length || 0}`);
+    // Executar a consulta do inventário
+    const inventoryResult = await inventoryQuery;
     
-    // Buscar TODAS as transações do usuário
-    const transactionsQuery = await supabase
+    if (inventoryResult.error) {
+      console.error("Erro ao buscar inventário:", inventoryResult.error);
+      throw new Error(`Erro ao buscar inventário: ${inventoryResult.error.message}`);
+    }
+    
+    console.log(`Itens no inventário encontrados: ${inventoryResult.data?.length || 0}`);
+    
+    // Construir a query base para transações
+    let transactionsQuery = supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', userId);
+      .order('date', { ascending: false });
     
-    if (transactionsQuery.error) {
-      console.error("Erro ao buscar transações:", transactionsQuery.error);
-      throw new Error(`Erro ao buscar transações: ${transactionsQuery.error.message}`);
+    // Se um ID de usuário específico foi fornecido, filtrar por ele
+    if (userId) {
+      transactionsQuery = transactionsQuery.eq('user_id', userId);
     }
     
-    console.log(`Transações encontradas: ${transactionsQuery.data?.length || 0}`);
+    // Executar a consulta de transações
+    const transactionsResult = await transactionsQuery;
+    
+    if (transactionsResult.error) {
+      console.error("Erro ao buscar transações:", transactionsResult.error);
+      throw new Error(`Erro ao buscar transações: ${transactionsResult.error.message}`);
+    }
+    
+    console.log(`Transações encontradas: ${transactionsResult.data?.length || 0}`);
     
     // Mapear dados para os tipos corretos
-    const inventory = inventoryQuery.data?.map(item => mapSupabaseToInventoryItem(item)).filter(Boolean) as InventoryItem[] || [];
-    const transactions = transactionsQuery.data?.map(item => mapSupabaseToTransaction(item)).filter(Boolean) as Transaction[] || [];
+    const inventory = inventoryResult.data?.map(item => mapSupabaseToInventoryItem(item)).filter(Boolean) as InventoryItem[] || [];
+    const transactions = transactionsResult.data?.map(item => mapSupabaseToTransaction(item)).filter(Boolean) as Transaction[] || [];
     
     // Filtrar itens ativos do inventário para algumas estatísticas
     const activeItems = inventory.filter((item) => item.isInUserInventory);
@@ -197,15 +213,23 @@ function downloadData(data: any, format: 'json' | 'csv', filename = 'export'): v
   URL.revokeObjectURL(url);
 }
 
+// Lista de usuários importantes com IDs e nomes
+const USERS = [
+  {
+    id: "e2bb0941-694a-411f-948b-1c4267849b3b",
+    name: "Breno"
+  },
+  // Adicione outros usuários conforme necessário
+];
+
 export default function PublicExport() {
-  // User ID de Breno - ID correto do usuário Breno
-  const BRENO_USER_ID = "e2bb0941-694a-411f-948b-1c4267849b3b";
-  
+  const [selectedUserId, setSelectedUserId] = useState<string>(USERS[0].id);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const [exportType, setExportType] = useState<ExportDataType>('all');
   const [includeDetails, setIncludeDetails] = useState(true);
+  const [exportAllUsers, setExportAllUsers] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [exportStats, setExportStats] = useState<{totalItems: number, activeSkins: number} | null>(null);
+  const [exportStats, setExportStats] = useState<{totalItems: number, activeSkins: number, transactionCount: number} | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -216,33 +240,29 @@ export default function PublicExport() {
         setError(null);
         setIsLoading(true);
         
-        // Buscar inventário e transações para estatísticas iniciais
-        const [inventoryResult, transactionsResult] = await Promise.all([
-          supabase.from('inventory').select('inventory_id, is_in_user_inventory').eq('user_id', BRENO_USER_ID),
-          supabase.from('transactions').select('transaction_id').eq('user_id', BRENO_USER_ID)
-        ]);
+        // Buscar inventário e transações para estatísticas iniciais do usuário selecionado
+        const userId = exportAllUsers ? undefined : selectedUserId;
         
-        if (inventoryResult.error) {
-          throw new Error(`Erro ao buscar inventário: ${inventoryResult.error.message}`);
+        // Use nossa função exportUserData para obter os dados (vai fazer queries corretamente)
+        const result = await exportUserData(
+          { format: 'json', type: 'all', includeDetails: true }, 
+          userId
+        );
+        
+        if (!result || !result.summary) {
+          throw new Error("Não foi possível carregar estatísticas");
         }
         
-        if (transactionsResult.error) {
-          throw new Error(`Erro ao buscar transações: ${transactionsResult.error.message}`);
-        }
-        
-        const totalItems = inventoryResult.data?.length || 0;
-        const activeSkins = inventoryResult.data?.filter(item => item.is_in_user_inventory)?.length || 0;
-        const transactionCount = transactionsResult.data?.length || 0;
-        
-        setExportStats({ 
-          totalItems,
-          activeSkins
+        setExportStats({
+          totalItems: result.summary.totalItems || 0,
+          activeSkins: result.summary.activeSkins || 0,
+          transactionCount: result.summary.transactionCount || 0
         });
         
-        console.log(`Estatísticas carregadas: ${totalItems} itens, ${activeSkins} ativos, ${transactionCount} transações`);
+        console.log(`Estatísticas carregadas: ${result.summary.totalItems} itens, ${result.summary.activeSkins} ativos, ${result.summary.transactionCount} transações`);
         
-        if (totalItems === 0 && transactionCount === 0) {
-          setError("Nenhum dado encontrado para Breno. Verifique se o ID do usuário está correto.");
+        if (result.summary.totalItems === 0 && result.summary.transactionCount === 0) {
+          setError("Nenhum dado encontrado. Verifique se o ID do usuário está correto.");
         }
       } catch (err: any) {
         console.error("Erro ao carregar estatísticas:", err);
@@ -258,7 +278,7 @@ export default function PublicExport() {
     };
     
     loadInitialStats();
-  }, [toast]);
+  }, [selectedUserId, exportAllUsers, toast]);
 
   const handleExport = async () => {
     setIsLoading(true);
@@ -271,7 +291,8 @@ export default function PublicExport() {
         includeDetails
       };
       
-      const result = await exportUserData(options, BRENO_USER_ID);
+      const userId = exportAllUsers ? undefined : selectedUserId;
+      const result = await exportUserData(options, userId);
       
       if (!result || !result.data) {
         throw new Error("Nenhum dado encontrado para exportação");
@@ -281,11 +302,12 @@ export default function PublicExport() {
         throw new Error("Nenhum item ou transação encontrada para exportar");
       }
       
-      downloadData(result.data, exportFormat, `breno-export-${exportType}`);
+      const userName = exportAllUsers ? "todos" : (USERS.find(u => u.id === selectedUserId)?.name || "usuario");
+      downloadData(result.data, exportFormat, `${userName}-export-${exportType}`);
       
       toast({
         title: "Exportação Concluída",
-        description: `Exportados ${result.summary.totalItems} itens no total, incluindo ${result.summary.activeSkins} skins ativas.`
+        description: `Exportados ${result.summary.totalItems} itens e ${result.summary.transactionCount} transações.`
       });
     } catch (error: any) {
       console.error("Erro na exportação:", error);
@@ -310,13 +332,13 @@ export default function PublicExport() {
             </span>
           </h1>
           <p className="text-lg text-muted-foreground mt-2">
-            Exportador de Inventário e Transações - Breno
+            Exportador de Inventário e Transações
           </p>
         </div>
 
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Exportar Dados de Breno</CardTitle>
+            <CardTitle>Exportar Dados</CardTitle>
             <CardDescription>
               Exporte o inventário e transações para análise ou backup
             </CardDescription>
@@ -334,8 +356,43 @@ export default function PublicExport() {
               )}
               
               {exportStats && (
-                <div className="bg-muted rounded-md p-3 mb-4 text-sm">
-                  <p>Breno tem <strong>{exportStats.totalItems}</strong> itens no total e <strong>{exportStats.activeSkins}</strong> skins ativas.</p>
+                <div className="bg-muted rounded-md p-3 mb-4">
+                  <p className="font-medium mb-1">Estatísticas dos Dados:</p>
+                  <ul className="text-sm space-y-1">
+                    <li><strong>Total de Itens:</strong> {exportStats.totalItems}</li>
+                    <li><strong>Skins Ativas:</strong> {exportStats.activeSkins}</li>
+                    <li><strong>Transações:</strong> {exportStats.transactionCount}</li>
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex items-center space-x-2 mb-4">
+                <Switch
+                  id="exportAllUsers"
+                  checked={exportAllUsers}
+                  onCheckedChange={setExportAllUsers}
+                />
+                <Label htmlFor="exportAllUsers">Exportar dados de todos os usuários</Label>
+              </div>
+
+              {!exportAllUsers && (
+                <div className="space-y-2">
+                  <Label htmlFor="selectedUser">Usuário</Label>
+                  <Select
+                    value={selectedUserId}
+                    onValueChange={setSelectedUserId}
+                  >
+                    <SelectTrigger id="selectedUser">
+                      <SelectValue placeholder="Selecione o usuário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {USERS.map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
@@ -389,7 +446,14 @@ export default function PublicExport() {
               disabled={isLoading}
               className="w-full"
             >
-              {isLoading ? "Exportando..." : "Exportar Dados"}
+              {isLoading ? (
+                "Exportando..."
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar Dados
+                </>
+              )}
             </Button>
           </CardFooter>
         </Card>

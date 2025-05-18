@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
 import PublicExport from "./pages/PublicExport";
 
@@ -18,7 +18,7 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  console.log("App component rendering");
+  console.log("App component rendering - Export Tool Only Mode");
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -32,7 +32,7 @@ const App = () => {
               {/* Todas as rotas apontam para a página de exportação pública */}
               <Route path="/" element={<PublicExport />} />
               <Route path="/export" element={<PublicExport />} />
-              <Route path="*" element={<PublicExport />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
         </div>
