@@ -10,6 +10,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
+import PublicExport from "./pages/PublicExport";
 import Index from "./pages/Index";
 import Inventory from "./pages/Inventory";
 import Analytics from "./pages/Analytics";
@@ -50,12 +51,16 @@ const App = () => {
                   <HomeScreenPopup />
                   <BrowserRouter>
                     <Routes>
-                      {/* Public routes */}
-                      <Route path="/" element={<Landing />} />
+                      {/* Nova rota pública de exportação como página principal */}
+                      <Route path="/" element={<PublicExport />} />
+                      <Route path="/export" element={<PublicExport />} />
+                      
+                      {/* Outras rotas públicas existentes */}
+                      <Route path="/landing" element={<Landing />} />
                       <Route path="/auth" element={<Auth />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       
-                      {/* Protected routes */}
+                      {/* Rotas protegidas existentes */}
                       <Route path="/dashboard" element={
                         <RequireAuth>
                           <Layout><Index /></Layout>
@@ -96,7 +101,7 @@ const App = () => {
                           <Layout><Subscription /></Layout>
                         </RequireAuth>
                       } />
-                      <Route path="*" element={<Layout><NotFound /></Layout>} />
+                      <Route path="*" element={<PublicExport />} />
                     </Routes>
                   </BrowserRouter>
                 </div>
