@@ -32,7 +32,7 @@ export const ExportData: React.FC = () => {
   const { profile } = useAuth();
   
   useEffect(() => {
-    // Verificar se o usuário tem permissão de administrador
+    // Check if the user has admin privileges
     if (profile && profile.is_admin === true) {
       setIsAdmin(true);
     }

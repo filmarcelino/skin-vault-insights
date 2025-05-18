@@ -214,10 +214,10 @@ export const sellSkin = async (itemId: string, sellData: SellData): Promise<bool
       item_id: itemId,
       weapon_name: itemData.weapon || 'Unknown',
       skin_name: itemData.name || 'Unknown',
-      date: sellData.date || new Date().toISOString(),
-      price: sellData.price,
-      notes: sellData.notes || `Sold on ${sellData.marketplace}`,
-      currency_code: sellData.currency || 'USD'
+      date: sellData.soldDate || new Date().toISOString(),
+      price: sellData.soldPrice,
+      notes: sellData.soldNotes || `Sold on ${sellData.soldMarketplace}`,
+      currency_code: sellData.soldCurrency || 'USD'
     };
     
     console.log("Creating sale transaction:", transaction);

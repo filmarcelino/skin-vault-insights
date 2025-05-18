@@ -1,4 +1,3 @@
-
 export interface Skin {
   id: string;
   name: string;
@@ -102,13 +101,13 @@ export interface SkinFilter {
 }
 
 export interface SellData {
-  soldDate?: string;
-  soldPrice: number;
-  soldMarketplace: string;
+  soldDate?: string;  // Changed from date to soldDate
+  soldPrice: number;  // Changed from soldPrice to soldPrice
+  soldMarketplace: string;  // Changed from soldMarketplace to soldMarketplace
   soldFeePercentage: number;
-  soldNotes?: string;
+  soldNotes?: string;  // Changed from notes to soldNotes
   profit?: number;
-  soldCurrency?: string; // Moeda usada na venda
+  soldCurrency?: string;  // Changed from currency to soldCurrency
 }
 
 export interface PriceHistoryItem {
