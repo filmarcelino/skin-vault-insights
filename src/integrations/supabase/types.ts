@@ -138,6 +138,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          inventory_populated: boolean | null
           is_admin: boolean | null
           preferred_currency: string
           updated_at: string
@@ -151,6 +152,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          inventory_populated?: boolean | null
           is_admin?: boolean | null
           preferred_currency?: string
           updated_at?: string
@@ -164,6 +166,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          inventory_populated?: boolean | null
           is_admin?: boolean | null
           preferred_currency?: string
           updated_at?: string
@@ -300,7 +303,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      populate_user_inventory: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -53,7 +53,7 @@ export const useInventoryActions = () => {
   };
 
   const handleSell = (itemId: string, sellData: SellData) => {
-    sellSkin.mutate({ itemId, sellData: sellData });
+    sellSkin.mutate({ itemId, sellData });
     handleClose();
     invalidateInventory();
     // Invalidamos as transações após uma venda para manter os dados atualizados

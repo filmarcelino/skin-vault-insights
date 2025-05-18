@@ -30,3 +30,10 @@ export const defaultInventoryItem: InventoryItem = {
   isStatTrak: false,
   tradeLockDays: 0
 };
+
+// Export default options
+export const defaultExportOptions = {
+  format: 'json',
+  type: 'all',
+  includeDetails: true
+};

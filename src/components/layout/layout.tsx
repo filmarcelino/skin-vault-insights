@@ -2,6 +2,7 @@
 import { FC, ReactNode } from "react";
 import { Header } from "./header";
 import { TopNav } from "./top-nav";
+import { Toaster } from "@/components/ui/toaster";
 
 interface LayoutProps {
   children: ReactNode;
@@ -19,6 +20,7 @@ export const Layout: FC<LayoutProps> = ({ children }) => {
           </main>
         </div>
       </div>
+      <Toaster />
     </div>
   );
 };

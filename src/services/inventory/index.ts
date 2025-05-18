@@ -21,13 +21,12 @@ export const debugInventoryItem = (item: any, label = "Inventory Item") => {
   });
 };
 
-// Utility function to safely convert unknown values to strings
+// Utility functions for type safety
 export const safeString = (value: unknown): string => {
   if (value === null || value === undefined) return '';
   return String(value);
 };
 
-// Utility function to safely convert unknown values to booleans
 export const safeBoolean = (value: unknown): boolean => {
   if (typeof value === 'boolean') return value;
   if (value === 'true') return true;
@@ -35,7 +34,6 @@ export const safeBoolean = (value: unknown): boolean => {
   return false;
 };
 
-// Utility function to safely convert unknown values to numbers
 export const safeNumber = (value: unknown): number => {
   if (value === null || value === undefined) return 0;
   const num = Number(value);

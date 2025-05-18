@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -13,6 +14,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Edit, User, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
+import { ExportData } from '@/components/profile/export-data';
 
 const profileSchema = z.object({
   username: z.string().min(3, 'Username must have at least 3 characters'),
@@ -24,7 +26,7 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-const Profile = () => {
+const Profile: React.FC = () => {
   const { profile, updateProfile, isLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
@@ -104,9 +106,10 @@ const Profile = () => {
       <h1 className="text-2xl font-bold">User Profile</h1>
       
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid grid-cols-2 md:w-[400px]">
+        <TabsList className="grid grid-cols-3 md:w-[600px]">
           <TabsTrigger value="info">Personal Information</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="export">Export Data</TabsTrigger>
         </TabsList>
         
         <TabsContent value="info" className="space-y-4 mt-4">
@@ -221,9 +224,9 @@ const Profile = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {CURRENCIES.map((currency) => (
-                              <SelectItem key={currency.code} value={currency.code}>
-                                {currency.symbol} - {currency.name} ({currency.code})
+                            {CURRENCIES.map((curr) => (
+                              <SelectItem key={curr.code} value={curr.code}>
+                                {curr.symbol} - {curr.name} ({curr.code})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -314,6 +317,10 @@ const Profile = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="export" className="space-y-4 mt-4">
+          <ExportData />
         </TabsContent>
       </Tabs>
     </div>
