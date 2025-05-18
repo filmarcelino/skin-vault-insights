@@ -1,86 +1,102 @@
 
-import { useState } from 'react';
-import { Skin } from '@/types/skin';
-import { fetchSkins } from '@/services/api';
+import { useState } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
+import { Skin } from '@/types/skin'
+import { searchSkins } from '@/services/api'
 
-interface AnalysisResult {
-  skinData?: Skin;
-  foundSkins?: Skin[];
-  description?: string;
-  error?: string;
+export interface SkinAnalysisResult {
+  description?: string
+  error?: string
+  skinData?: Skin
+  foundSkins?: Skin[]
 }
 
-// Helper function to search for skins by name or weapon
-export const searchSkins = async (query: string): Promise<Skin[]> => {
-  if (!query) return [];
-  
-  try {
-    const allSkins = await fetchSkins();
-    return allSkins.filter(skin => 
-      skin.name?.toLowerCase().includes(query.toLowerCase()) ||
-      skin.weapon?.toLowerCase().includes(query.toLowerCase())
-    );
-  } catch (error) {
-    console.error("Error searching skins:", error);
-    return [];
-  }
-};
-
 export const useSkinImageAnalysis = () => {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<SkinAnalysisResult | null>(null)
+  const { toast } = useToast()
 
-  const analyzeSkinImage = async (base64Image: string) => {
-    setIsAnalyzing(true);
-    setAnalysisResult(null);
-    
+  const analyzeSkinImage = async (imageBase64: string) => {
+    setIsAnalyzing(true)
+    setAnalysisResult(null)
+
     try {
-      // Mock implementation - in real app this would call the analyze-skin-image function
-      console.log("Analyzing skin image...");
+      console.log("Enviando imagem para análise...")
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock detection of a skin
-      const detectedName = "Asiimov";
-      const detectedWeapon = "AWP";
-      
-      // Search for matching skins
-      const foundSkins = await searchSkins(detectedName);
-      
-      // Create result
-      const result: AnalysisResult = {
-        skinData: {
-          id: "mock-detection",
-          name: detectedName,
-          weapon: detectedWeapon,
-          image: "/placeholder-skin.png",
-          price: 50,
-          rarity: "Classified",
-          category: "Normal",
-          collections: [] // Changed from string to empty array for type correctness
-        },
-        foundSkins: foundSkins.slice(0, 4),
-        description: `Detected ${detectedWeapon} | ${detectedName}. This appears to be a popular skin from CS2.`
-      };
-      
-      setAnalysisResult(result);
-      return result;
-    } catch (error) {
-      console.error("Error analyzing skin image:", error);
-      const errorResult = {
-        error: "Failed to analyze image. Please try again."
-      };
-      setAnalysisResult(errorResult);
-      return errorResult;
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+      const { data, error } = await supabase.functions.invoke('analyze-skin-image', {
+        body: JSON.stringify({ imageBase64 })
+      })
 
-  return {
-    analyzeSkinImage,
-    isAnalyzing,
-    analysisResult
-  };
-};
+      if (error) {
+        console.error("Erro na função analyze-skin-image:", error)
+        throw error
+      }
+
+      console.log("Resposta da análise:", data)
+
+      // Criar um objeto Skin temporário com os dados retornados da análise
+      const skinData: Skin = {
+        id: `skin-${Date.now()}`,
+        name: data.skinName || "Unknown Skin",
+        weapon: data.weaponName || "Unknown",
+        rarity: data.rarity || "",
+        wear: data.wear || "",
+        // Não usamos a imagem do usuário, deixamos em branco inicialmente
+        image: "",
+        price: data.estimatedPrice || 0,
+        floatValue: data.floatValue ? parseFloat(data.floatValue) : undefined,
+      }
+      
+      // Buscar skins correspondentes usando o termo de pesquisa formatado
+      let foundSkins: Skin[] = []
+      
+      if (data.weaponName && data.skinName) {
+        console.log("Buscando skins correspondentes...")
+        // Formatar o termo de pesquisa corretamente para o site
+        const searchTerm = `${data.weaponName} ${data.skinName}`.trim()
+        foundSkins = await searchSkins(searchTerm)
+        console.log("Skins encontradas:", foundSkins)
+        
+        // Se encontrarmos skins correspondentes, atualizamos nosso skinData
+        // com a imagem da primeira skin encontrada
+        if (foundSkins.length > 0) {
+          skinData.image = foundSkins[0].image || ""
+        }
+      }
+
+      setAnalysisResult({
+        description: data.description,
+        skinData: skinData,
+        foundSkins: foundSkins
+      })
+      
+      toast({
+        title: "Análise concluída",
+        description: foundSkins.length > 0 
+          ? `${foundSkins.length} skins correspondentes encontradas` 
+          : "A skin foi analisada com sucesso"
+      })
+      
+    } catch (error) {
+      console.error("Erro ao analisar skin:", error)
+      setAnalysisResult({
+        error: error instanceof Error ? error.message : 'Erro desconhecido na análise da imagem'
+      })
+      
+      toast({
+        title: "Falha na análise",
+        description: "Não foi possível analisar a imagem",
+        variant: "destructive"
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  return { 
+    analyzeSkinImage, 
+    isAnalyzing, 
+    analysisResult 
+  }
+}

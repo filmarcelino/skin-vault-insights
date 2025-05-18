@@ -3,12 +3,11 @@ import { InventoryItem, SellData } from "@/types/skin";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { InventoryTableActions } from "./InventoryTableActions";
 import { formatPrice } from "@/utils/format-utils";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface InventoryTableProps {
   items: InventoryItem[];
   onEdit: (item: InventoryItem) => void;
-  onDelete: (item: InventoryItem) => void;
+  onDelete: (inventoryId: string) => void;
   onSell: (itemId: string, sellData: SellData) => void;
   onDuplicate: (item: InventoryItem) => void;
   onViewDetails: (item: InventoryItem) => void;
@@ -22,16 +21,14 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
   onDuplicate,
   onViewDetails,
 }) => {
-  const { t } = useLanguage();
-  
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>{t("inventory.item")}</TableHead>
-          <TableHead>{t("inventory.wear")}</TableHead>
-          <TableHead>{t("inventory.acquired")}</TableHead>
-          <TableHead className="text-right">{t("inventory.price")}</TableHead>
+          <TableHead>Item</TableHead>
+          <TableHead>Wear</TableHead>
+          <TableHead>Acquired</TableHead>
+          <TableHead className="text-right">Price</TableHead>
           <TableHead></TableHead>
         </TableRow>
       </TableHeader>
@@ -58,7 +55,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                 </div>
               </div>
             </TableCell>
-            <TableCell>{item.wear || t("inventory.notSpecified")}</TableCell>
+            <TableCell>{item.wear || "Not specified"}</TableCell>
             <TableCell>
               {new Date(item.acquiredDate).toLocaleDateString()}
             </TableCell>
@@ -68,14 +65,10 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
             <TableCell>
               <InventoryTableActions
                 item={item}
-                onEdit={() => onEdit(item)}
-                onDuplicate={() => onDuplicate(item)}
-                onRemove={() => onDelete(item)}
-                onSell={(sellData: SellData) => {
-                  if (item.inventoryId) {
-                    onSell(item.inventoryId, sellData);
-                  }
-                }}
+                onEdit={onEdit}
+                onDuplicate={onDuplicate}
+                onRemove={onDelete}
+                onSell={onSell}
               />
             </TableCell>
           </TableRow>

@@ -1,4 +1,3 @@
-
 import { MoreVertical, Edit, Copy, Trash2, DollarSign } from "lucide-react";
 import {
   DropdownMenu,
@@ -8,7 +7,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { InventoryItem, SellData } from "@/types/skin";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface InventoryTableActionsProps {
   item: InventoryItem;
@@ -25,13 +23,11 @@ export const InventoryTableActions = ({
   onRemove,
   onSell,
 }: InventoryTableActionsProps) => {
-  const { t } = useLanguage();
-  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">{t("common.openMenu")}</span>
+          <span className="sr-only">Abrir menu</span>
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -41,35 +37,41 @@ export const InventoryTableActions = ({
           onEdit(item);
         }}>
           <Edit className="mr-2 h-4 w-4" />
-          <span>{t("common.edit")}</span>
+          <span>Editar</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={(e) => {
           e.stopPropagation();
           onDuplicate(item);
         }}>
           <Copy className="mr-2 h-4 w-4" />
-          <span>{t("common.duplicate")}</span>
+          <span>Duplicar</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();
-            // Open the sell modal with sell mode
-            const itemToSell = { ...item, sellMode: true };
-            onEdit({ ...itemToSell, sellMode: true });
+            onSell(item.inventoryId, {
+              soldPrice: item.currentPrice || item.price || 0,
+              soldDate: new Date().toISOString(),
+              soldMarketplace: "steam",
+              soldFeePercentage: 13,
+              soldNotes: "",
+              profit: 0,
+              soldCurrency: "USD"
+            });
           }}
         >
           <DollarSign className="mr-2 h-4 w-4" />
-          <span>{t("inventory.sell")}</span>
+          <span>Vender</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={(e) => {
             e.stopPropagation();
-            onRemove(item.inventoryId || item.id);
+            onRemove(item.inventoryId);
           }}
           className="text-destructive"
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          <span>{t("common.remove")}</span>
+          <span>Remover</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

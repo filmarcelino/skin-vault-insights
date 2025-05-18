@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { useSkins, useUserInventory } from '@/hooks/use-skins';
+import { useSkins } from '@/hooks/use-skins';
+import { Layout } from '@/components/layout/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -16,13 +16,6 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { InventoryItem, Skin, Transaction } from '@/types/skin';
 import { Loading } from "@/components/ui/loading";
-import { defaultSkin, defaultInventoryItem } from '@/utils/default-objects';
-import { useLanguage } from '@/contexts/LanguageContext';
-
-// Helper function to check item type
-const isInventoryItem = (item: any): item is InventoryItem => {
-  return 'inventoryId' in item && !!item.inventoryId;
-};
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("inventory");
@@ -32,12 +25,9 @@ export default function Index() {
   
   const { viewMode, setViewMode } = useViewMode("grid");
   const { formatPrice } = useCurrency();
-  const { t } = useLanguage();
-
-  console.log("Dashboard: Rendering Index component");
 
   // Fetch inventory data
-  const { data: userInventory = [], isLoading: isLoadingInventory } = useUserInventory();
+  const { data: userInventory = [], isLoading: isLoadingInventory } = useSkins({ onlyUserInventory: true });
   
   // Fetch all skins for search
   const { data: allSkins = [], isLoading: isLoadingSkins } = useSkins();
@@ -48,10 +38,7 @@ export default function Index() {
   const { 
     handleAddToInventory, 
     handleViewDetails, 
-    selectedItem,
-    isModalOpen,
-    modalMode,
-    setIsModalOpen
+    selectedItem
   } = useInventoryActions();
 
   const {
@@ -69,7 +56,7 @@ export default function Index() {
 
   // Calculate inventory statistics
   const inventoryStats = React.useMemo(() => {
-    if (!Array.isArray(userInventory) || userInventory.length === 0) return { totalValue: formatPrice(0) };
+    if (userInventory?.length === 0) return { totalValue: formatPrice(0) };
     
     const totalValue = userInventory.reduce((acc, item: any) => 
       acc + (item.currentPrice || item.price || 0), 0);
@@ -84,7 +71,7 @@ export default function Index() {
 
   // Filter skins based on searchQuery
   const filteredSkins = React.useMemo(() => {
-    if (!searchQuery || !Array.isArray(allSkins)) return [];
+    if (!searchQuery) return [];
     
     return allSkins.filter(skin => {
       const fullName = `${skin.weapon || ""} ${skin.name || ""}`.toLowerCase();
@@ -109,73 +96,70 @@ export default function Index() {
     handleViewDetails(item);
   };
 
-  // Add a debug log to check component load
-  useEffect(() => {
-    console.log("Dashboard ready");
-  }, []);
-
   return (
-    <div className="space-y-6 pb-8">
-      {/* Tab navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="pb-6">
-        <TabsList className="w-full">
-          <TabsTrigger value="inventory" className="w-1/2">
-            {t("inventory.title")}
-          </TabsTrigger>
-          <TabsTrigger value="search" className="w-1/2">
-            {t("search.skins")}
-          </TabsTrigger>
-        </TabsList>
+    <Layout>
+      <div className="space-y-6 pb-8">
+        {/* Tab navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="pb-6">
+          <TabsList className="w-full">
+            <TabsTrigger value="inventory" className="w-1/2">
+              My Inventory
+            </TabsTrigger>
+            <TabsTrigger value="search" className="w-1/2">
+              Search Skins
+            </TabsTrigger>
+          </TabsList>
           
-        {/* Search input */}
-        <div className="mt-4">
-          <div className="relative">
-            <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder={activeTab === 'inventory' ? t("inventory.filterInventory") : t("search.searchSkins")}
-              className="pl-8"
-              value={activeTab === 'inventory' ? inventorySearchQuery : searchQuery}
-              onChange={activeTab === 'inventory' ? handleSearchChange : handleSearchInputChange}
-            />
+          {/* Search input */}
+          <div className="mt-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder={activeTab === 'inventory' ? "Filter inventory..." : "Search for skins..."}
+                className="pl-8"
+                value={activeTab === 'inventory' ? inventorySearchQuery : searchQuery}
+                onChange={activeTab === 'inventory' ? handleSearchChange : handleSearchInputChange}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Tab content */}
-        <TabsContent value="inventory" className="mt-6">
-          <InventorySection 
-            searchQuery={inventorySearchQuery}
-            onSearchChange={handleSearchChange}
-            weaponFilter={weaponFilter}
-            setWeaponFilter={setWeaponFilter}
-            rarityFilter={rarityFilter}
-            setRarityFilter={setRarityFilter}
-            sortMethod={sortMethod}
-            setSortMethod={setSortMethod}
-            viewMode={viewMode}
-            isLoading={isLoadingInventory}
-            filteredInventory={filteredInventory}
-            userInventory={userInventory as InventoryItem[]}
-            inventoryStats={inventoryStats}
-            handleSkinClick={handleInventorySkinClick}
-          />
-        </TabsContent>
+          {/* Tab content */}
+          <TabsContent value="inventory" className="mt-6">
+            <InventorySection 
+              searchQuery={inventorySearchQuery}
+              onSearchChange={handleSearchChange}
+              weaponFilter={weaponFilter}
+              setWeaponFilter={setWeaponFilter}
+              rarityFilter={rarityFilter}
+              setRarityFilter={setRarityFilter}
+              sortMethod={sortMethod}
+              setSortMethod={setSortMethod}
+              viewMode={viewMode}
+              isLoading={isLoadingInventory}
+              filteredInventory={filteredInventory}
+              userInventory={userInventory as InventoryItem[]}
+              inventoryStats={inventoryStats}
+              handleSkinClick={handleInventorySkinClick}
+            />
+          </TabsContent>
           
-        <TabsContent value="search" className="mt-6">
-          <SearchSection 
-            viewMode={viewMode}
-            isSkinsLoading={isLoadingSkins}
-            skins={filteredSkins as Skin[]}
-            searchQuery={searchQuery}
-            handleSkinClick={handleSkinClick}
-          />
-        </TabsContent>
-      </Tabs>
-      
-      {/* Activity Section with proper typing */}
-      <ActivitySection 
-        isLoading={isTransactionsLoading}
-        transactions={transactions as Transaction[]}
-      />
+          <TabsContent value="search" className="mt-6">
+            <SearchSection 
+              viewMode={viewMode}
+              isSkinsLoading={isLoadingSkins}
+              skins={filteredSkins as Skin[]}
+              searchQuery={searchQuery}
+              handleSkinClick={handleSkinClick}
+            />
+          </TabsContent>
+        </Tabs>
+        
+        {/* Activity Section with proper typing */}
+        <ActivitySection 
+          isLoading={isTransactionsLoading}
+          transactions={transactions as Transaction[]}
+        />
+      </div>
       
       {/* Skin detail modal for search items */}
       <SkinDetailModal 
@@ -188,12 +172,12 @@ export default function Index() {
       {/* Skin modal for inventory items */}
       {selectedItem && (
         <InventorySkinModal
-          inventoryItem={selectedItem}
-          onClose={() => setIsModalOpen(false)}
-        >
-          <span>Open Modal</span>
-        </InventorySkinModal>
+          open={!!selectedItem}
+          onOpenChange={() => handleViewDetails(null)}
+          item={selectedItem}
+          mode="view"
+        />
       )}
-    </div>
+    </Layout>
   );
 }

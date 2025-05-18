@@ -4,44 +4,23 @@ import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { MobileNav } from "@/components/ui/mobile-nav";
 import { LanguageSelector } from "@/components/ui/language-selector";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LogOut, Loader2 } from "lucide-react";
+import { Bell, User, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { useState } from "react";
 
 export function Header() {
-  const { user, signOut, session, profile } = useAuth();
+  const { user, signOut } = useAuth();
   const { isSubscribed, isTrial, trialDaysRemaining } = useSubscription();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      await signOut();
-      toast.success(t("auth.logout_success"), {
-        description: t("auth.logout_success_description")
-      });
-      navigate("/", { replace: true });
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error(t("auth.logout_error"), {
-        description: t("auth.logout_error_description")
-      });
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
-  const handleLogin = () => {
-    navigate("/auth");
+    await signOut();
+    navigate("/");
   };
   
-  const userName = profile?.username || user?.email?.split('@')[0] || '';
-
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -51,7 +30,7 @@ export function Header() {
           </Link>
           <div className="flex items-center gap-2">
             <LanguageSelector />
-            {user && session ? (
+            {user ? (
               <>
                 {/* Subscription Badge */}
                 {isSubscribed && (
@@ -64,17 +43,11 @@ export function Header() {
                     {t("subscription.trial")}: {trialDaysRemaining} {t("subscription.days")}
                   </span>
                 )}
-
-                {/* User info with name */}
-                <div className="hidden sm:flex items-center gap-2 mr-2">
-                  <span className="text-sm font-medium">{userName}</span>
-                </div>
-                
                 <Link to="/profile">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url || undefined} />
+                    <AvatarImage src={user?.user_metadata?.avatar_url || undefined} />
                     <AvatarFallback>
-                      {userName.substring(0, 2).toUpperCase()}
+                      <User className="h-4 w-4" />
                     </AvatarFallback>
                   </Avatar>
                 </Link>
@@ -82,23 +55,18 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
-                  disabled={isLoggingOut}
                   className="hidden sm:flex"
-                  title={t("auth.logout")}
                 >
-                  {isLoggingOut ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <LogOut className="h-4 w-4" />
-                  )}
+                  <LogOut className="h-4 w-4" />
                   <span className="sr-only">{t("auth.logout")}</span>
                 </Button>
               </>
             ) : (
-              <Button variant="secondary" onClick={handleLogin}>
+              <Button variant="secondary" onClick={() => navigate("/auth")}>
                 {t("auth.login")}
               </Button>
             )}
+            <MobileNav />
           </div>
         </div>
       </div>

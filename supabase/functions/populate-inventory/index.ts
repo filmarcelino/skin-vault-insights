@@ -2,7 +2,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-import { starterSkins, generateStarterItem } from "../utils/starter-inventory.ts";
+import { starterSkins, generateStarterItem } from "../../utils/starter-inventory.ts";
 
 // Set up CORS headers for browser support
 const corsHeaders = {
@@ -50,10 +50,10 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Check if user's email is teste@teste.com
+    // Check if user inventory is already populated
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('email, inventory_populated')
+      .select('inventory_populated')
       .eq('id', userId)
       .single();
     
@@ -63,20 +63,6 @@ serve(async (req) => {
         JSON.stringify({ error: "Failed to check user profile", details: profileError }),
         { 
           status: 500, 
-          headers: { 
-            ...corsHeaders, 
-            "Content-Type": "application/json" 
-          } 
-        }
-      );
-    }
-    
-    // Only allow teste@teste.com to populate inventory
-    if (profile.email !== "teste@teste.com") {
-      return new Response(
-        JSON.stringify({ error: "This feature is only available for test accounts" }),
-        { 
-          status: 403, 
           headers: { 
             ...corsHeaders, 
             "Content-Type": "application/json" 

@@ -1,58 +1,201 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { 
+  fetchSkins, 
+  fetchSkinById, 
+  fetchWeapons, 
+  fetchCollections, 
+  searchSkins,
+  fetchCategories
+} from "@/services/api";
+import { 
+  fetchUserInventory, 
+  addSkinToInventory,
+  removeInventoryItem,
+  updateInventoryItem,
+  markItemAsSold
+} from "@/services/inventory";
+import { Skin, SkinFilter, InventoryItem, SellData } from "@/types/skin";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchSkins } from "@/services/api";
-import { fetchUserInventory } from "@/services/inventory";
-import { type InventoryItem, type Skin } from "@/types/skin";
+// Custom key for inventory data
+export const INVENTORY_QUERY_KEY = "user-inventory";
+export const SKINS_QUERY_KEY = "skins";
+export const CATEGORIES_QUERY_KEY = "categories";
+export const TRANSACTIONS_QUERY_KEY = "transactions";
 
-// Hook to fetch all CS2 skins from the API
-export const useSkins = (params?: { weaponType?: string; search?: string }) => {
-  return useQuery({
-    queryKey: ["skins", params?.weaponType || "all", params?.search || ""],
-    queryFn: () => fetchSkins(params), // Pass params to fetchSkins
-    staleTime: 1000 * 60 * 60, // 1 hour
-  });
-};
-
-// Hook to fetch user inventory data
-export const useUserInventory = () => {
-  return useQuery({
-    queryKey: ["inventory"],
+export const useSkins = (filters?: SkinFilter) => {
+  const result = useQuery({
+    queryKey: filters?.onlyUserInventory ? [INVENTORY_QUERY_KEY] : [SKINS_QUERY_KEY, filters],
     queryFn: async () => {
-      console.log("Fetching user inventory");
-      return fetchUserInventory();
+      try {
+        // Se queremos apenas o inventário do usuário, buscamos do Supabase
+        if (filters?.onlyUserInventory) {
+          const inventory = await fetchUserInventory();
+          console.log("Retrieved inventory in useSkins hook:", inventory);
+          return Array.isArray(inventory) ? inventory : [];
+        }
+        // Caso contrário, buscamos da API
+        const result = await fetchSkins(filters);
+        return Array.isArray(result) ? result : [];
+      } catch (error) {
+        console.error("Error in useSkins:", error);
+        return [];
+      }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
+  });
+
+  // Add these properties to make it compatible with the code that uses this hook
+  return {
+    ...result,
+    skins: result.data || [],
+    loading: result.isLoading,
+    error: result.error
+  };
+};
+
+export const useCategories = () => {
+  return useQuery({
+    queryKey: [CATEGORIES_QUERY_KEY],
+    queryFn: async () => {
+      try {
+        // Buscamos as categorias disponíveis
+        const categories = await fetchCategories();
+        console.log("Retrieved categories:", categories);
+        return Array.isArray(categories) ? categories : [];
+      } catch (error) {
+        console.error("Error in useCategories:", error);
+        return [];
+      }
+    },
+    retry: 1,
   });
 };
 
-// Hook to invalidate inventory cache
+export const useInventory = () => {
+  return useQuery({
+    queryKey: [INVENTORY_QUERY_KEY],
+    queryFn: async () => {
+      try {
+        console.log("Fetching inventory data...");
+        const inventory = await fetchUserInventory();
+        console.log("Loaded inventory:", inventory);
+        // Ensure we always return an array
+        const validInventory = Array.isArray(inventory) ? inventory : [];
+        
+        // Log inventory items with isInUserInventory status
+        validInventory.forEach(item => {
+          console.log(`Item ${item.name || 'Unknown'} isInUserInventory:`, item.isInUserInventory);
+        });
+        
+        return validInventory;
+      } catch (error) {
+        console.error("Error in useInventory:", error);
+        return [];
+      }
+    },
+    retry: 1,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    staleTime: 10000, // 10 seconds
+  });
+};
+
+export const useAddSkin = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: {skin: Skin, purchaseInfo: any}) => {
+      console.log("Add skin mutation called with:", data);
+      
+      // Validate data before proceeding
+      if (!data.skin || !data.skin.name) {
+        throw new Error("Invalid skin data provided");
+      }
+      
+      const result = await addSkinToInventory(data.skin, data.purchaseInfo);
+      if (!result) {
+        throw new Error("Failed to add skin to inventory");
+      }
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    },
+    onError: (error) => {
+      console.error("Error in addSkin mutation:", error);
+    }
+  });
+};
+
+export const useSellSkin = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: {itemId: string, sellData: SellData}) => 
+      markItemAsSold(data.itemId, data.sellData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    },
+  });
+};
+
+export const useUpdateSkin = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: {itemId: string, updates: Partial<InventoryItem>}) => 
+      updateInventoryItem(data.itemId, data.updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    },
+  });
+};
+
+export const useRemoveSkin = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: removeInventoryItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+    },
+  });
+};
+
 export const useInvalidateInventory = () => {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ["inventory"] });
+  
+  return () => {
+    queryClient.invalidateQueries({ queryKey: [INVENTORY_QUERY_KEY] });
+  };
 };
 
-// Used for analytics graphs
-export const useSkinPriceHistory = (skinId: string) => {
+export const useSkinById = (id: string) => {
   return useQuery({
-    queryKey: ["skinPriceHistory", skinId],
-    queryFn: async () => {
-      // Mock price history data for now
-      const daysAgo = (days: number) => {
-        const date = new Date();
-        date.setDate(date.getDate() - days);
-        return date.toISOString().split("T")[0];
-      };
-      
-      return [
-        { date: daysAgo(30), price: 100 },
-        { date: daysAgo(25), price: 105 },
-        { date: daysAgo(20), price: 102 },
-        { date: daysAgo(15), price: 110 },
-        { date: daysAgo(10), price: 115 },
-        { date: daysAgo(5), price: 112 },
-        { date: daysAgo(0), price: 118 },
-      ];
-    },
-    enabled: !!skinId,
+    queryKey: ["skin", id],
+    queryFn: () => fetchSkinById(id),
+    enabled: !!id,
+  });
+};
+
+export const useWeapons = () => {
+  return useQuery({
+    queryKey: ["weapons"],
+    queryFn: fetchWeapons,
+  });
+};
+
+export const useCollections = () => {
+  return useQuery({
+    queryKey: ["collections"],
+    queryFn: fetchCollections,
+  });
+};
+
+export const useSearchSkins = (query: string) => {
+  return useQuery({
+    queryKey: ["search", query],
+    queryFn: () => searchSkins(query),
+    enabled: query.length > 2, // Só busca com pelo menos 3 caracteres
   });
 };

@@ -1,189 +1,353 @@
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Edit, User, Save, Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { useCurrency, CURRENCIES, Currency } from '@/contexts/CurrencyContext';
+import { populateUserInventory, isInventoryPopulated } from "@/services/inventory";
+import { useQuery } from "@tanstack/react-query";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/contexts/AuthContext";
-import { useCurrency } from "@/contexts/CurrencyContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Profile } from "@/types/auth";
+const profileSchema = z.object({
+  username: z.string().min(3, 'Username must have at least 3 characters'),
+  full_name: z.string().min(3, 'Full name is required'),
+  city: z.string().optional(),
+  country: z.string().optional(),
+  preferred_currency: z.string(),
+});
 
-export default function Profile() {
-  const { user, profile, signOut } = useAuth();
-  const { currencies, currency, setCurrency } = useCurrency();
-  const { t, language, setLanguage, languages } = useLanguage();
-  const [isUpdating, setIsUpdating] = useState(false);
-  
-  // Profile form state
-  const [formState, setFormState] = useState({
-    fullName: "",
-    username: "",
-    currency: "",
-    language: ""
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
+const Profile = () => {
+  const { profile, updateProfile, isLoading } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const { toast } = useToast();
+  const { currency, setCurrency } = useCurrency();
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: profile?.username || '',
+      full_name: profile?.full_name || '',
+      city: profile?.city || '',
+      country: profile?.country || '',
+      preferred_currency: profile?.preferred_currency || 'USD',
+    },
   });
-  
-  // Initialize form with user data
-  useEffect(() => {
-    if (user && profile) {
-      setFormState({
-        fullName: profile.full_name || "",
-        username: profile.username || "",
-        currency: profile.preferred_currency || "USD",
-        language: language
-      });
-    }
-  }, [user, profile, language]);
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormState(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleUpdateProfile = async () => {
-    if (!user || !profile) return;
-    
+
+  const onSubmit = async (data: ProfileFormValues) => {
     try {
-      setIsUpdating(true);
+      const { error, data: updatedProfile } = await updateProfile({
+        username: data.username,
+        full_name: data.full_name,
+        city: data.city,
+        country: data.country,
+        preferred_currency: data.preferred_currency,
+      });
       
-      // Update profile in Supabase
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username: formState.username,
-          full_name: formState.fullName,
-          preferred_currency: formState.currency,
-        })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      // Update language context
-      setLanguage(formState.language as "en" | "pt" | "es");
-      
-      // Update currency context
-      setCurrency(formState.currency);
-      
-      toast.success(t("profile.updateSuccess"));
+      if (error) {
+        toast({
+          title: "Error updating profile",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Profile updated",
+          description: "Your information was saved successfully.",
+        });
+        
+        if (data.preferred_currency !== currency.code) {
+          const newCurrency = CURRENCIES.find(c => c.code === data.preferred_currency);
+          if (newCurrency) {
+            setCurrency(newCurrency);
+          }
+        }
+        
+        setIsEditing(false);
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error(t("profile.updateError"));
-    } finally {
-      setIsUpdating(false);
+      toast({
+        title: "Unexpected error",
+        description: "Could not update your profile. Please try again.",
+        variant: "destructive",
+      });
     }
   };
-  
-  if (!user || !profile) {
-    return <div>{t("common.loading")}</div>;
+
+  if (!profile) {
+    return (
+      <div className="w-full flex justify-center items-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
-  
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
+  const { data: inventoryPopulated, refetch: refetchPopulatedStatus } = useQuery({
+    queryKey: ["inventoryPopulated"],
+    queryFn: isInventoryPopulated,
+    enabled: !!profile // Only run this query if the user is logged in
+  });
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">{t("profile.title")}</h1>
+    <div className="w-full max-w-4xl mx-auto space-y-6 p-4">
+      <h1 className="text-2xl font-bold">User Profile</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Profile Card */}
-        <Card>
-          <CardHeader className="text-center">
-            <Avatar className="w-24 h-24 mx-auto">
-              <AvatarImage src={profile.avatar_url || ""} />
-              <AvatarFallback>{profile.username?.substring(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <CardTitle className="mt-4">{profile.full_name}</CardTitle>
-            <CardDescription>{profile.username || user.email}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={() => signOut()}
-            >
-              {t("auth.logout")}
-            </Button>
-          </CardFooter>
-        </Card>
+      <Tabs defaultValue="info" className="w-full">
+        <TabsList className="grid grid-cols-2 md:w-[400px]">
+          <TabsTrigger value="info">Personal Information</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
         
-        {/* Edit Profile Card */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>{t("profile.editProfile")}</CardTitle>
-            <CardDescription>{t("profile.editProfileDesc")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="fullName">{t("profile.fullName")}</Label>
-              <Input 
-                id="fullName" 
-                name="fullName"
-                value={formState.fullName} 
-                onChange={handleInputChange}
-                placeholder={t("profile.fullNamePlaceholder")}
-              />
-            </div>
+        <TabsContent value="info" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="space-y-1">
+                <CardTitle>Profile Details</CardTitle>
+                <CardDescription>Manage your personal information</CardDescription>
+              </div>
+              <Avatar className="h-16 w-16">
+                {profile.avatar_url ? (
+                  <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
+                ) : (
+                  <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+                    {getInitials(profile.full_name)}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+            </CardHeader>
             
-            <div className="grid gap-2">
-              <Label htmlFor="username">{t("profile.username")}</Label>
-              <Input 
-                id="username" 
-                name="username"
-                value={formState.username} 
-                onChange={handleInputChange}
-                placeholder={t("profile.usernamePlaceholder")}
-              />
-            </div>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            disabled={!isEditing}
+                            className={isEditing ? "" : "bg-muted"}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            disabled={!isEditing}
+                            className={isEditing ? "" : "bg-muted"}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              disabled={!isEditing}
+                              className={isEditing ? "" : "bg-muted"}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              disabled={!isEditing}
+                              className={isEditing ? "" : "bg-muted"}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="preferred_currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preferred Currency</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                          disabled={!isEditing}
+                        >
+                          <FormControl>
+                            <SelectTrigger className={isEditing ? "" : "bg-muted"}>
+                              <SelectValue placeholder="Select a currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CURRENCIES.map((currency) => (
+                              <SelectItem key={currency.code} value={currency.code}>
+                                {currency.symbol} - {currency.name} ({currency.code})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          This currency will be used to display values throughout the app.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {isEditing && (
+                    <div className="flex justify-end space-x-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsEditing(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        type="submit"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="mr-2 h-4 w-4" />
+                        )}
+                        Save Changes
+                      </Button>
+                    </div>
+                  )}
+                </form>
+              </Form>
+            </CardContent>
             
-            <div className="grid gap-2">
-              <Label htmlFor="currency">{t("profile.currency")}</Label>
-              <Select 
-                value={formState.currency} 
-                onValueChange={(value) => setFormState(prev => ({ ...prev, currency: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("profile.selectCurrency")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(currencies).map(([code, currencyInfo]) => (
-                    <SelectItem key={code} value={code}>
-                      {currencyInfo.symbol} {code} - {currencyInfo.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="language">{t("profile.language")}</Label>
-              <Select 
-                value={formState.language} 
-                onValueChange={(value) => setFormState(prev => ({ ...prev, language: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("profile.selectLanguage")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(languages).map(([code, name]) => (
-                    <SelectItem key={code} value={code}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button 
-              onClick={handleUpdateProfile} 
-              disabled={isUpdating}
-            >
-              {isUpdating ? t("common.updating") : t("common.saveChanges")}
-            </Button>
-          </CardFooter>
-        </Card>
+            {!isEditing && (
+              <CardFooter className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </Button>
+              </CardFooter>
+            )}
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Email</CardTitle>
+              <CardDescription>Your registered email address</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-2">
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <span>{profile.email}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="settings" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>Manage your account preferences</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <h3 className="font-medium">Member since</h3>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(profile.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="font-medium">Last update</h3>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(profile.updated_at).toLocaleDateString()}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Add this section to the Profile page just before the closing Card tag */}
+      <div className="pt-4 mt-6 border-t">
+        <h3 className="text-lg font-medium mb-2">Inventory Tools</h3>
+        <Button 
+          onClick={async () => {
+            const success = await populateUserInventory();
+            if (success) {
+              refetchPopulatedStatus();
+            }
+          }}
+          disabled={inventoryPopulated}
+          variant={inventoryPopulated ? "outline" : "default"}
+        >
+          {inventoryPopulated ? "Inventory Already Populated" : "Add 70 Starter Skins to Inventory"}
+        </Button>
+        {inventoryPopulated && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Your account already has starter skins. You can view them in your inventory.
+          </p>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default Profile;

@@ -10,7 +10,6 @@ import { useCurrency, CURRENCIES } from "@/contexts/CurrencyContext";
 import { format } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SkinSellingFormProps {
   item?: InventoryItem | null;
@@ -29,7 +28,6 @@ const MARKETPLACE_OPTIONS = [
 ];
 
 export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = () => {} }: SkinSellingFormProps) {
-  const { t } = useLanguage();
   // Use item if it exists, otherwise use skin, ensure it's never null
   const skinData = item || skin || {} as InventoryItem;
   const { currency, formatPrice, convertPrice } = useCurrency();
@@ -76,10 +74,11 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Safely get the inventory ID for the item
-    const itemId = skinData.inventoryId || skinData.id;
+    // Safely check if inventoryId exists with type guard
+    const inventoryId = 'inventoryId' in skinData ? 
+      typeof skinData.inventoryId === 'string' ? skinData.inventoryId : '' : '';
     
-    if (!soldPrice || !itemId) return;
+    if (!soldPrice || !inventoryId) return;
     
     const sellData: SellData = {
       soldDate: soldDate.toISOString(),
@@ -91,15 +90,14 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
       soldCurrency
     };
     
-    console.log("Selling skin with data:", { itemId, sellData });
-    onSellSkin(itemId, sellData);
+    onSellSkin(inventoryId, sellData);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="sold-date">{t('inventory.dateOfSale')}</Label>
+          <Label htmlFor="sold-date">Data da venda</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -108,7 +106,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
                 id="sold-date"
                 type="button"
               >
-                {soldDate ? format(soldDate, "dd/MM/yyyy") : <span>{t('common.selectDate')}</span>}
+                {soldDate ? format(soldDate, "dd/MM/yyyy") : <span>Selecionar data</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -129,7 +127,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
             onValueChange={setSoldMarketplace}
           >
             <SelectTrigger id="marketplace">
-              <SelectValue placeholder={t('inventory.selectMarketplace')} />
+              <SelectValue placeholder="Selecione onde vendeu" />
             </SelectTrigger>
             <SelectContent>
               {MARKETPLACE_OPTIONS.map(option => (
@@ -140,7 +138,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="sold-price">{t('inventory.salePrice')}</Label>
+          <Label htmlFor="sold-price">Preço de venda</Label>
           <Input
             id="sold-price"
             type="number"
@@ -154,13 +152,13 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="sold-currency">{t('common.currency')}</Label>
+          <Label htmlFor="sold-currency">Moeda</Label>
           <Select
             value={soldCurrency}
             onValueChange={setSoldCurrency}
           >
             <SelectTrigger id="sold-currency">
-              <SelectValue placeholder={t('common.selectCurrency')} />
+              <SelectValue placeholder="Selecionar moeda" />
             </SelectTrigger>
             <SelectContent>
               {CURRENCIES.map(curr => (
@@ -173,7 +171,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fee-percentage">{t('inventory.marketplaceFee')}</Label>
+          <Label htmlFor="fee-percentage">Taxa do marketplace (%)</Label>
           <Input
             id="fee-percentage"
             type="number"
@@ -191,7 +189,7 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
         
         {profit !== 0 && (
           <div className="space-y-2">
-            <Label>{t('inventory.estimatedProfitLoss')}</Label>
+            <Label>Lucro/Perda estimado</Label>
             <div className={`p-2 border rounded ${profit > 0 ? 'bg-green-500/10 border-green-500/30' : profit < 0 ? 'bg-red-500/10 border-red-500/30' : 'bg-muted/20'}`}>
               <p className={`font-medium ${profit > 0 ? 'text-green-500' : profit < 0 ? 'text-red-500' : ''}`}>
                 {formatPrice(profit)}
@@ -205,10 +203,10 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">{t('inventory.saleNotes')}</Label>
+        <Label htmlFor="notes">Observações sobre a venda</Label>
         <Textarea
           id="notes"
-          placeholder={t('inventory.addSaleNotes')}
+          placeholder="Adicione observações sobre esta venda..."
           value={soldNotes}
           onChange={(e) => setSoldNotes(e.target.value)}
         />
@@ -216,10 +214,10 @@ export function SkinSellingForm({ item, skin, onSellSkin = () => {}, onCancel = 
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
-          {t('common.cancel')}
+          Cancelar
         </Button>
         <Button type="submit" variant="default">
-          {t('inventory.confirmSale')}
+          Confirmar Venda
         </Button>
       </div>
     </form>

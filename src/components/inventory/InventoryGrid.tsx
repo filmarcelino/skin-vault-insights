@@ -1,13 +1,13 @@
 
-import { InventoryItem } from "@/types/skin";
-import { SkinCard } from "@/components/inventory/SkinCard";
+import { InventoryItem, SellData } from "@/types/skin";
+import { InventoryCard } from "@/components/dashboard/inventory-card";
 
 export interface InventoryGridProps {
   items: InventoryItem[];
   onEdit: (item: InventoryItem) => void;
-  onDelete: (item: InventoryItem) => void;  // Changed from string to InventoryItem
-  onSell: (item: InventoryItem) => void;    // Changed from string to InventoryItem
-  onDuplicate: (item: InventoryItem) => void; // Changed from string to InventoryItem
+  onDelete: (inventoryId: string) => void;
+  onSell: (itemId: string, sellData: SellData) => void;
+  onDuplicate: (item: InventoryItem) => void;
   onViewDetails: (item: InventoryItem) => void;
 }
 
@@ -22,15 +22,23 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {items.map((item) => (
-        <SkinCard
+        <InventoryCard
           key={item.inventoryId || item.id}
-          item={item}
-          onEdit={() => onEdit(item)}
-          onDuplicate={() => onDuplicate(item)}
-          onRemove={() => onDelete(item)}  // Now passing the full item
-          onSell={() => onSell(item)}      // Now passing the full item
-          onClick={() => onViewDetails(item)}
+          weaponName={item.weapon || ''}
+          skinName={item.name || ''}
+          wear={item.wear || ''}
+          price={typeof item.currentPrice === 'number' ? item.currentPrice : 
+                (typeof item.price === 'number' ? item.price : 0)}
+          image={item.image || ''}
+          rarity={item.rarity || ''}
+          isStatTrak={!!item.isStatTrak}
+          tradeLockDays={item.tradeLockDays}
+          tradeLockUntil={item.tradeLockUntil}
           className="animate-fade-in transition-transform duration-200"
+          onClick={() => onViewDetails(item)}
+          onDelete={() => onDelete(item.id)}
+          showDeleteButton={true}
+          purchasePrice={item.purchasePrice}
         />
       ))}
     </div>

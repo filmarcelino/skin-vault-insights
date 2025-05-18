@@ -1,61 +1,19 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { Transaction } from "@/types/skin";
-import { fetchTransactions } from "@/services/inventory";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getUserTransactions } from "@/services/inventory/transactions-service";
 
-/**
- * Hook for fetching transaction data
- */
-export function useTransactions() {
+export const useTransactions = () => {
   return useQuery({
-    queryKey: ['transactions'],
-    queryFn: () => fetchTransactions(),
-    staleTime: 1000 * 60 * 5 // 5 minutes cache
+    queryKey: ["transactions"],
+    queryFn: getUserTransactions,
   });
-}
+};
 
-/**
- * Hook for fetching recent transactions
- */
-export function useRecentTransactions(limit: number = 5) {
-  const { data, isLoading, error } = useTransactions();
+// Add a function to invalidate transactions cache
+export const useInvalidateTransactions = () => {
+  const queryClient = useQueryClient();
   
-  const recentTransactions = data
-    ? [...data].sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      ).slice(0, limit)
-    : [];
-    
-  return { 
-    recentTransactions, 
-    isLoading, 
-    error 
+  return () => {
+    queryClient.invalidateQueries({ queryKey: ["transactions"] });
   };
-}
-
-/**
- * Hook to get transaction stats
- */
-export function useTransactionStats() {
-  const { data: transactions = [], isLoading, error } = useTransactions();
-  
-  // Calculate stats
-  const totalVolume = transactions.reduce((sum, transaction) => sum + transaction.price, 0);
-  const purchaseVolume = transactions
-    .filter(transaction => transaction.type === "buy")
-    .reduce((sum, transaction) => sum + transaction.price, 0);
-  const saleVolume = transactions
-    .filter(transaction => transaction.type === "sell")
-    .reduce((sum, transaction) => sum + transaction.price, 0);
-  const profit = saleVolume - purchaseVolume;
-  
-  return {
-    totalVolume,
-    purchaseVolume,
-    saleVolume,
-    profit,
-    transactionCount: transactions.length,
-    isLoading,
-    error
-  };
-}
+};

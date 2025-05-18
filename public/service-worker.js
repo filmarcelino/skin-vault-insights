@@ -4,14 +4,15 @@
 const CACHE_NAME = 'cs-skin-vault-v1';
 const OFFLINE_PAGE = '/';
 
-// Files to cache for offline access - only cache assets, not source files
+// Files to cache for offline access
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
   '/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png',
-  '/favicon.ico',
-  // Don't cache source files that get bundled
+  '/service-worker.js',
+  '/src/index.css',
+  '/src/main.tsx',
 ];
 
 // Install event - cache critical assets
@@ -45,13 +46,6 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  // Don't cache API requests or source files
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('/src/') || 
-      event.request.url.includes('localhost')) {
-    return fetch(event.request);
-  }
-  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -73,9 +67,13 @@ self.addEventListener('fetch', (event) => {
             // Clone the response
             const responseToCache = response.clone();
             
+            // Open the cache and put the fetched resource
             caches.open(CACHE_NAME)
               .then((cache) => {
-                cache.put(event.request, responseToCache);
+                // Don't cache API requests
+                if (!event.request.url.includes('/api/')) {
+                  cache.put(event.request, responseToCache);
+                }
               });
               
             return response;
@@ -104,5 +102,6 @@ self.addEventListener('sync', (event) => {
 
 // Function to sync inventory data when back online
 async function syncInventoryData() {
+  // This would be implemented when offline functionality is needed
   console.log('Background sync: inventory data');
 }

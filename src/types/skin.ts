@@ -5,7 +5,7 @@ export interface Skin {
   weapon: string;
   image: string;
   rarity: string;
-  price?: number; // Made optional to match InventoryItem
+  price: number;
   type?: string;
   wear?: string;
   isStatTrak?: boolean;
@@ -14,18 +14,7 @@ export interface Skin {
   collections?: SkinCollection[];
   collection?: SkinCollection;
   category?: string;
-  floatValue?: number;
-  
-  // Optional inventory-related properties to improve compatibility
-  purchasePrice?: number;
-  marketplace?: string;
-  feePercentage?: number;
-  notes?: string;
-  inventoryId?: string;
-  acquiredDate?: string;
-  isInUserInventory?: boolean;
-  sellMode?: boolean;
-  userId?: string;
+  floatValue?: number; // Added to match usage in use-skin-image-analysis.ts
 }
 
 export interface SkinCollection {
@@ -35,7 +24,7 @@ export interface SkinCollection {
   image?: string;
 }
 
-export interface InventoryItem extends Skin {
+export interface InventoryItem {
   inventoryId: string;
   acquiredDate: string;
   purchasePrice: number;
@@ -70,17 +59,11 @@ export interface InventoryItem extends Skin {
   sold_price?: number;
   sold_marketplace?: string;
   sold_fee_percentage?: number;
-  soldPrice?: number;
-  soldMarketplace?: string;
-  soldFeePercentage?: number;
-  soldDate?: string;
-  soldCurrency?: string;
-  soldNotes?: string;
   // Also include Skin properties
-  type?: string;
-  category?: string;
-  // Special property for sell mode
-  sellMode?: boolean;
+  id: string;
+  name: string;
+  weapon: string;
+  image: string;
 }
 
 export interface SkinFilter {
@@ -108,7 +91,7 @@ export interface SellData {
 // Define SkinWear type
 export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';
 
-// Define Transaction type with a strictly defined 'type' field
+// Define Transaction type
 export interface Transaction {
   id: string;
   type: 'add' | 'sell' | 'trade' | 'buy';
@@ -120,7 +103,6 @@ export interface Transaction {
   itemId: string;
   currency?: string;
   userId: string;
-  marketplace?: string;
 }
 
 // Define LockStatus type with isLocked, daysLeft, and tradeLockDate fields
@@ -128,18 +110,4 @@ export interface LockStatus {
   isLocked: boolean;
   daysLeft: number;
   tradeLockDate?: string;
-}
-
-// Define modal mode type - include 'sell' as a valid mode
-export type ModalMode = 'view' | 'edit' | 'add' | 'sell';
-
-// New interface for the updated inventory skin modal
-export interface InventorySkinModalProps {
-  inventoryItem: InventoryItem;
-  children: React.ReactNode;
-  onClose: () => void;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  skin?: Skin | InventoryItem;
-  mode?: ModalMode;
 }

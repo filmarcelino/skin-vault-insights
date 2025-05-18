@@ -4,27 +4,22 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { InventoryItem } from "@/types/skin";
 import { formatDateString } from "@/utils/date-utils";
 import { formatPrice } from "@/utils/format-utils";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SoldSkinsTableProps {
   items: InventoryItem[];
 }
 
 export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
-  const { t } = useLanguage();
-  
   // Format date function
   const formatDate = (dateStr?: string) => {
-    if (!dateStr) return t("common.unknown");
+    if (!dateStr) return "Unknown";
     return formatDateString(dateStr);
   };
 
   // Calculate profit percentage
   const calculateProfitPercentage = (item: InventoryItem) => {
-    if (!item.purchasePrice || item.purchasePrice === 0) return 0;
-    // For sold items, price represents the sold price
-    const soldPrice = item.sold_price || item.price || 0;
-    return ((soldPrice - item.purchasePrice) / item.purchasePrice) * 100;
+    if (!item.purchasePrice || !item.sold_price || item.purchasePrice === 0) return 0;
+    return ((item.sold_price - item.purchasePrice) / item.purchasePrice) * 100;
   };
 
   return (
@@ -32,28 +27,25 @@ export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t("inventory.item")}</TableHead>
-            <TableHead>{t("inventory.dateSold")}</TableHead>
-            <TableHead>{t("inventory.purchasePrice")}</TableHead>
-            <TableHead>{t("inventory.soldPrice")}</TableHead>
-            <TableHead>{t("inventory.profit")}</TableHead>
-            <TableHead>{t("inventory.marketplace")}</TableHead>
+            <TableHead>Item</TableHead>
+            <TableHead>Date Sold</TableHead>
+            <TableHead>Purchase Price</TableHead>
+            <TableHead>Sold Price</TableHead>
+            <TableHead>Profit</TableHead>
+            <TableHead>Marketplace</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {items.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center py-4">
-                {t("inventory.noSoldItems")}
+                No sold items found
               </TableCell>
             </TableRow>
           ) : (
             items.map((item) => {
               const profitPercentage = calculateProfitPercentage(item);
-              // Calculate profit on the fly if not provided
-              const soldPrice = item.sold_price || item.price || 0;
-              const profit = item.profit !== undefined ? item.profit : (soldPrice - (item.purchasePrice || 0));
-              const isProfit = profit > 0;
+              const isProfit = item.profit && item.profit > 0;
 
               return (
                 <TableRow key={item.id}>
@@ -77,16 +69,16 @@ export const SoldSkinsTable: React.FC<SoldSkinsTableProps> = ({ items }) => {
                   </TableCell>
                   <TableCell>{formatDate(item.date_sold)}</TableCell>
                   <TableCell>{formatPrice(item.purchasePrice || 0)}</TableCell>
-                  <TableCell>{formatPrice(soldPrice)}</TableCell>
+                  <TableCell>{formatPrice(item.sold_price || 0)}</TableCell>
                   <TableCell>
                     <span className={isProfit ? "text-green-500" : "text-red-500"}>
-                      {formatPrice(profit)}
+                      {formatPrice(item.profit || 0)}
                       <span className="text-xs ml-1">
                         ({profitPercentage > 0 ? "+" : ""}{profitPercentage.toFixed(1)}%)
                       </span>
                     </span>
                   </TableCell>
-                  <TableCell>{item.sold_marketplace || item.marketplace || t("common.unknown")}</TableCell>
+                  <TableCell>{item.sold_marketplace || "Unknown"}</TableCell>
                 </TableRow>
               );
             })

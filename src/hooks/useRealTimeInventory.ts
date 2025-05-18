@@ -1,4 +1,6 @@
 
+// Let's improve the real-time inventory hook to make sure it's properly subscribing to database changes
+
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useInvalidateInventory } from '@/hooks/use-skins';

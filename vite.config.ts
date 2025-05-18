@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: false // Disable in development to prevent caching issues
+        enabled: true
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
@@ -30,13 +30,13 @@ export default defineConfig(({ mode }) => ({
         display: 'standalone',
         icons: [
           {
-            src: '/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png',
+            src: '/lovable-uploads/24f8851e-1368-4d88-9a6f-58906ab20007.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/lovable-uploads/bf94853c-aef8-4bc7-8ca6-60524a082ca0.png',
+            src: '/lovable-uploads/24f8851e-1368-4d88-9a6f-58906ab20007.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

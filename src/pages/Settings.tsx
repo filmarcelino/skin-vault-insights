@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { JsonSettings } from "@/components/settings/json-settings";
 import { Separator } from "@/components/ui/separator";
@@ -14,24 +13,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { StripeWebhookSettings } from "@/components/settings/stripe-webhook-settings";
-import { formatCurrency as formatCurrencyUtil } from "@/utils/format-utils"; // Renamed import
 
 const ADMIN_EMAIL = "luisfelipemarcelino33@gmail.com";
 
-// Provide a local format currency function if needed
-const formatCurrency = (amount: number, currency = 'USD') => {
-  return formatCurrencyUtil(amount, currency);
-};
-
 const Settings = () => {
   const { toast } = useToast();
-  const { user, authStatus } = useAuth();
+  const { user, isLoading } = useAuth();
   const [stripeKeyInput, setStripeKeyInput] = useState("");
   const [isUpdatingStripe, setIsUpdatingStripe] = useState(false);
   const [stripeStatus, setStripeStatus] = useState<{ valid: boolean; message?: string } | null>(null);
 
-  // Show loading while auth is initializing
-  if (authStatus === 'loading') {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loading size="lg" />

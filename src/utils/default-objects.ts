@@ -1,59 +1,50 @@
 
-import { Skin, InventoryItem } from "@/types/skin";
+import { InventoryItem, Skin } from "@/types/skin";
 
-// Default skin object to use as a fallback
+// Default skin object for new or empty skins
 export const defaultSkin: Skin = {
-  id: "default",
-  name: "Default Skin",
-  weapon: "Unknown",
-  image: "/placeholder-skin.png",
+  id: "",
+  name: "",
+  weapon: "",
+  image: "",
   rarity: "Consumer Grade",
-  price: 0, // Price is now optional in Skin type but we provide a default
-  category: "Normal",
-  type: "Normal",
-  wear: "Factory New",
-  collections: [],
-  purchasePrice: 0,
-  inventoryId: "",
-  isInUserInventory: false,
-  marketplace: "Steam Market",
-  feePercentage: 15,
-  notes: "",
-  isStatTrak: false
+  price: 0,
+  // Additional properties that are now part of Skin interface
+  wear: "",
+  isStatTrak: false,
+  min_float: 0,
+  max_float: 1,
 };
 
-// Default inventory item to use as a fallback
+// Default inventory item for new or empty inventory items
 export const defaultInventoryItem: InventoryItem = {
-  id: "default",
-  inventoryId: "default",
-  name: "Default Skin",
-  weapon: "Unknown",
-  image: "/placeholder-skin.png",
+  id: "",
+  inventoryId: "",
+  name: "",
+  weapon: "",
+  image: "",
   rarity: "Consumer Grade",
   price: 0,
   purchasePrice: 0,
   acquiredDate: new Date().toISOString(),
-  isInUserInventory: false,
-  category: "Normal",
-  sellMode: false,
+  isInUserInventory: true,
   isStatTrak: false,
-  wear: "Factory New",
-  marketplace: "Steam Market",
-  feePercentage: 15,
-  floatValue: undefined,
-  notes: ""
-};
-
-// Default transaction object to use as a fallback
-export const defaultTransaction = {
-  id: "default",
-  type: "add" as "add" | "sell" | "trade" | "buy", 
-  itemId: "default",
-  skinName: "Default Skin",
-  weaponName: "Unknown",
-  price: 0,
-  date: new Date().toISOString(),
-  userId: "",
+  wear: "",
+  floatValue: 0,
+  tradeLockDays: 0,
+  notes: "",
+  // Snake case versions
+  skin_id: "",
+  skin_name: "",
+  weapon_name: "",
+  image_url: "",
+  purchase_price: 0,
+  acquired_date: new Date().toISOString(),
+  is_in_user_inventory: true,
+  float_value: 0,
+  is_stat_trak: false,
+  condition: "",
+  marketplace: "Steam",
+  fee_percentage: 0,
   currency: "USD",
-  marketplace: "Unknown"
 };

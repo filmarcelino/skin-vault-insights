@@ -3,12 +3,10 @@ import { FC } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Plus, LayoutGrid, LineChart, Settings, Search } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export const TopNav: FC = () => {
   const location = useLocation();
   const { t } = useLanguage();
-  const isMobile = useIsMobile();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -42,11 +40,6 @@ export const TopNav: FC = () => {
       ? `${baseClass} bg-primary/10 text-primary font-medium`
       : `${baseClass} text-muted-foreground hover:bg-primary/5 hover:text-foreground`;
   };
-
-  if (isMobile) {
-    // For mobile, we won't render the top nav as we have the bottom nav
-    return null;
-  }
 
   return (
     <nav className="border-b border-border/50 bg-background sticky top-16 z-30">

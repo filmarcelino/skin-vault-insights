@@ -3,7 +3,6 @@ import { FC, useState, useEffect } from "react";
 import { Search as SearchIcon, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SearchProps {
   placeholder?: string;
@@ -26,7 +25,6 @@ export const Search: FC<SearchProps> = ({
 }) => {
   const [internalValue, setValue] = useState(initialValue);
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
-  const { t } = useLanguage();
 
   useEffect(() => {
     if (value !== undefined) {
@@ -79,18 +77,12 @@ export const Search: FC<SearchProps> = ({
     }
   };
 
-  // Get the translated placeholder
-  let translatedPlaceholder = placeholder;
-  if (placeholder.includes('.')) {
-    translatedPlaceholder = t(placeholder);
-  }
-
   return (
     <form onSubmit={handleSubmit} className={`relative w-full ${className}`}>
       <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         type="search"
-        placeholder={translatedPlaceholder}
+        placeholder={placeholder}
         value={value !== undefined ? value : internalValue}
         onChange={handleChange}
         className="pl-9 pr-10 bg-secondary/50"
@@ -104,7 +96,7 @@ export const Search: FC<SearchProps> = ({
           onClick={handleClear}
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">{t("search.clear")}</span>
+          <span className="sr-only">Limpar pesquisa</span>
         </Button>
       )}
     </form>

@@ -4,14 +4,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Loader2, Camera, Save, Search, List } from 'lucide-react'
 import { useSkinImageAnalysis } from '@/hooks/use-skin-image-analysis'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { useInventoryActions } from '@/hooks/useInventoryActions'
+import { useAddSkin, useCategories } from '@/hooks/use-skins'
 import { SkinDetailModal } from '@/components/skins/skin-detail-modal'
 import { useNavigate } from 'react-router-dom'
 import { InventoryCard } from '@/components/dashboard/inventory-card'
 import { Skin } from '@/types/skin'
-import { toast } from "sonner"
+import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
-import { useSkins } from '@/hooks/use-skins'
 
 export const SkinImageAnalyzer: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -20,16 +19,11 @@ export const SkinImageAnalyzer: React.FC = () => {
   const [showCategories, setShowCategories] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { analyzeSkinImage, isAnalyzing, analysisResult } = useSkinImageAnalysis()
-  const { data: allSkins, isLoading: isCategoriesLoading } = useSkins()
-  const { handleAddToInventory } = useInventoryActions()
+  const { data: categories, isLoading: isCategoriesLoading } = useCategories()
+  const addSkinMutation = useAddSkin()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
-
-  // Extract unique categories
-  const categories = React.useMemo(() => {
-    if (!allSkins || !Array.isArray(allSkins)) return [];
-    return [...new Set(allSkins.map((skin: any) => skin.category).filter(Boolean))];
-  }, [allSkins]);
+  const { toast } = useToast()
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -56,18 +50,35 @@ export const SkinImageAnalyzer: React.FC = () => {
     setDetailModalOpen(true)
   }
 
-  const handleAddSkin = (skinData: Skin) => {
+  const handleAddSkin = (skinData: any) => {
     console.log("Adicionando skin com dados:", skinData)
     
-    handleAddToInventory(skinData);
-    
-    // Fix: Use the correct toast function signature from sonner
-    toast("Skin adicionada", {
-      description: `${skinData.weapon} | ${skinData.name} foi adicionada ao seu inventário`
-    });
-    
-    setDetailModalOpen(false);
-    navigate("/inventory");
+    addSkinMutation.mutate({
+      skin: skinData,
+      purchaseInfo: {
+        purchasePrice: skinData.purchasePrice || 0,
+        marketplace: skinData.marketplace || "Steam Market",
+        feePercentage: skinData.feePercentage || 0,
+        notes: skinData.notes || ""
+      }
+    }, {
+      onSuccess: () => {
+        toast({
+          title: "Skin adicionada",
+          description: `${skinData.weapon} | ${skinData.name} foi adicionada ao seu inventário`
+        })
+        setDetailModalOpen(false)
+        navigate("/inventory")
+      },
+      onError: (error) => {
+        toast({
+          title: "Erro",
+          description: "Não foi possível adicionar a skin ao inventário",
+          variant: "destructive"
+        })
+        console.error("Erro ao adicionar skin:", error)
+      }
+    })
   }
   
   const toggleCategoriesModal = () => {
@@ -203,7 +214,7 @@ export const SkinImageAnalyzer: React.FC = () => {
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {categories && categories.length > 0 ? (
-                  categories.map((category: string, index: number) => (
+                  categories.map((category, index) => (
                     <Badge key={index} variant="outline" className="text-xs">
                       {category}
                     </Badge>

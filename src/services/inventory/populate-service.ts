@@ -11,35 +11,7 @@ export const populateUserInventory = async (): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      toast.error("Você precisa estar logado para popular seu inventário");
-      return false;
-    }
-    
-    // Get user email to check if it's the test account
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', user.id)
-      .maybeSingle();
-    
-    // If the profile doesn't exist, we need to handle this error
-    if (profileError && profileError.code === 'PGRST116') {
-      toast.error("Perfil não encontrado", {
-        description: "Não foi possível encontrar seu perfil. Tente fazer login novamente."
-      });
-      return false;
-    }
-    
-    if (profileError) {
-      console.error("Erro ao buscar perfil:", profileError);
-      toast.error("Falha ao verificar perfil", {
-        description: "Ocorreu um erro ao verificar suas informações."
-      });
-      return false;
-    }
-    
-    if (!profileData || profileData.email !== "teste@teste.com") {
-      toast.error("Esta funcionalidade está disponível apenas para contas de teste");
+      toast.error("You must be logged in to populate your inventory");
       return false;
     }
     
@@ -48,30 +20,30 @@ export const populateUserInventory = async (): Promise<boolean> => {
     });
     
     if (error) {
-      console.error("Erro ao popular inventário:", error);
-      toast.error("Falha ao popular o inventário", {
-        description: "Ocorreu um erro ao adicionar skins iniciais ao seu inventário."
+      console.error("Error populating inventory:", error);
+      toast.error("Failed to populate inventory", {
+        description: "An error occurred while adding starter skins to your inventory."
       });
       return false;
     }
     
     // Check if the inventory was already populated
     if (data.message === "User inventory already populated") {
-      toast.info("Seu inventário já foi populado", {
-        description: "Você já tem skins iniciais em seu inventário."
+      toast.info("Your inventory has already been populated", {
+        description: "You already have starter skins in your inventory."
       });
       return true;
     }
     
-    toast.success("Inventário populado com sucesso", {
-      description: "Suas skins iniciais foram adicionadas ao seu inventário!"
+    toast.success("Inventory populated successfully", {
+      description: "70 starter skins have been added to your inventory!"
     });
     
     return true;
   } catch (error) {
-    console.error("Erro em populateUserInventory:", error);
-    toast.error("Falha ao popular inventário", {
-      description: "Ocorreu um erro inesperado. Por favor, tente novamente."
+    console.error("Error in populateUserInventory:", error);
+    toast.error("Failed to populate inventory", {
+      description: "An unexpected error occurred. Please try again."
     });
     return false;
   }
@@ -92,16 +64,16 @@ export const isInventoryPopulated = async (): Promise<boolean> => {
       .from('profiles')
       .select('inventory_populated')
       .eq('id', user.id)
-      .maybeSingle(); 
+      .single();
     
     if (error) {
-      console.error("Erro ao verificar status de inventário populado:", error);
+      console.error("Error checking inventory populated status:", error);
       return false;
     }
     
     return !!data?.inventory_populated;
   } catch (error) {
-    console.error("Erro em isInventoryPopulated:", error);
+    console.error("Error in isInventoryPopulated:", error);
     return false;
   }
 };
