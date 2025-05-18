@@ -140,13 +140,9 @@ export const addSkinToInventory = async (skin: Skin, purchaseInfo: any): Promise
       return null;
     }
     
-    // Now check for the name property with a type guard
-    if (!('name' in skin) || typeof skin.name !== 'string' || !skin.name) {
-      console.error("Invalid skin data: missing or invalid name property", skin);
-      return null;
-    }
-    
-    const skinName = 'name' in skin && typeof skin.name === 'string' ? skin.name : "";
+    // Extract the name safely with proper type checking
+    const skinName = typeof skin === 'object' && skin !== null && 'name' in skin && 
+      typeof skin.name === 'string' ? skin.name : "";
       
     if (!skinName) {
       console.error("Invalid skin data: name property is missing or invalid", skin);
