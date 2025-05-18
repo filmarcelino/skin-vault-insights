@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ExportOptions, ExportDataType } from "@/services/inventory/inventory-service";
 import { InventoryItem, Transaction } from "@/types/skin";
 import { mapSupabaseToInventoryItem, mapSupabaseToTransaction } from "@/services/inventory/inventory-mapper";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 // Função para exportar dados completos de um usuário específico
 async function exportUserData(options: ExportOptions, userId: string): Promise<any> {
@@ -20,8 +22,7 @@ async function exportUserData(options: ExportOptions, userId: string): Promise<a
     const inventoryQuery = await supabase
       .from('inventory')
       .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .eq('user_id', userId);
     
     if (inventoryQuery.error) {
       console.error("Erro ao buscar inventário:", inventoryQuery.error);
@@ -34,8 +35,7 @@ async function exportUserData(options: ExportOptions, userId: string): Promise<a
     const transactionsQuery = await supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .eq('user_id', userId);
     
     if (transactionsQuery.error) {
       console.error("Erro ao buscar transações:", transactionsQuery.error);
@@ -198,7 +198,7 @@ function downloadData(data: any, format: 'json' | 'csv', filename = 'export'): v
 }
 
 export default function PublicExport() {
-  // Breno's user ID
+  // User ID de Breno - ID fixo para garantir que estamos exportando os dados corretos
   const BRENO_USER_ID = "dc82fd34-5d56-4504-ad8d-306af593d841";
   
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
@@ -206,29 +206,99 @@ export default function PublicExport() {
   const [includeDetails, setIncludeDetails] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [exportStats, setExportStats] = useState<{totalItems: number, activeSkins: number} | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Buscar estatísticas iniciais para mostrar na UI
   useEffect(() => {
     const loadInitialStats = async () => {
       try {
-        const { data: inventory } = await supabase
-          .from('inventory')
-          .select('inventory_id, is_in_user_inventory')
-          .eq('user_id', BRENO_USER_ID);
-          
-        if (inventory) {
-          const totalItems = inventory.length;
-          const activeSkins = inventory.filter(item => item.is_in_user_inventory).length;
-          setExportStats({ totalItems, activeSkins });
+        setError(null);
+        setIsLoading(true);
+        
+        // Buscar inventário e transações para estatísticas iniciais
+        const [inventoryResult, transactionsResult] = await Promise.all([
+          supabase.from('inventory').select('inventory_id, is_in_user_inventory').eq('user_id', BRENO_USER_ID),
+          supabase.from('transactions').select('transaction_id').eq('user_id', BRENO_USER_ID)
+        ]);
+        
+        if (inventoryResult.error) {
+          throw new Error(`Erro ao buscar inventário: ${inventoryResult.error.message}`);
         }
-      } catch (error) {
-        console.error("Erro ao carregar estatísticas iniciais:", error);
+        
+        if (transactionsResult.error) {
+          throw new Error(`Erro ao buscar transações: ${transactionsResult.error.message}`);
+        }
+        
+        const totalItems = inventoryResult.data?.length || 0;
+        const activeSkins = inventoryResult.data?.filter(item => item.is_in_user_inventory)?.length || 0;
+        const transactionCount = transactionsResult.data?.length || 0;
+        
+        setExportStats({ 
+          totalItems,
+          activeSkins
+        });
+        
+        console.log(`Estatísticas carregadas: ${totalItems} itens, ${activeSkins} ativos, ${transactionCount} transações`);
+        
+        if (totalItems === 0 && transactionCount === 0) {
+          setError("Nenhum dado encontrado para Breno. Verifique se o ID do usuário está correto.");
+        }
+      } catch (err: any) {
+        console.error("Erro ao carregar estatísticas:", err);
+        setError(`Erro ao carregar dados: ${err.message || 'Erro desconhecido'}`);
+        toast({
+          title: "Erro ao carregar dados",
+          description: err.message || "Não foi possível carregar os dados do inventário",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
     
     loadInitialStats();
-  }, []);
+  }, [toast]);
+
+  const handleExport = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const options = {
+        format: exportFormat,
+        type: exportType,
+        includeDetails
+      };
+      
+      const result = await exportUserData(options, BRENO_USER_ID);
+      
+      if (!result || !result.data) {
+        throw new Error("Nenhum dado encontrado para exportação");
+      }
+      
+      if (result.summary.totalItems === 0 && result.summary.transactionCount === 0) {
+        throw new Error("Nenhum item ou transação encontrada para exportar");
+      }
+      
+      downloadData(result.data, exportFormat, `breno-export-${exportType}`);
+      
+      toast({
+        title: "Exportação Concluída",
+        description: `Exportados ${result.summary.totalItems} itens no total, incluindo ${result.summary.activeSkins} skins ativas.`
+      });
+    } catch (error: any) {
+      console.error("Erro na exportação:", error);
+      setError(error.message || "Erro desconhecido durante a exportação");
+      toast({
+        title: "Falha na Exportação",
+        description: error.message || "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -253,6 +323,16 @@ export default function PublicExport() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Erro</AlertTitle>
+                  <AlertDescription>
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {exportStats && (
                 <div className="bg-muted rounded-md p-3 mb-4 text-sm">
                   <p>Breno tem <strong>{exportStats.totalItems}</strong> itens no total e <strong>{exportStats.activeSkins}</strong> skins ativas.</p>
@@ -305,33 +385,7 @@ export default function PublicExport() {
           </CardContent>
           <CardFooter>
             <Button 
-              onClick={async () => {
-                const options = {
-                  format: exportFormat,
-                  type: exportType,
-                  includeDetails
-                };
-                
-                setIsLoading(true);
-                try {
-                  const result = await exportUserData(options, BRENO_USER_ID);
-                  downloadData(result.data, exportFormat, `export-${exportType}`);
-                  
-                  toast({
-                    title: "Exportação Concluída",
-                    description: `Exportados ${result.summary.totalItems} itens no total, incluindo ${result.summary.activeSkins} skins ativas.`
-                  });
-                } catch (error) {
-                  console.error("Erro na exportação:", error);
-                  toast({
-                    title: "Falha na Exportação",
-                    description: error instanceof Error ? error.message : "Erro desconhecido",
-                    variant: "destructive"
-                  });
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
+              onClick={handleExport}
               disabled={isLoading}
               className="w-full"
             >

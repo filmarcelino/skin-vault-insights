@@ -29,7 +29,7 @@ const App = () => {
           <HomeScreenPopup />
           <BrowserRouter>
             <Routes>
-              {/* Apenas página de exportação pública */}
+              {/* Todas as rotas apontam para a página de exportação pública */}
               <Route path="/" element={<PublicExport />} />
               <Route path="/export" element={<PublicExport />} />
               <Route path="*" element={<PublicExport />} />
