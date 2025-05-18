@@ -18,6 +18,3 @@ verify_jwt = true
 
 [functions.create-checkout]
 verify_jwt = true
-
-[functions.populate-inventory]
-verify_jwt = true

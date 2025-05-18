@@ -3,7 +3,6 @@ import { Transaction } from "@/types/skin";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToTransaction } from "./inventory-mapper";
 
-// This is the function we need to export for the useTransactions hook
 export const getUserTransactions = async (): Promise<Transaction[]> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -69,6 +68,3 @@ export const addTransaction = async (transaction: Transaction): Promise<boolean>
     return false;
   }
 };
-
-// Adding an alias for backward compatibility
-export const fetchTransactions = getUserTransactions;

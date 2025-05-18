@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -8,142 +7,140 @@ import {
   useSellSkin, 
   useInvalidateInventory 
 } from "@/hooks/use-skins";
-import { useInvalidateTransactions } from "@/hooks/useTransactions";
 import { InventoryItem, Skin, SellData } from "@/types/skin";
 
 export const useInventoryActions = () => {
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
+  const [selectedItemForDuplicate, setSelectedItemForDuplicate] = useState<InventoryItem | null>(null);
+  const [duplicateCount, setDuplicateCount] = useState(1);
+  
   const { toast } = useToast();
   const addSkin = useAddSkin();
   const removeSkin = useRemoveSkin();
   const updateSkin = useUpdateSkin();
   const sellSkin = useSellSkin();
   const invalidateInventory = useInvalidateInventory();
-  
-  const invalidateTransactions = useInvalidateTransactions();
-  
-  const handleViewDetails = (item: InventoryItem) => {
-    setSelectedItem(item);
-    setIsDetailModalOpen(true);
-  };
 
-  const handleEditItem = (item: InventoryItem) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
-  };
-  
-  // Alias to maintain API compatibility
-  const handleEdit = handleEditItem;
-
-  const handleSellItem = (item: InventoryItem) => {
+  const handleEdit = (item: InventoryItem) => {
     setSelectedItem(item);
     setIsModalOpen(true);
   };
 
-  const handleDeleteItem = async (inventoryId: string) => {
+  const handleDuplicate = (item: InventoryItem) => {
+    setSelectedItemForDuplicate(item);
+    setDuplicateModalOpen(true);
+  };
+
+  const handleRemove = async (inventoryId: string) => {
     try {
       await removeSkin.mutateAsync(inventoryId);
       toast({
         title: "Skin Removida",
         description: "Skin removida do inventário com sucesso.",
       });
-      
-      // Invalidate both inventory and transactions caches
-      invalidateInventory();
-      invalidateTransactions();
     } catch (error) {
       toast({
         title: "Erro ao Remover",
         description: "Falha ao remover a skin do inventário.",
-        variant: "destructive"
       });
+    } finally {
+      invalidateInventory();
+      // Também invalidamos as transações para manter os dados atualizados
+      invalidateTransactions();
     }
   };
 
-  const handleMarkAsSold = (item: InventoryItem | string, sellData: SellData) => {
-    // Handle both item object and direct itemId string
-    const itemId = typeof item === 'string' ? item : item.id;
-    sellSkin.mutate({ itemId: itemId, sellData: sellData });
+  const handleSell = (itemId: string, sellData: SellData) => {
+    sellSkin.mutate({ itemId, sellData: sellData });
     handleClose();
-    
-    // Invalidate both inventory and transactions caches
     invalidateInventory();
+    // Invalidamos as transações após uma venda para manter os dados atualizados
     invalidateTransactions();
   };
-  
-  const handleDuplicate = async (item: InventoryItem | Skin) => {
+
+  const handleAddToInventory = async (skin: Skin): Promise<InventoryItem | null> => {
     try {
-      // Basic purchase info for duplication
-      const purchaseInfo = {
-        purchasePrice: ('purchasePrice' in item) ? item.purchasePrice : (item.price || 0),
-        marketplace: "Duplicated",
-        feePercentage: 0,
-        currency: "USD"
-      };
-      
-      // Make sure the item has all required properties for a skin
-      const skinToAdd: Skin = {
-        id: item.id,
-        name: item.name,
-        image: item.image,
-        weapon: item.weapon || '',
-        rarity: item.rarity || '',
-        price: ('price' in item) ? item.price : (item.purchasePrice || 0),
-        floatValue: item.floatValue,
-        isStatTrak: item.isStatTrak || false,
-        wear: item.wear || ''
-      };
-      
-      await addSkin.mutateAsync({ skin: skinToAdd, purchaseInfo: purchaseInfo });
-      toast({
-        title: "Skin Duplicada",
-        description: "Skin duplicada para o inventário com sucesso.",
-      });
-      
-      // Invalidate both inventory and transactions caches
-      invalidateInventory();
-      invalidateTransactions();
-    } catch (error) {
-      toast({
-        title: "Erro ao Duplicar",
-        description: "Falha ao duplicar a skin para o inventário.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  // Add new function for adding inventory items
-  const handleAddToInventory = async (skin: Skin) => {
-    try {
-      // Basic purchase info for new items
+      if (!skin) {
+        console.error("Invalid skin data provided:", skin);
+        toast({
+          title: "Erro ao Adicionar",
+          description: "Dados da skin inválidos.",
+          variant: "destructive"
+        });
+        return null;
+      }
+
       const purchaseInfo = {
         purchasePrice: skin.price || 0,
         marketplace: "Steam Market",
         feePercentage: 0,
+        notes: "Added from inventory",
         currency: "USD"
       };
       
-      const result = await addSkin.mutateAsync({ skin: skin, purchaseInfo: purchaseInfo });
+      const newItem = await addSkin.mutateAsync({ skin, purchaseInfo });
       
-      toast({
-        title: "Skin Adicionada",
-        description: "Skin adicionada ao inventário com sucesso.",
-      });
+      if (newItem) {
+        toast({
+          title: "Skin Adicionada",
+          description: `${skin.name || 'Nova skin'} foi adicionada ao inventário.`,
+        });
+      }
       
-      // Invalidate both inventory and transactions caches
       invalidateInventory();
-      invalidateTransactions();
-      
-      return result;
+      return newItem;
     } catch (error) {
+      console.error("Error adding skin:", error);
       toast({
         title: "Erro ao Adicionar",
-        description: "Falha ao adicionar a skin ao inventário.",
+        description: "Falha ao adicionar skin ao inventário.",
         variant: "destructive"
       });
+      return null;
     }
+  };
+
+  const handleDuplicateMultiple = async (count: number) => {
+    if (!selectedItemForDuplicate) return;
+    
+    try {
+      for (let i = 0; i < count; i++) {
+        await handleAddToInventory(selectedItemForDuplicate);
+      }
+      
+      toast({
+        title: "Skins Duplicadas",
+        description: `${count} cópias foram adicionadas ao inventário.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao Duplicar",
+        description: "Falha ao duplicar as skins.",
+        variant: "destructive",
+      });
+    } finally {
+      setDuplicateModalOpen(false);
+      setDuplicateCount(1);
+      setSelectedItemForDuplicate(null);
+      invalidateInventory();
+    }
+  };
+
+  // Add these missing functions
+  const handleDuplicateCountChange = (count: number) => {
+    setDuplicateCount(count);
+  };
+
+  const handleConfirmDuplicate = () => {
+    handleDuplicateMultiple(duplicateCount);
+  };
+
+  const handleCloseDuplicateModal = () => {
+    setDuplicateModalOpen(false);
+    setDuplicateCount(1);
+    setSelectedItemForDuplicate(null);
   };
 
   const handleClose = () => {
@@ -151,26 +148,45 @@ export const useInventoryActions = () => {
     setSelectedItem(null);
   };
 
-  const handleCloseDetail = () => {
-    setIsDetailModalOpen(false);
-    setSelectedItem(null);
+  const handleViewDetails = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+  
+  // Função para invalidar manualmente o cache de transações
+  const invalidateTransactions = () => {
+    // As transações geralmente são carregadas na página, então forçamos um reload
+    // dos dados ao invalidar o cache
+    try {
+      const queryClient = require('@tanstack/react-query').queryClient;
+      queryClient?.invalidateQueries({ queryKey: ["transactions"] });
+    } catch (error) {
+      console.log("Failed to invalidate transactions cache:", error);
+      // Fallback - we don't need to do anything here as the page will reload on navigation
+    }
   };
 
-  // Return all the functions and state
   return {
     selectedItem,
     isModalOpen,
-    isDetailModalOpen,
+    duplicateModalOpen,
+    selectedItemForDuplicate,
+    duplicateCount,
     setIsModalOpen,
-    setIsDetailModalOpen,
-    handleViewDetails,
-    handleEditItem,
-    handleEdit, // Add the alias
-    handleDeleteItem,
-    handleMarkAsSold,
+    setDuplicateModalOpen,
+    setDuplicateCount,
+    setSelectedItem,
+    setSelectedItemForDuplicate,
+    handleEdit,
     handleDuplicate,
-    handleAddToInventory, // Export the new function
+    handleRemove,
+    handleSell,
+    handleAddToInventory,
+    handleDuplicateMultiple,
     handleClose,
-    handleCloseDetail
+    handleViewDetails,
+    handleDuplicateCountChange,
+    handleConfirmDuplicate,
+    handleCloseDuplicateModal
   };
 };

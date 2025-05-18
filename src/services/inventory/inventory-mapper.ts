@@ -1,54 +1,64 @@
 
 import { InventoryItem, Transaction } from "@/types/skin";
-import { supabase } from "@/integrations/supabase/client"; // Fixed import path
 
-/**
- * Maps a Supabase database row to an InventoryItem
- */
-export const mapSupabaseToInventoryItem = (item: any): InventoryItem => {
+export const mapSupabaseToInventoryItem = (item: any): InventoryItem | null => {
   if (!item) return null;
   
-  return {
-    id: item.id || "",
-    inventoryId: item.inventory_id || `inv_${Math.random().toString(36).slice(2, 11)}`,
-    name: item.name || "",
-    weapon: item.weapon || "",
-    image: item.image || "",
-    rarity: item.rarity || "",
-    price: parseFloat(item.price) || 0,
-    purchasePrice: parseFloat(item.purchase_price) || 0,
-    currentPrice: parseFloat(item.current_price) || parseFloat(item.price) || 0,
-    acquiredDate: item.acquired_date || new Date().toISOString(),
-    isStatTrak: !!item.is_stat_trak,
-    wear: item.wear || "",
-    floatValue: parseFloat(item.float_value) || 0,
-    notes: item.notes || "",
-    userId: item.user_id || "",
-    isInUserInventory: !!item.is_in_user_inventory,
-    skin_id: item.skin_id || "",
-    marketplace: item.marketplace || "Steam",
-    fee_percentage: item.fee_percentage || 13,
-    tradeLockDays: item.trade_lock_days || 0,
-    tradeLockUntil: item.trade_lock_until || null,
-  };
+  try {
+    const mappedItem: InventoryItem = {
+      id: item.skin_id || '',
+      inventoryId: item.inventory_id || '',
+      name: item.name || '',
+      weapon: item.weapon || '',
+      rarity: item.rarity,
+      wear: item.wear,
+      image: item.image,
+      price: item.price,
+      purchasePrice: item.purchase_price,
+      currentPrice: item.current_price,
+      acquiredDate: item.acquired_date || new Date().toISOString(),
+      isStatTrak: Boolean(item.is_stat_trak),
+      tradeLockDays: item.trade_lock_days || 0,
+      tradeLockUntil: item.trade_lock_until,
+      marketplace: item.marketplace,
+      feePercentage: item.fee_percentage,
+      floatValue: item.float_value,
+      notes: item.notes,
+      currency: item.currency_code || "USD",
+      collection: item.collection_name ? {
+        id: item.collection_id,
+        name: item.collection_name
+      } : undefined,
+      // Ensure isInUserInventory is always a boolean
+      isInUserInventory: item.is_in_user_inventory !== false
+    };
+    
+    console.log(`Mapped item ${mappedItem.name} with isInUserInventory:`, mappedItem.isInUserInventory);
+    
+    return mappedItem;
+  } catch (error) {
+    console.error("Error mapping inventory item:", error);
+    return null;
+  }
 };
 
-/**
- * Maps a Supabase database row to a Transaction
- */
-export const mapSupabaseToTransaction = (item: any): Transaction => {
-  if (!item) return null;
+export const mapSupabaseToTransaction = (transaction: any): Transaction | null => {
+  if (!transaction) return null;
   
-  return {
-    id: item.transaction_id || item.id || "",
-    type: item.type || "add",
-    weaponName: item.weapon_name || "",
-    skinName: item.skin_name || "",
-    date: item.date || new Date().toISOString(),
-    price: parseFloat(item.price) || 0,
-    notes: item.notes || "",
-    itemId: item.item_id || "",
-    currency: item.currency_code || "USD",
-    userId: item.user_id || "",
-  };
+  try {
+    return {
+      id: transaction.transaction_id || '',
+      type: transaction.type || 'add',
+      itemId: transaction.item_id || '',
+      weaponName: transaction.weapon_name || '',
+      skinName: transaction.skin_name || '',
+      date: transaction.date || new Date().toISOString(),
+      price: transaction.price,
+      notes: transaction.notes,
+      currency: transaction.currency_code || "USD"
+    };
+  } catch (error) {
+    console.error("Error mapping transaction:", error);
+    return null;
+  }
 };

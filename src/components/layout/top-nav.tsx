@@ -2,11 +2,9 @@
 import { FC } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Plus, LayoutGrid, LineChart, Settings, Search } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 export const TopNav: FC = () => {
   const location = useLocation();
-  const { t } = useLanguage();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -16,17 +14,17 @@ export const TopNav: FC = () => {
   const getPageName = (path: string) => {
     switch (path) {
       case "/dashboard":
-        return t("dashboard.title");
+        return "Dashboard";
       case "/search":
-        return t("search.title");
+        return "Buscar Skins";
       case "/add":
-        return t("inventory.add");
+        return "Adicionar Skin";
       case "/inventory":
-        return t("inventory.title");
+        return "Inventário";
       case "/analytics":
-        return t("analytics.title");
+        return "Análise";
       case "/settings":
-        return t("settings.title");
+        return "Configurações";
       default:
         return "";
     }
@@ -53,50 +51,50 @@ export const TopNav: FC = () => {
             <Link 
               to="/dashboard" 
               className={getLinkClass("/dashboard")}
-              title={t("dashboard.title")}
+              title="Dashboard"
             >
               <Home className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">{t("dashboard.title")}</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Dashboard</span>
             </Link>
             <Link 
               to="/search" 
               className={getLinkClass("/search")}
-              title={t("search.title")}
+              title="Buscar Skins"
             >
               <Search className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">{t("search.title")}</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Buscar</span>
             </Link>
             <Link 
               to="/add" 
               className={getLinkClass("/add")}
-              title={t("inventory.add")}
+              title="Adicionar Skin"
             >
               <Plus className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">{t("inventory.add")}</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Adicionar</span>
             </Link>
             <Link 
               to="/inventory" 
               className={getLinkClass("/inventory")}
-              title={t("inventory.title")}
+              title="Inventário"
             >
               <LayoutGrid className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">{t("inventory.title")}</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Inventário</span>
             </Link>
             <Link 
               to="/analytics" 
               className={getLinkClass("/analytics")}
-              title={t("analytics.title")}
+              title="Análise"
             >
               <LineChart className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">{t("analytics.title")}</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Análise</span>
             </Link>
             <Link 
               to="/settings" 
               className={getLinkClass("/settings")}
-              title={t("settings.title")}
+              title="Configurações"
             >
               <Settings className="h-4 w-4" />
-              <span className="text-[10px] sm:text-xs hidden xs:inline-block">{t("settings.title")}</span>
+              <span className="text-[10px] sm:text-xs hidden xs:inline-block">Configurações</span>
             </Link>
           </div>
         </div>

@@ -10,13 +10,8 @@ import {
 import { useFilteredCategories } from "@/hooks/useCategories";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { InventoryFilter } from "@/hooks/useInventoryFilter";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-export interface InventoryFilter {
-  id: string;
-  label: string;
-  value: string;
-}
 
 export interface InventoryFilterBarProps {
   filters: InventoryFilter[];
@@ -54,7 +49,7 @@ export const InventoryFilterBar = ({
           <SelectContent>
             <SelectItem value="all">{t('filters.allWeapons')}</SelectItem>
             {weaponTypes.map(weapon => (
-              <SelectItem key={weapon} value={weapon || "unknown"}>{weapon || "Unknown"}</SelectItem>
+              <SelectItem key={weapon} value={weapon}>{weapon}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -66,7 +61,7 @@ export const InventoryFilterBar = ({
           <SelectContent>
             <SelectItem value="all">{t('filters.allRarities')}</SelectItem>
             {rarityTypes.map(rarity => (
-              <SelectItem key={rarity} value={rarity || "unknown"}>{rarity || "Unknown"}</SelectItem>
+              <SelectItem key={rarity} value={rarity}>{rarity}</SelectItem>
             ))}
           </SelectContent>
         </Select>

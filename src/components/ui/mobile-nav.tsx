@@ -2,11 +2,9 @@
 import { FC } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Plus, LayoutGrid, Search, MoreHorizontal } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 export const MobileNav: FC = () => {
   const location = useLocation();
-  const { t } = useLanguage();
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -24,21 +22,21 @@ export const MobileNav: FC = () => {
       <div className="flex items-center justify-around h-16">
         <Link to="/" className={getLinkClass("/")}>
           <Home className="h-5 w-5" />
-          <span className="text-[10px] mt-1">{t("common.home")}</span>
+          <span className="text-[10px] mt-1">Home</span>
         </Link>
         <Link to="/add" className={getLinkClass("/add")}>
           <Plus className="h-5 w-5" />
-          <span className="text-[10px] mt-1">{t("common.add")}</span>
+          <span className="text-[10px] mt-1">Add</span>
         </Link>
         <Link to="/inventory" className={getLinkClass("/inventory")}>
           <LayoutGrid className="h-5 w-5" />
-          <span className="text-[10px] mt-1">{t("inventory.title")}</span>
+          <span className="text-[10px] mt-1">Inventory</span>
         </Link>
         <Link to="/more" className={getLinkClass("/more")}>
           <MoreHorizontal className="h-5 w-5" />
-          <span className="text-[10px] mt-1">{t("common.more")}</span>
+          <span className="text-[10px] mt-1">More</span>
         </Link>
       </div>
     </div>
   );
-}
+};

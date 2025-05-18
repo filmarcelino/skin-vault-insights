@@ -1,287 +1,317 @@
+import { Skin, InventoryItem, SellData } from "@/types/skin";
+import { supabase } from "@/integrations/supabase/client";
+import { mapSupabaseToInventoryItem } from "./inventory-mapper";
+import { addTransaction } from "./transactions-service";
+import { safeBoolean, safeString } from "@/utils/safe-type-utils";
 
-// This function needs to be added or updated to ensure it returns items matching the InventoryItem interface
-import { v4 as uuidv4 } from 'uuid';
-import { InventoryItem, SellData } from "@/types/skin";
-import { supabase } from '@/integrations/supabase/client'; // Direct import
+// Helper function to safely get properties from potentially null objects
+const getSkinProperty = <T>(data: any | null, property: string, defaultValue: T): T => {
+  if (!data || typeof data !== 'object' || !(property in data)) {
+    return defaultValue;
+  }
+  const value = data[property as keyof typeof data];
+  return (value === null || value === undefined) ? defaultValue : value as T;
+};
 
-export const fetchSoldItems = async () => {
+export const removeSkinFromInventory = async (inventoryId: string): Promise<boolean> => {
   try {
-    const { data: userData } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!userData?.user || !userData?.user.id) {
-      throw new Error("User not authenticated");
+    if (!session) {
+      console.error("No user session found");
+      return false;
     }
     
-    const userId = userData.user.id;
-    
-    const { data, error } = await supabase
+    // Fetch skin data before removal to include in transaction
+    const { data: skinData, error: skinError } = await supabase
       .from('inventory')
-      .select('*, transactions(*)')
-      .eq('user_id', userId)
-      .eq('is_in_user_inventory', false)
-      .order('date_sold', { ascending: false });
-      
-    if (error) {
-      console.error("Error fetching sold items:", error);
-      return [];
+      .select('weapon, name, currency_code')
+      .eq('inventory_id', inventoryId)
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    
+    if (skinError) {
+      console.error("Error fetching skin data:", skinError);
+      return false;
     }
     
-    // Ensure all required properties are present and properly formatted
-    const mappedItems = data.map(item => ({
-      id: item.id,
-      inventoryId: item.id,
-      skin_id: item.skin_id,
-      name: item.name,
-      weapon: item.weapon || "", // Fallback for missing fields
-      image: item.image || "",
-      rarity: item.rarity || "Unknown", // Make sure rarity is never undefined
-      price: item.price || 0,
-      purchasePrice: item.purchase_price || 0, // Required field
-      acquiredDate: item.acquired_date || new Date().toISOString(),
-      acquired_date: item.acquired_date,
-      user_id: item.user_id,
-      isInUserInventory: false,
-      is_in_user_inventory: false,
-      date_sold: item.date_sold,
-      sold_price: item.sold_price,
-      sold_marketplace: item.marketplace,
-      sold_fee_percentage: item.fee_percentage,
-      tradeLockDays: item.trade_lock_days,
-      tradeLockUntil: item.trade_lock_until,
-      profit: item.profit || 0,
-      currency: item.currency_code || 'USD',
-      floatValue: item.float_value,
-      isStatTrak: item.is_stat_trak,
-      wear: item.wear || ""
-    }));
+    const weaponName = getSkinProperty(skinData, 'weapon', "Unknown");
+    const skinName = getSkinProperty(skinData, 'name', "Unknown Skin");
+    const currencyCode = getSkinProperty(skinData, 'currency_code', "USD");
     
-    return mappedItems;
+    const { error: deleteError } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('inventory_id', inventoryId)
+      .eq('user_id', session.user.id);
+    
+    if (deleteError) {
+      console.error("Error removing skin from inventory:", deleteError);
+      return false;
+    }
+    
+    await addTransaction({
+      id: `trans-${Date.now()}`,
+      type: 'remove',
+      itemId: inventoryId,
+      weaponName: weaponName,
+      skinName: skinName,
+      date: new Date().toISOString(),
+      price: 0,
+      notes: "Skin removed from inventory",
+      currency: currencyCode
+    });
+    
+    return true;
   } catch (error) {
-    console.error("Error fetching sold items:", error);
-    return [];
+    console.error("Error removing skin:", error);
+    return false;
   }
 };
 
-// Updated user inventory function with proper type mappings
-export const fetchUserInventory = async () => {
+export const getUserInventory = async (): Promise<InventoryItem[]> => {
   try {
-    const { data: userData } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!userData?.user || !userData?.user.id) {
-      console.log("No authenticated user found");
+    if (!session) {
+      console.error("No user session found");
       return [];
     }
     
-    const userId = userData.user.id;
-    console.log("Fetching inventory for user:", userId);
+    console.log("Fetching inventory for user:", session.user.id);
     
     const { data, error } = await supabase
       .from('inventory')
       .select('*')
-      .eq('user_id', userId)
-      .eq('is_in_user_inventory', true)
-      .order('acquired_date', { ascending: false });
-      
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+    
     if (error) {
-      console.error("Error fetching inventory:", error);
+      console.error("Error getting inventory from Supabase:", error);
       return [];
     }
     
-    console.log(`Found ${data?.length || 0} items in inventory`);
+    console.log("Retrieved inventory data:", data);
     
-    // Ensure all required properties are present and properly formatted
-    const inventory = data.map(item => ({
-      id: item.id,
-      inventoryId: item.id,
-      skin_id: item.skin_id,
-      name: item.name,
-      weapon: item.weapon || "",
-      image: item.image || "",
-      rarity: item.rarity || "Unknown", // Make sure rarity is never undefined
-      price: item.price || 0,
-      purchasePrice: item.purchase_price || 0, // Required field
-      purchase_price: item.purchase_price,
-      acquiredDate: item.acquired_date || new Date().toISOString(),
-      acquired_date: item.acquired_date,
-      user_id: item.user_id,
-      isInUserInventory: true,
-      is_in_user_inventory: true,
-      tradeLockDays: item.trade_lock_days,
-      tradeLockUntil: item.trade_lock_until,
-      floatValue: item.float_value,
-      float_value: item.float_value,
-      isStatTrak: item.is_stat_trak,
-      is_stat_trak: item.is_stat_trak,
-      wear: item.wear || "",
-      condition: item.wear || "",
-      marketplace: item.marketplace,
-      fee_percentage: item.fee_percentage,
-      feePercentage: item.fee_percentage,
-      currency: item.currency_code,
-      currentPrice: item.current_price || item.price
-    }));
+    // Map the data to InventoryItem objects and ensure isInUserInventory is set correctly
+    const mappedItems = Array.isArray(data) ? data.map(item => {
+      try {
+        // Check if is_in_user_inventory exists and explicitly set it
+        if ('is_in_user_inventory' in item) {
+          console.log(`Item ${item.name || 'unknown'} has is_in_user_inventory:`, item.is_in_user_inventory);
+        } else {
+          console.log(`Item ${item.name || 'unknown'} missing is_in_user_inventory field`);
+          // If missing, we'll set a default in mapSupabaseToInventoryItem
+        }
+        
+        const mappedItem = mapSupabaseToInventoryItem(item);
+        
+        // Double-check that isInUserInventory is set correctly after mapping
+        if (mappedItem) {
+          // Convert any value to a boolean to avoid type issues
+          mappedItem.isInUserInventory = safeBoolean(item.is_in_user_inventory !== false);
+          console.log(`Item ${mappedItem.name || 'unknown'} isInUserInventory set to:`, mappedItem.isInUserInventory);
+        }
+        return mappedItem;
+      } catch (err) {
+        console.error("Error mapping inventory item:", err);
+        return null;
+      }
+    }).filter(Boolean) as InventoryItem[] : [];
     
-    return inventory;
+    console.log("Final mapped items:", mappedItems);
+    return mappedItems;
   } catch (error) {
-    console.error("Error fetching user inventory:", error);
+    console.error("Error getting inventory:", error);
     return [];
   }
 };
 
-export const addSkinToInventory = async (skin: any, purchaseInfo: any): Promise<InventoryItem | null> => {
+export const addSkinToInventory = async (skin: Skin, purchaseInfo: any): Promise<InventoryItem | null> => {
   try {
-    const { data: userData } = await supabase.auth.getUser();
-
-    if (!userData?.user || !userData?.user.id) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       throw new Error("User not authenticated");
     }
-
-    const userId = userData.user.id;
-    const newItem = {
-      id: uuidv4(),
-      skin_id: skin.id,
-      user_id: userId,
-      name: skin.name,
-      weapon: skin.weapon,
-      image: skin.image,
+    
+    // Add validation to check if skin is a valid object
+    if (!skin || typeof skin !== 'object') {
+      console.error("Invalid skin data provided:", skin);
+      return null;
+    }
+    
+    // Now check for the name property with a type guard
+    if (!('name' in skin) || typeof skin.name !== 'string' || !skin.name) {
+      console.error("Invalid skin data: missing or invalid name property", skin);
+      return null;
+    }
+    
+    const skinName = 'name' in skin && typeof skin.name === 'string' ? skin.name : "";
+      
+    if (!skinName) {
+      console.error("Invalid skin data: name property is missing or invalid", skin);
+      return null;
+    }
+    
+    const skinId = skin.id || `skin-${Date.now()}`;
+    const inventoryId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    const tradeLockDays = Math.floor(Math.random() * 8);
+    const tradeLockUntil = new Date(new Date().getTime() + tradeLockDays * 24 * 60 * 60 * 1000).toISOString();
+    
+    const insertData = {
+      skin_id: skinId,
+      inventory_id: inventoryId,
+      user_id: session.user.id,
+      weapon: skin.weapon || "Unknown",
+      name: skinName,
+      wear: skin.wear,
       rarity: skin.rarity,
-      price: skin.price,
-      purchase_price: purchaseInfo.purchasePrice,
-      acquired_date: new Date().toISOString(),
-      is_in_user_inventory: true,
-      trade_lock_days: 0,
-      trade_lock_until: null,
-      float_value: skin.floatValue || null,
+      image: skin.image,
+      price: skin.price || 0,
+      current_price: skin.price || purchaseInfo.purchasePrice || 0,
+      purchase_price: purchaseInfo.purchasePrice || 0,
+      marketplace: purchaseInfo.marketplace || "Steam Market",
+      fee_percentage: purchaseInfo.feePercentage || 0,
+      notes: purchaseInfo.notes || "",
       is_stat_trak: skin.isStatTrak || false,
-      wear: skin.wear || null,
-      marketplace: purchaseInfo.marketplace,
-      fee_percentage: purchaseInfo.feePercentage,
-      currency_code: purchaseInfo.currency,
-      current_price: skin.price
+      trade_lock_days: tradeLockDays,
+      trade_lock_until: tradeLockUntil,
+      collection_id: skin.collection?.id,
+      collection_name: skin.collection?.name,
+      float_value: skin.floatValue || 0,
+      acquired_date: new Date().toISOString(),
+      currency_code: purchaseInfo.currency || "USD",
+      is_in_user_inventory: true // Explicitly set this to true for new items
     };
-
+    
     const { data, error } = await supabase
       .from('inventory')
-      .insert([newItem])
-      .select();
-
+      .insert(insertData)
+      .select()
+      .single();
+    
     if (error) {
       console.error("Error adding skin to inventory:", error);
       return null;
     }
-
-    return {
-      inventoryId: newItem.id,
-      id: newItem.id,
-      skin_id: newItem.skin_id,
-      name: newItem.name,
-      weapon: newItem.weapon,
-      image: newItem.image,
-      rarity: newItem.rarity,
-      price: newItem.price,
-      purchasePrice: newItem.purchase_price,
-      acquiredDate: newItem.acquired_date,
-      userId: newItem.user_id,
-      isInUserInventory: newItem.is_in_user_inventory,
-      tradeLockDays: newItem.trade_lock_days,
-      tradeLockUntil: newItem.trade_lock_until,
-      floatValue: newItem.float_value,
-      isStatTrak: newItem.is_stat_trak,
-      wear: newItem.wear,
-      marketplace: newItem.marketplace,
-      feePercentage: newItem.fee_percentage,
-      currency: newItem.currency_code,
-      currentPrice: newItem.current_price
-    };
+    
+    const transactionSuccess = await addTransaction({
+      id: `trans-${Date.now()}`,
+      type: 'add',
+      itemId: inventoryId,
+      weaponName: skin.weapon || "Unknown",
+      skinName: skinName,
+      date: new Date().toISOString(),
+      price: purchaseInfo.purchasePrice || 0,
+      notes: purchaseInfo.notes || "",
+      currency: purchaseInfo.currency || "USD"
+    });
+    
+    if (!transactionSuccess) {
+      console.warn("Failed to record transaction for added skin");
+    }
+    
+    const mappedItem = mapSupabaseToInventoryItem(data);
+    if (mappedItem) {
+      // Ensure isInUserInventory is set correctly
+      mappedItem.isInUserInventory = true;
+    }
+    
+    return mappedItem;
   } catch (error) {
     console.error("Error adding skin to inventory:", error);
     return null;
   }
 };
 
-export const removeInventoryItem = async (inventoryId: string): Promise<boolean> => {
+export const updateInventoryItem = async (updatedItem: InventoryItem): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('inventory')
-      .delete()
-      .eq('id', inventoryId);
-
-    if (error) {
-      console.error("Error removing item from inventory:", error);
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
       return false;
     }
-
-    return true;
-  } catch (error) {
-    console.error("Error removing item from inventory:", error);
-    return false;
-  }
-};
-
-export const updateInventoryItem = async (itemId: string, updates: Partial<InventoryItem>): Promise<boolean> => {
-  try {
-    // Map the property names from the update object to column names in Supabase
-    const supabaseUpdates: { [key: string]: any } = {};
-    if (updates.purchasePrice !== undefined) supabaseUpdates.purchase_price = updates.purchasePrice;
-    if (updates.currentPrice !== undefined) supabaseUpdates.current_price = updates.currentPrice;
-    if (updates.tradeLockDays !== undefined) supabaseUpdates.trade_lock_days = updates.tradeLockDays;
-    if (updates.tradeLockUntil !== undefined) supabaseUpdates.trade_lock_until = updates.tradeLockUntil;
-    if (updates.floatValue !== undefined) supabaseUpdates.float_value = updates.floatValue;
-    if (updates.notes !== undefined) supabaseUpdates.notes = updates.notes;
-    if (updates.wear !== undefined) supabaseUpdates.wear = updates.wear;
-    if (updates.isStatTrak !== undefined) supabaseUpdates.is_stat_trak = updates.isStatTrak;
-    if (updates.marketplace !== undefined) supabaseUpdates.marketplace = updates.marketplace;
-    if (updates.feePercentage !== undefined) supabaseUpdates.fee_percentage = updates.feePercentage;
-    if (updates.currency !== undefined) supabaseUpdates.currency_code = updates.currency;
-
+    
     const { error } = await supabase
       .from('inventory')
-      .update(supabaseUpdates)
-      .eq('id', itemId);
-
+      .update({
+        current_price: updatedItem.currentPrice,
+        notes: updatedItem.notes,
+        float_value: updatedItem.floatValue,
+        is_stat_trak: updatedItem.isStatTrak
+      })
+      .eq('inventory_id', updatedItem.inventoryId)
+      .eq('user_id', session.user.id);
+    
     if (error) {
       console.error("Error updating inventory item:", error);
       return false;
     }
-
+    
     return true;
   } catch (error) {
-    console.error("Error updating inventory item:", error);
+    console.error("Error updating item:", error);
     return false;
   }
 };
 
-export const markItemAsSold = async (itemId: string, sellData: SellData): Promise<boolean> => {
+export const sellSkin = async (inventoryId: string, sellData: SellData): Promise<boolean> => {
   try {
-    // Ensure soldDate is properly formatted
-    const soldDate = sellData.soldDate ? new Date(sellData.soldDate).toISOString() : new Date().toISOString();
-
-    const { error } = await supabase
-      .from('inventory')
-      .update({
-        is_in_user_inventory: false,
-        date_sold: soldDate,
-        sold_price: sellData.soldPrice,
-        sold_marketplace: sellData.soldMarketplace,
-        sold_fee_percentage: sellData.soldFeePercentage,
-        profit: sellData.profit,
-        currency_code: sellData.soldCurrency
-      })
-      .eq('id', itemId);
-
-    if (error) {
-      console.error("Error marking item as sold:", error);
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.error("No user session found");
       return false;
     }
 
+    const { data: skinData, error: skinError } = await supabase
+      .from('inventory')
+      .select('weapon, name, currency_code')
+      .eq('inventory_id', inventoryId)
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    
+    const weaponName = getSkinProperty(skinData, 'weapon', "Unknown");
+    const skinName = getSkinProperty(skinData, 'name', "Unknown Skin");
+    const originalCurrency = getSkinProperty(skinData, 'currency_code', "USD");
+    
+    if (skinError) {
+      console.error("Error getting skin info:", skinError);
+    }
+    
+    const { error: removeError } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('inventory_id', inventoryId)
+      .eq('user_id', session.user.id);
+    
+    if (removeError) {
+      console.error("Error removing skin:", removeError);
+      return false;
+    }
+    
+    const transactionSuccess = await addTransaction({
+      id: `trans-${Date.now()}`,
+      type: 'sell',
+      itemId: inventoryId,
+      weaponName: weaponName,
+      skinName: skinName,
+      date: sellData.soldDate || new Date().toISOString(),
+      price: sellData.soldPrice,
+      notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
+      currency: sellData.soldCurrency || originalCurrency
+    });
+    
+    if (!transactionSuccess) {
+      console.error("Failed to record sell transaction");
+      return false;
+    }
+    
+    console.log("Sold skin successfully");
     return true;
   } catch (error) {
-    console.error("Error marking item as sold:", error);
+    console.error("Error selling skin:", error);
     return false;
   }
-};
-
-// Add a utility function to get current date as string
-export const getCurrentDateAsString = (): string => {
-  return new Date().toISOString();
 };

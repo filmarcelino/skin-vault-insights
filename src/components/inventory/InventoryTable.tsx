@@ -1,79 +1,56 @@
 
-import { InventoryItem, SellData } from "@/types/skin";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { InventoryTableActions } from "./InventoryTableActions";
-import { formatPrice } from "@/utils/format-utils";
+import { useState } from "react";
+import { InventoryItem } from "@/types/skin";
+import { SkinListItem } from "./SkinListItem";
+import { useInventoryActions } from "@/hooks/useInventoryActions";
 
-export interface InventoryTableProps {
+interface InventoryTableProps {
   items: InventoryItem[];
-  onEdit: (item: InventoryItem) => void;
-  onDelete: (inventoryId: string) => void;
-  onSell: (itemId: string, sellData: SellData) => void;
-  onDuplicate: (item: InventoryItem) => void;
-  onViewDetails: (item: InventoryItem) => void;
 }
 
-export const InventoryTable: React.FC<InventoryTableProps> = ({
-  items,
-  onEdit,
-  onDelete,
-  onSell,
-  onDuplicate,
-  onViewDetails,
-}) => {
+export const InventoryTable = ({ items }: InventoryTableProps) => {
+  // Estado para controlar itens favoritos
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const { 
+    handleEdit, 
+    handleDuplicate, 
+    handleRemove, 
+    handleSell,
+    handleViewDetails
+  } = useInventoryActions();
+
+  const toggleFavorite = (itemId: string) => {
+    setFavorites(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="flex justify-center items-center p-8 h-64 text-muted-foreground">
+        No skins found.
+      </div>
+    );
+  }
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Item</TableHead>
-          <TableHead>Wear</TableHead>
-          <TableHead>Acquired</TableHead>
-          <TableHead className="text-right">Price</TableHead>
-          <TableHead></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow 
-            key={item.inventoryId}
-            className="cursor-pointer hover:bg-secondary/40"
-            onClick={() => onViewDetails(item)}
-          >
-            <TableCell>
-              <div className="flex items-center gap-2">
-                {item.image && (
-                  <img 
-                    src={item.image} 
-                    alt={item.name} 
-                    className="h-8 w-8 object-contain"
-                    onError={(e) => (e.currentTarget.src = '/placeholder.svg')}
-                  />
-                )}
-                <div>
-                  <div className="font-medium">{item.name}</div>
-                  <div className="text-xs text-muted-foreground">{item.weapon}</div>
-                </div>
-              </div>
-            </TableCell>
-            <TableCell>{item.wear || "Not specified"}</TableCell>
-            <TableCell>
-              {new Date(item.acquiredDate).toLocaleDateString()}
-            </TableCell>
-            <TableCell className="text-right">
-              {formatPrice(item.currentPrice || item.price || 0)}
-            </TableCell>
-            <TableCell>
-              <InventoryTableActions
-                item={item}
-                onEdit={onEdit}
-                onDuplicate={onDuplicate}
-                onRemove={onDelete}
-                onSell={onSell}
-              />
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="space-y-2 mt-4 w-full">
+      {items.map((item) => (
+        <SkinListItem 
+          key={item.inventoryId} 
+          item={item}
+          onEdit={() => handleEdit(item)}
+          onDuplicate={() => handleDuplicate(item)}
+          onRemove={() => handleRemove(item.inventoryId)}
+          onSell={handleSell}
+          onToggleFavorite={toggleFavorite}
+          isFavorite={favorites.includes(item.inventoryId)}
+          showMetadata={true}
+          onClick={() => handleViewDetails(item)}
+        />
+      ))}
+    </div>
   );
 };

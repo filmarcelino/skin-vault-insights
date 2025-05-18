@@ -2,112 +2,144 @@
 export interface Skin {
   id: string;
   name: string;
-  weapon: string;
-  image: string;
-  rarity: string;
-  price: number;
-  type?: string;
+  description?: string;
+  weapon?: string;
+  category?: string;
+  rarity?: string;
+  image?: string;
   wear?: string;
-  isStatTrak?: boolean;
   min_float?: number;
   max_float?: number;
-  collections?: SkinCollection[];
-  collection?: SkinCollection;
-  category?: string;
-  floatValue?: number; // Added to match usage in use-skin-image-analysis.ts
+  price?: number;
+  floatValue?: number;
+  isStatTrak?: boolean;
+  tradeLockDays?: number;
+  tradeLockUntil?: string;
+  collection?: {
+    id?: string;
+    name: string;
+    description?: string;
+    image?: string;
+  };
+  collections?: {
+    id?: string;
+    name: string;
+    description?: string;
+    image?: string;
+  }[];
+  type?: SkinType; // Added this field
 }
+
+export type WeaponType = string;
+export type RarityType = string;
+export type SkinType = string;
+
+export interface InventoryItem extends Skin {
+  inventoryId: string;
+  acquiredDate: string;
+  purchasePrice?: number;
+  currentPrice?: number;
+  isStatTrak?: boolean;
+  tradeLockDays?: number;
+  tradeLockUntil?: string;
+  marketplace?: string;
+  feePercentage?: number;
+  floatValue?: number;
+  notes?: string;
+  isInUserInventory: boolean;
+  currency?: string; // Moeda usada na compra
+  // Supabase fields mapping
+  inventory_id?: string; 
+  skin_id?: string;
+  acquired_date?: string;
+  purchase_price?: number;
+  current_price?: number;
+  fee_percentage?: number;
+  float_value?: number;
+  is_stat_trak?: boolean;
+  trade_lock_days?: number;
+  trade_lock_until?: string;
+  is_in_user_inventory?: boolean;
+  currency_code?: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: 'add' | 'sell' | 'trade' | 'purchase' | 'remove';
+  itemId: string;
+  weaponName: string;
+  skinName: string;
+  date: string;
+  price?: number | string;
+  notes?: string;
+  currency?: string; // Adicionada moeda da transação
+  // Supabase fields mapping
+  transaction_id?: string;
+  item_id?: string;
+  weapon_name?: string;
+  skin_name?: string;
+  currency_code?: string;
+}
+
+export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';
 
 export interface SkinCollection {
   id: string;
   name: string;
-  description: string;
+  description?: string;
   image?: string;
 }
 
-export interface InventoryItem {
-  inventoryId: string;
-  acquiredDate: string;
-  purchasePrice: number;
-  currentPrice?: number;
-  tradeLockDays?: number;
-  tradeLockUntil?: string;
-  isStatTrak?: boolean;
-  wear?: string;
-  floatValue?: number;
-  notes?: string;
-  userId?: string;
-  isInUserInventory?: boolean;
-  skin_id?: string;
-  skin_name?: string;
-  weapon_name?: string;
-  image_url?: string;
-  rarity: string;
-  price?: number;
-  purchase_price?: number;
-  acquired_date?: string;
-  is_in_user_inventory?: boolean;
-  float_value?: number;
-  is_stat_trak?: boolean;
-  condition?: string;
-  marketplace?: string;
-  fee_percentage?: number;
-  feePercentage?: number;
-  date_sold?: string;
-  profit?: number;
-  currency?: string;
-  // Sales related properties
-  sold_price?: number;
-  sold_marketplace?: string;
-  sold_fee_percentage?: number;
-  // Also include Skin properties
-  id: string;
-  name: string;
-  weapon: string;
-  image: string;
-}
-
 export interface SkinFilter {
-  search?: string;
   weapon?: string;
-  rarity?: string;
-  onlyUserInventory?: boolean;
   category?: string;
+  rarity?: string;
   collection?: string;
   minPrice?: number;
   maxPrice?: number;
+  search?: string;
+  onlyUserInventory?: boolean;
 }
 
-// Define the SellData type with profit property
 export interface SellData {
+  soldDate?: string;
   soldPrice: number;
   soldMarketplace: string;
   soldFeePercentage: number;
   soldNotes?: string;
-  soldDate?: string;
   profit?: number;
-  soldCurrency?: string;
+  soldCurrency?: string; // Moeda usada na venda
 }
 
-// Define SkinWear type
-export type SkinWear = 'Factory New' | 'Minimal Wear' | 'Field-Tested' | 'Well-Worn' | 'Battle-Scarred';
-
-// Define Transaction type
-export interface Transaction {
+export interface PriceHistoryItem {
   id: string;
-  type: 'add' | 'sell' | 'trade' | 'buy';
-  weaponName: string;
-  skinName: string;
-  date: string;
+  skin_id: string;
+  inventory_id?: string | null;
+  user_id: string;
   price: number;
-  notes?: string;
-  itemId: string;
-  currency?: string;
-  userId: string;
+  price_date: string;
+  marketplace?: string | null;
+  wear?: string | null;
+  created_at: string;
 }
 
-// Define LockStatus type with isLocked, daysLeft, and tradeLockDate fields
-export interface LockStatus {
-  isLocked: boolean;
-  daysLeft: number;
-  tradeLockDate?: string;
+// Interface para os dados de estatísticas do inventário
+export interface InventoryStats {
+  total_items: number;
+  total_value: number;
+  avg_price: number;
+  value_change_30d: number;
+  value_change_percentage_30d: number;
+}
+
+// Interface detalhada para análises mais avançadas
+export interface DetailedInventoryStats {
+  totalValue: number;
+  profitLoss: number;
+  itemCount: number;
+  averageItemValue: number;
+  valueChange30d: number;
+  valueChangePercent: number;
+  topRarities: Array<{name: string, count: number}>;
+  recentTransactions: Array<{id: string, name: string, type: string, value: number, date: string}>;
 }

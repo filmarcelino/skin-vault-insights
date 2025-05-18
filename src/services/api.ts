@@ -1,4 +1,3 @@
-
 import { Skin, SkinCollection, SkinFilter } from "@/types/skin";
 import { 
   getLocalWeapons, 
@@ -6,7 +5,7 @@ import {
   getLocalSkins, 
   getLocalSkinById 
 } from "./local-data";
-import { fetchUserInventory } from "@/services/inventory";
+import { getUserInventory } from "@/services/inventory";
 
 // Base API URL for CS:GO API from GitHub
 const API_URL = "https://raw.githubusercontent.com/ByMykel/CSGO-API/main/public/api/en/";
@@ -141,21 +140,7 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
   
   // If we only want user inventory skins, return them directly
   if (filters?.onlyUserInventory) {
-    const inventoryItems = await fetchUserInventory();
-    // Convert InventoryItems to Skin objects to match the expected return type
-    return inventoryItems.map(item => ({
-      id: item.id,
-      name: item.name,
-      weapon: item.weapon,
-      image: item.image,
-      rarity: item.rarity || "Unknown", // Ensure rarity is never undefined
-      price: item.price || 0, // Ensure price is never undefined
-      category: item.category || "",
-      wear: item.wear,
-      isStatTrak: item.isStatTrak,
-      floatValue: item.floatValue,
-      // Any other fields needed for Skin
-    }));
+    return getUserInventory();
   }
   
   // Try to load from custom JSON first
@@ -188,7 +173,7 @@ export const fetchSkins = async (filters?: SkinFilter): Promise<Skin[]> => {
     description: skin.description,
     weapon: skin.weapon?.name || "",
     category: skin.category?.name || "",
-    rarity: skin.rarity?.name || "Common", // Default rarity to ensure it's never undefined
+    rarity: skin.rarity?.name || "",
     image: skin.image,
     wear: "", // Will be updated after filtering by wear
     min_float: skin.min_float,

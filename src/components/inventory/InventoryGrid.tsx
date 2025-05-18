@@ -1,44 +1,54 @@
 
-import { InventoryItem, SellData } from "@/types/skin";
-import { InventoryCard } from "@/components/dashboard/inventory-card";
+import { useState } from "react";
+import { InventoryItem } from "@/types/skin";
+import { SkinCard } from "@/components/inventory/SkinCard";
+import { useInventoryActions } from "@/hooks/useInventoryActions";
 
-export interface InventoryGridProps {
+interface InventoryGridProps {
   items: InventoryItem[];
-  onEdit: (item: InventoryItem) => void;
-  onDelete: (inventoryId: string) => void;
-  onSell: (itemId: string, sellData: SellData) => void;
-  onDuplicate: (item: InventoryItem) => void;
-  onViewDetails: (item: InventoryItem) => void;
 }
 
-export const InventoryGrid: React.FC<InventoryGridProps> = ({
-  items,
-  onEdit,
-  onDelete,
-  onSell,
-  onDuplicate,
-  onViewDetails,
-}) => {
+export const InventoryGrid = ({ items }: InventoryGridProps) => {
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const { 
+    handleEdit, 
+    handleDuplicate, 
+    handleRemove, 
+    handleSell,
+    handleViewDetails
+  } = useInventoryActions();
+
+  const toggleFavorite = (itemId: string) => {
+    setFavorites(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="flex justify-center items-center p-8 h-64 text-muted-foreground">
+        No skins found.
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mt-4">
       {items.map((item) => (
-        <InventoryCard
-          key={item.inventoryId || item.id}
-          weaponName={item.weapon || ''}
-          skinName={item.name || ''}
-          wear={item.wear || ''}
-          price={typeof item.currentPrice === 'number' ? item.currentPrice : 
-                (typeof item.price === 'number' ? item.price : 0)}
-          image={item.image || ''}
-          rarity={item.rarity || ''}
-          isStatTrak={!!item.isStatTrak}
-          tradeLockDays={item.tradeLockDays}
-          tradeLockUntil={item.tradeLockUntil}
-          className="animate-fade-in transition-transform duration-200"
-          onClick={() => onViewDetails(item)}
-          onDelete={() => onDelete(item.id)}
-          showDeleteButton={true}
-          purchasePrice={item.purchasePrice}
+        <SkinCard 
+          key={item.inventoryId} 
+          item={item}
+          onEdit={() => handleEdit(item)}
+          onDuplicate={() => handleDuplicate(item)}
+          onRemove={() => handleRemove(item.inventoryId)}
+          onSell={handleSell}
+          onToggleFavorite={toggleFavorite}
+          isFavorite={favorites.includes(item.inventoryId)}
+          showMetadata={true}
+          className="w-full h-full"
+          onClick={() => handleViewDetails(item)}
         />
       ))}
     </div>

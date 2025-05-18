@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { LineChart } from '@/components/ui/chart';
 import { StatsCards } from '@/components/analytics/stats-cards';
 import { useInventory } from '@/hooks/use-skins';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface InventoryStats {
   total_items: number;
@@ -44,13 +43,11 @@ const RarityDistribution: React.FC<{
   rarities: Array<{name: string, count: number}> | undefined;
   loading: boolean;
 }> = ({ rarities, loading }) => {
-  const { t } = useLanguage();
-  
   if (loading) {
     return (
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle className="text-lg">{t("analytics.rarityDistribution")}</CardTitle>
+          <CardTitle className="text-lg">Rarity Distribution</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <Skeleton className="h-20 w-full" />
@@ -62,7 +59,7 @@ const RarityDistribution: React.FC<{
   return (
     <Card className="col-span-full">
       <CardHeader>
-        <CardTitle className="text-lg">{t("analytics.rarityDistribution")}</CardTitle>
+        <CardTitle className="text-lg">Rarity Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -92,13 +89,12 @@ const RecentTransactions: React.FC<{
   loading: boolean;
 }> = ({ transactions, loading }) => {
   const { formatPrice } = useCurrency();
-  const { t } = useLanguage();
   
   if (loading) {
     return (
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle className="text-lg">{t("analytics.recentTransactions")}</CardTitle>
+          <CardTitle className="text-lg">Recent Transactions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -114,7 +110,7 @@ const RecentTransactions: React.FC<{
   return (
     <Card className="col-span-full">
       <CardHeader>
-        <CardTitle className="text-lg">{t("analytics.recentTransactions")}</CardTitle>
+        <CardTitle className="text-lg">Recent Transactions</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -124,7 +120,7 @@ const RecentTransactions: React.FC<{
                 <div>
                   <p className="font-medium">{tx.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {tx.type === 'sell' ? t("analytics.sell") : tx.type === 'add' ? t("analytics.buy") : tx.type}
+                    {tx.type === 'sell' ? 'Sell' : tx.type === 'add' ? 'Buy' : tx.type}
                     {' • '}
                     {new Date(tx.date).toLocaleDateString()}
                   </p>
@@ -135,7 +131,7 @@ const RecentTransactions: React.FC<{
               </div>
             ))
           ) : (
-            <p className="text-center text-muted-foreground py-4">{t("analytics.noTransactions")}</p>
+            <p className="text-center text-muted-foreground py-4">No recent transactions</p>
           )}
         </div>
       </CardContent>
@@ -150,13 +146,12 @@ const SoldItemsSummary: React.FC<{
   loading: boolean;
 }> = ({ soldItems, totalSoldValue, totalProfit, loading }) => {
   const { formatPrice } = useCurrency();
-  const { t } = useLanguage();
   
   if (loading) {
     return (
       <Card className="col-span-full">
         <CardHeader>
-          <CardTitle className="text-lg">{t("analytics.soldItemsSummary")}</CardTitle>
+          <CardTitle className="text-lg">Sold Items Summary</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-24 w-full" />
@@ -168,20 +163,20 @@ const SoldItemsSummary: React.FC<{
   return (
     <Card className="col-span-full">
       <CardHeader>
-        <CardTitle className="text-lg">{t("analytics.soldItemsSummary")}</CardTitle>
+        <CardTitle className="text-lg">Sold Items Summary</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-muted/20 p-4 rounded-lg border border-muted">
-            <p className="text-sm font-medium text-muted-foreground">{t("analytics.itemsSold")}</p>
+            <p className="text-sm font-medium text-muted-foreground">Items Sold</p>
             <p className="text-2xl font-bold">{soldItems}</p>
           </div>
           <div className="bg-muted/20 p-4 rounded-lg border border-muted">
-            <p className="text-sm font-medium text-muted-foreground">{t("analytics.totalSoldValue")}</p>
+            <p className="text-sm font-medium text-muted-foreground">Total Sold Value</p>
             <p className="text-2xl font-bold">{formatPrice(totalSoldValue)}</p>
           </div>
           <div className="bg-muted/20 p-4 rounded-lg border border-muted">
-            <p className="text-sm font-medium text-muted-foreground">{t("analytics.totalProfit")}</p>
+            <p className="text-sm font-medium text-muted-foreground">Total Profit</p>
             <p className={`text-2xl font-bold ${totalProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {totalProfit >= 0 ? '+' : ''}{formatPrice(totalProfit)}
             </p>
@@ -193,14 +188,12 @@ const SoldItemsSummary: React.FC<{
 };
 
 const PremiumFeatureCard = () => {
-  const { t } = useLanguage();
-  
   return (
     <Card className="col-span-full relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-purple-500/20 z-0"></div>
       <CardHeader className="relative z-10">
         <CardTitle className="text-lg flex items-center gap-2">
-          {t("analytics.priceHistory")}
+          Price History
           <Lock className="h-4 w-4 text-amber-500" />
         </CardTitle>
       </CardHeader>
@@ -210,11 +203,11 @@ const PremiumFeatureCard = () => {
             <Lock className="h-8 w-8 text-amber-500" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold">{t("subscription.premiumFeature")}</h3>
-            <p className="text-muted-foreground">{t("subscription.upgradeToPremiumDesc")}</p>
+            <h3 className="text-xl font-semibold">Premium Feature</h3>
+            <p className="text-muted-foreground">Upgrade to Premium to view detailed price history charts</p>
           </div>
           <Button variant="outline" className="bg-gradient-to-r from-amber-500/80 to-amber-600/80 text-white border-amber-500 hover:from-amber-600/80 hover:to-amber-700/80">
-            {t("subscription.upgradeToPremium")}
+            Upgrade to Premium
           </Button>
         </div>
       </CardContent>
@@ -226,7 +219,6 @@ const Analytics = () => {
   const { formatPrice, currency } = useCurrency();
   const { user } = useAuth();
   const { data: inventoryData } = useInventory();
-  const { t } = useLanguage();
   
   const { data: inventoryStats, isLoading } = useQuery({
     queryKey: ['inventoryStats', currency.code, user?.id],
@@ -409,13 +401,13 @@ const Analytics = () => {
 
   return (
     <div className="w-full space-y-4">
-      <h2 className="text-2xl font-bold">{t("analytics.dashboard")}</h2>
+      <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">{t("analytics.overview")}</TabsTrigger>
-          <TabsTrigger value="sold">{t("analytics.soldItems")}</TabsTrigger>
-          <TabsTrigger value="trends">{t("analytics.trends")}</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="sold">Sold Items</TabsTrigger>
+          <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
