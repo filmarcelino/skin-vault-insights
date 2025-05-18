@@ -1,8 +1,10 @@
-import { getUserInventory } from "@/services/inventory";
-import { getUserTransactions } from "@/services/inventory/transactions-service";
+
+import { getUserInventory } from "./index";
+import { getUserTransactions } from "./transactions-service";
 import { InventoryItem, Transaction } from "@/types/skin";
 import { calculateInventoryValue, calculateProfitLoss } from "@/utils/financial-utils";
 import { supabase } from "@/integrations/supabase/client";
+import { mapSupabaseToInventoryItem, mapSupabaseToTransaction } from "./inventory-mapper";
 
 export type ExportDataType = 'inventory' | 'transactions' | 'financial' | 'all';
 
@@ -121,7 +123,7 @@ export const prepareAdminExportData = async (
     .from('profiles')
     .select('is_admin')
     .eq('id', session.user.id)
-    .single();
+    .maybeSingle();
   
   if (!userProfile?.is_admin) {
     throw new Error("Only administrators can use this function");
@@ -192,10 +194,6 @@ export const prepareAdminExportData = async (
 
   return { data: exportData, summary };
 };
-
-// Import needed functions for admin export
-import { mapSupabaseToInventoryItem } from "./inventory/inventory-mapper";
-import { mapSupabaseToTransaction } from "./inventory/inventory-mapper";
 
 /**
  * Converts data to CSV format
@@ -278,3 +276,9 @@ export const downloadData = (
   // Clean up
   URL.revokeObjectURL(url);
 };
+
+// Export functions from this file that were previously imported from @/services/inventory
+export { addSkinToInventory } from "./inventory-functions";
+export { removeSkinFromInventory } from "./inventory-functions";
+export { updateInventoryItem } from "./inventory-functions";
+export { sellSkin } from "./inventory-functions";

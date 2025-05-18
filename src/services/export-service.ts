@@ -1,9 +1,10 @@
 
-import { getUserInventory } from "@/services/inventory";
+import { getUserInventory } from "@/services/inventory/inventory-functions";
 import { getUserTransactions } from "@/services/inventory/transactions-service";
 import { InventoryItem, Transaction } from "@/types/skin";
 import { calculateInventoryValue, calculateProfitLoss } from "@/utils/financial-utils";
 import { supabase } from "@/integrations/supabase/client";
+import { mapSupabaseToInventoryItem, mapSupabaseToTransaction } from "@/services/inventory/inventory-mapper";
 
 export type ExportDataType = 'inventory' | 'transactions' | 'financial' | 'all';
 
@@ -122,7 +123,7 @@ export const prepareAdminExportData = async (
     .from('profiles')
     .select('is_admin')
     .eq('id', session.user.id)
-    .single();
+    .maybeSingle();
   
   if (!userProfile?.is_admin) {
     throw new Error("Only administrators can use this function");
@@ -193,10 +194,6 @@ export const prepareAdminExportData = async (
 
   return { data: exportData, summary };
 };
-
-// Import needed functions for admin export
-import { mapSupabaseToInventoryItem } from "./inventory/inventory-mapper";
-import { mapSupabaseToTransaction } from "./inventory/inventory-mapper";
 
 /**
  * Converts data to CSV format
