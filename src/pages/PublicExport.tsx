@@ -198,8 +198,8 @@ function downloadData(data: any, format: 'json' | 'csv', filename = 'export'): v
 }
 
 export default function PublicExport() {
-  // User ID de Breno - ID fixo para garantir que estamos exportando os dados corretos
-  const BRENO_USER_ID = "dc82fd34-5d56-4504-ad8d-306af593d841";
+  // User ID de Breno - ID correto do usuário Breno
+  const BRENO_USER_ID = "e2bb0941-694a-411f-948b-1c4267849b3b";
   
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const [exportType, setExportType] = useState<ExportDataType>('all');
