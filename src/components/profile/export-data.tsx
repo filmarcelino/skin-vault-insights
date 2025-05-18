@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,10 +7,18 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Download, FileJson, FileSpreadsheet } from "lucide-react";
-import { ExportDataType, ExportOptions, ExportSummary, prepareExportData, downloadData } from "@/services/export-service";
+import { Loader2, Download, FileJson, FileSpreadsheet, UserCheck } from "lucide-react";
+import { 
+  ExportDataType, 
+  ExportOptions, 
+  ExportSummary, 
+  prepareExportData,
+  prepareAdminExportData, 
+  downloadData 
+} from "@/services/export-service";
 import { formatCurrency } from "@/utils/financial-utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const ExportData: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,9 +26,17 @@ export const ExportData: React.FC = () => {
   const [exportFormat, setExportFormat] = useState<"json" | "csv">("json");
   const [includeDetails, setIncludeDetails] = useState(true);
   const [summary, setSummary] = useState<ExportSummary | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const { currency } = useCurrency();
+  const { profile } = useAuth();
   
+  useEffect(() => {
+    if (profile?.is_admin) {
+      setIsAdmin(true);
+    }
+  }, [profile]);
+
   const handleExport = async () => {
     try {
       setIsLoading(true);
@@ -31,7 +47,11 @@ export const ExportData: React.FC = () => {
         includeDetails
       };
       
-      const { data, summary } = await prepareExportData(options);
+      // Use the appropriate export function based on user role
+      const { data, summary } = isAdmin 
+        ? await prepareAdminExportData(options)  // Admin can export all data
+        : await prepareExportData(options);      // Regular users export only their data
+      
       setSummary(summary);
       
       // Generate filename based on export type
@@ -49,6 +69,11 @@ export const ExportData: React.FC = () => {
         case "all":
           filename += "-complete";
           break;
+      }
+      
+      // Add admin prefix for admin exports
+      if (isAdmin) {
+        filename = "admin-" + filename;
       }
       
       downloadData(data, exportFormat, filename);
@@ -72,10 +97,20 @@ export const ExportData: React.FC = () => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Export Data</CardTitle>
-        <CardDescription>
-          Download your inventory and transaction data
-        </CardDescription>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Export Data</CardTitle>
+            <CardDescription>
+              Download your inventory and transaction data
+            </CardDescription>
+          </div>
+          {isAdmin && (
+            <div className="flex items-center text-sm bg-amber-100 dark:bg-amber-900 px-2 py-1 rounded-md">
+              <UserCheck className="h-4 w-4 mr-2 text-amber-600 dark:text-amber-400" />
+              <span>Admin Export</span>
+            </div>
+          )}
+        </div>
       </CardHeader>
       
       <CardContent>
@@ -129,6 +164,17 @@ export const ExportData: React.FC = () => {
                 />
                 <Label htmlFor="include-details">Include detailed information</Label>
               </div>
+              
+              {isAdmin && (
+                <div className="bg-amber-50 dark:bg-amber-950/50 p-3 rounded-md border border-amber-200 dark:border-amber-800 mt-4">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-400">
+                    Admin Export Mode Active
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
+                    You will export data for all users. Use this functionality responsibly.
+                  </p>
+                </div>
+              )}
             </div>
           </TabsContent>
           

@@ -33,9 +33,31 @@ export const prepareExportData = async (options: ExportOptions): Promise<{ data:
     throw new Error("User not authenticated");
   }
   
-  // Get inventory items and transactions
-  const inventory = await getUserInventory();
-  const transactions = await getUserTransactions();
+  // Check if user is admin to determine if they can access all data or just their own
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', session.user.id)
+    .maybeSingle();
+  
+  const isAdmin = userProfile?.is_admin || false;
+  
+  let inventory: InventoryItem[] = [];
+  let transactions: Transaction[] = [];
+  
+  if (isAdmin) {
+    // Admins can export data for all users or specific users
+    console.log("Admin user detected - can export all user data");
+    // For now, we'll continue to use the regular function (user's own data)
+    // In a real implementation, you'd add parameters to specify which user's data to export
+    inventory = await getUserInventory();
+    transactions = await getUserTransactions();
+  } else {
+    // Regular users can only export their own data
+    console.log("Regular user - exporting only their own data");
+    inventory = await getUserInventory();
+    transactions = await getUserTransactions();
+  }
   
   // Filter active inventory items
   const activeItems = inventory.filter(item => item.isInUserInventory);
@@ -82,6 +104,99 @@ export const prepareExportData = async (options: ExportOptions): Promise<{ data:
 
   return { data: exportData, summary };
 };
+
+/**
+ * Admin function to export data for a specific user or all users
+ */
+export const prepareAdminExportData = async (
+  options: ExportOptions, 
+  targetUserId?: string
+): Promise<{ data: any, summary: ExportSummary }> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("User not authenticated");
+  }
+  
+  // Verify admin status
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', session.user.id)
+    .single();
+  
+  if (!userProfile?.is_admin) {
+    throw new Error("Only administrators can use this function");
+  }
+  
+  // Get inventory and transactions for the specified user or all users
+  let inventoryQuery = supabase.from('inventory').select('*');
+  let transactionsQuery = supabase.from('transactions').select('*');
+  
+  if (targetUserId) {
+    // Export data for specific user
+    inventoryQuery = inventoryQuery.eq('user_id', targetUserId);
+    transactionsQuery = transactionsQuery.eq('user_id', targetUserId);
+  }
+  
+  const [inventoryResult, transactionsResult] = await Promise.all([
+    inventoryQuery.order('created_at', { ascending: false }),
+    transactionsQuery.order('date', { ascending: false })
+  ]);
+  
+  if (inventoryResult.error) throw new Error(`Error fetching inventory: ${inventoryResult.error.message}`);
+  if (transactionsResult.error) throw new Error(`Error fetching transactions: ${transactionsResult.error.message}`);
+  
+  // Map data to appropriate types
+  const inventory = inventoryResult.data.map(item => mapSupabaseToInventoryItem(item)).filter(Boolean) as InventoryItem[];
+  const transactions = transactionsResult.data.map(item => mapSupabaseToTransaction(item)).filter(Boolean) as Transaction[];
+  
+  // Continue with the same logic as prepareExportData
+  const activeItems = inventory.filter(item => item.isInUserInventory);
+  const totalValue = calculateInventoryValue(activeItems);
+  const { profit, loss } = calculateProfitLoss(transactions);
+  
+  const summary: ExportSummary = {
+    totalItems: inventory.length,
+    activeSkins: activeItems.length,
+    totalValue,
+    totalProfit: profit,
+    totalLoss: loss,
+    netProfit: profit - loss,
+    transactionCount: transactions.length,
+    exportDate: new Date().toISOString()
+  };
+  
+  // Prepare export data
+  let exportData: any;
+  
+  switch (options.type) {
+    case 'inventory':
+      exportData = activeItems;
+      break;
+    case 'transactions':
+      exportData = transactions;
+      break;
+    case 'financial':
+      exportData = {
+        summary,
+        transactions: transactions.filter(t => t.type === 'sell' || t.type === 'add')
+      };
+      break;
+    case 'all':
+    default:
+      exportData = {
+        inventory: activeItems,
+        transactions,
+        summary
+      };
+  }
+
+  return { data: exportData, summary };
+};
+
+// Import needed functions for admin export
+import { mapSupabaseToInventoryItem } from "./inventory/inventory-mapper";
+import { mapSupabaseToTransaction } from "./inventory/inventory-mapper";
 
 /**
  * Converts data to CSV format
