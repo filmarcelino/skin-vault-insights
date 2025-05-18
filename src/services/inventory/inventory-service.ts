@@ -1,313 +1,280 @@
-import { Skin, InventoryItem, SellData } from "@/types/skin";
+import { getUserInventory } from "@/services/inventory";
+import { getUserTransactions } from "@/services/inventory/transactions-service";
+import { InventoryItem, Transaction } from "@/types/skin";
+import { calculateInventoryValue, calculateProfitLoss } from "@/utils/financial-utils";
 import { supabase } from "@/integrations/supabase/client";
-import { mapSupabaseToInventoryItem } from "./inventory-mapper";
-import { addTransaction } from "./transactions-service";
-import { safeBoolean, safeString } from "@/utils/safe-type-utils";
 
-// Helper function to safely get properties from potentially null objects
-const getSkinProperty = <T>(data: any | null, property: string, defaultValue: T): T => {
-  if (!data || typeof data !== 'object' || !(property in data)) {
-    return defaultValue;
+export type ExportDataType = 'inventory' | 'transactions' | 'financial' | 'all';
+
+export interface ExportOptions {
+  format: 'json' | 'csv';
+  type: ExportDataType;
+  includeDetails: boolean;
+}
+
+export interface ExportSummary {
+  totalItems: number;
+  activeSkins: number;
+  totalValue: number;
+  totalProfit: number;
+  totalLoss: number;
+  netProfit: number;
+  transactionCount: number;
+  exportDate: string;
+}
+
+/**
+ * Prepares and returns data for export based on specified options
+ */
+export const prepareExportData = async (options: ExportOptions): Promise<{ data: any, summary: ExportSummary }> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("User not authenticated");
   }
-  const value = data[property as keyof typeof data];
-  return (value === null || value === undefined) ? defaultValue : value as T;
+  
+  // Check if user is admin to determine if they can access all data or just their own
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', session.user.id)
+    .maybeSingle();
+  
+  const isAdmin = userProfile?.is_admin || false;
+  
+  let inventory: InventoryItem[] = [];
+  let transactions: Transaction[] = [];
+  
+  if (isAdmin) {
+    // Admins can export data for all users or specific users
+    console.log("Admin user detected - can export all user data");
+    // For now, we'll continue to use the regular function (user's own data)
+    // In a real implementation, you'd add parameters to specify which user's data to export
+    inventory = await getUserInventory();
+    transactions = await getUserTransactions();
+  } else {
+    // Regular users can only export their own data
+    console.log("Regular user - exporting only their own data");
+    inventory = await getUserInventory();
+    transactions = await getUserTransactions();
+  }
+  
+  // Filter active inventory items
+  const activeItems = inventory.filter(item => item.isInUserInventory);
+  
+  // Calculate summary data
+  const totalValue = calculateInventoryValue(activeItems);
+  const { profit, loss } = calculateProfitLoss(transactions);
+  
+  const summary: ExportSummary = {
+    totalItems: inventory.length,
+    activeSkins: activeItems.length,
+    totalValue,
+    totalProfit: profit,
+    totalLoss: loss,
+    netProfit: profit - loss,
+    transactionCount: transactions.length,
+    exportDate: new Date().toISOString()
+  };
+
+  // Prepare the export data based on selected type
+  let exportData: any;
+  
+  switch (options.type) {
+    case 'inventory':
+      exportData = activeItems;
+      break;
+    case 'transactions':
+      exportData = transactions;
+      break;
+    case 'financial':
+      exportData = {
+        summary,
+        transactions: transactions.filter(t => t.type === 'sell' || t.type === 'add')
+      };
+      break;
+    case 'all':
+    default:
+      exportData = {
+        inventory: activeItems,
+        transactions,
+        summary
+      };
+  }
+
+  return { data: exportData, summary };
 };
 
-export const removeSkinFromInventory = async (inventoryId: string): Promise<boolean> => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      console.error("No user session found");
-      return false;
-    }
-    
-    // Fetch skin data before removal to include in transaction
-    const { data: skinData, error: skinError } = await supabase
-      .from('inventory')
-      .select('weapon, name, currency_code')
-      .eq('inventory_id', inventoryId)
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-    
-    if (skinError) {
-      console.error("Error fetching skin data:", skinError);
-      return false;
-    }
-    
-    const weaponName = getSkinProperty(skinData, 'weapon', "Unknown");
-    const skinName = getSkinProperty(skinData, 'name', "Unknown Skin");
-    const currencyCode = getSkinProperty(skinData, 'currency_code', "USD");
-    
-    const { error: deleteError } = await supabase
-      .from('inventory')
-      .delete()
-      .eq('inventory_id', inventoryId)
-      .eq('user_id', session.user.id);
-    
-    if (deleteError) {
-      console.error("Error removing skin from inventory:", deleteError);
-      return false;
-    }
-    
-    await addTransaction({
-      id: `trans-${Date.now()}`,
-      type: 'remove',
-      itemId: inventoryId,
-      weaponName: weaponName,
-      skinName: skinName,
-      date: new Date().toISOString(),
-      price: 0,
-      notes: "Skin removed from inventory",
-      currency: currencyCode
-    });
-    
-    return true;
-  } catch (error) {
-    console.error("Error removing skin:", error);
-    return false;
+/**
+ * Admin function to export data for a specific user or all users
+ */
+export const prepareAdminExportData = async (
+  options: ExportOptions, 
+  targetUserId?: string
+): Promise<{ data: any, summary: ExportSummary }> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error("User not authenticated");
   }
+  
+  // Verify admin status
+  const { data: userProfile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', session.user.id)
+    .single();
+  
+  if (!userProfile?.is_admin) {
+    throw new Error("Only administrators can use this function");
+  }
+  
+  // Get inventory and transactions for the specified user or all users
+  let inventoryQuery = supabase.from('inventory').select('*');
+  let transactionsQuery = supabase.from('transactions').select('*');
+  
+  if (targetUserId) {
+    // Export data for specific user
+    inventoryQuery = inventoryQuery.eq('user_id', targetUserId);
+    transactionsQuery = transactionsQuery.eq('user_id', targetUserId);
+  }
+  
+  const [inventoryResult, transactionsResult] = await Promise.all([
+    inventoryQuery.order('created_at', { ascending: false }),
+    transactionsQuery.order('date', { ascending: false })
+  ]);
+  
+  if (inventoryResult.error) throw new Error(`Error fetching inventory: ${inventoryResult.error.message}`);
+  if (transactionsResult.error) throw new Error(`Error fetching transactions: ${transactionsResult.error.message}`);
+  
+  // Map data to appropriate types
+  const inventory = inventoryResult.data.map(item => mapSupabaseToInventoryItem(item)).filter(Boolean) as InventoryItem[];
+  const transactions = transactionsResult.data.map(item => mapSupabaseToTransaction(item)).filter(Boolean) as Transaction[];
+  
+  // Continue with the same logic as prepareExportData
+  const activeItems = inventory.filter(item => item.isInUserInventory);
+  const totalValue = calculateInventoryValue(activeItems);
+  const { profit, loss } = calculateProfitLoss(transactions);
+  
+  const summary: ExportSummary = {
+    totalItems: inventory.length,
+    activeSkins: activeItems.length,
+    totalValue,
+    totalProfit: profit,
+    totalLoss: loss,
+    netProfit: profit - loss,
+    transactionCount: transactions.length,
+    exportDate: new Date().toISOString()
+  };
+  
+  // Prepare export data
+  let exportData: any;
+  
+  switch (options.type) {
+    case 'inventory':
+      exportData = activeItems;
+      break;
+    case 'transactions':
+      exportData = transactions;
+      break;
+    case 'financial':
+      exportData = {
+        summary,
+        transactions: transactions.filter(t => t.type === 'sell' || t.type === 'add')
+      };
+      break;
+    case 'all':
+    default:
+      exportData = {
+        inventory: activeItems,
+        transactions,
+        summary
+      };
+  }
+
+  return { data: exportData, summary };
 };
 
-export const getUserInventory = async (): Promise<InventoryItem[]> => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      console.error("No user session found");
-      return [];
-    }
-    
-    console.log("Fetching inventory for user:", session.user.id);
-    
-    const { data, error } = await supabase
-      .from('inventory')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error("Error getting inventory from Supabase:", error);
-      return [];
-    }
-    
-    console.log("Retrieved inventory data:", data);
-    
-    // Map the data to InventoryItem objects and ensure isInUserInventory is set correctly
-    const mappedItems = Array.isArray(data) ? data.map(item => {
-      try {
-        // Check if is_in_user_inventory exists and explicitly set it
-        if ('is_in_user_inventory' in item) {
-          console.log(`Item ${item.name || 'unknown'} has is_in_user_inventory:`, item.is_in_user_inventory);
-        } else {
-          console.log(`Item ${item.name || 'unknown'} missing is_in_user_inventory field`);
-          // If missing, we'll set a default in mapSupabaseToInventoryItem
-        }
-        
-        const mappedItem = mapSupabaseToInventoryItem(item);
-        
-        // Double-check that isInUserInventory is set correctly after mapping
-        if (mappedItem) {
-          // Convert any value to a boolean to avoid type issues
-          mappedItem.isInUserInventory = safeBoolean(item.is_in_user_inventory !== false);
-          console.log(`Item ${mappedItem.name || 'unknown'} isInUserInventory set to:`, mappedItem.isInUserInventory);
-        }
-        return mappedItem;
-      } catch (err) {
-        console.error("Error mapping inventory item:", err);
-        return null;
+// Import needed functions for admin export
+import { mapSupabaseToInventoryItem } from "./inventory/inventory-mapper";
+import { mapSupabaseToTransaction } from "./inventory/inventory-mapper";
+
+/**
+ * Converts data to CSV format
+ */
+export const convertToCSV = (data: any[]): string => {
+  if (!Array.isArray(data) || data.length === 0) {
+    return '';
+  }
+
+  // Extract headers from the first object
+  const headers = Object.keys(data[0]);
+  const csvRows = [];
+  
+  // Add headers row
+  csvRows.push(headers.join(','));
+  
+  // Add data rows
+  for (const row of data) {
+    const values = headers.map(header => {
+      const value = row[header];
+      // Handle null/undefined values
+      if (value === null || value === undefined) {
+        return '';
       }
-    }).filter(Boolean) as InventoryItem[] : [];
-    
-    console.log("Final mapped items:", mappedItems);
-    return mappedItems;
-  } catch (error) {
-    console.error("Error getting inventory:", error);
-    return [];
-  }
-};
-
-export const addSkinToInventory = async (skin: Skin, purchaseInfo: any): Promise<InventoryItem | null> => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error("User not authenticated");
-    }
-    
-    // Add validation to check if skin is a valid object
-    if (!skin || typeof skin !== 'object') {
-      console.error("Invalid skin data provided:", skin);
-      return null;
-    }
-    
-    // Extract the name safely with proper type checking
-    const skinName = typeof skin === 'object' && skin !== null && 'name' in skin && 
-      typeof skin.name === 'string' ? skin.name : "";
-      
-    if (!skinName) {
-      console.error("Invalid skin data: name property is missing or invalid", skin);
-      return null;
-    }
-    
-    const skinId = skin.id || `skin-${Date.now()}`;
-    const inventoryId = `inv-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    const tradeLockDays = Math.floor(Math.random() * 8);
-    const tradeLockUntil = new Date(new Date().getTime() + tradeLockDays * 24 * 60 * 60 * 1000).toISOString();
-    
-    const insertData = {
-      skin_id: skinId,
-      inventory_id: inventoryId,
-      user_id: session.user.id,
-      weapon: skin.weapon || "Unknown",
-      name: skinName,
-      wear: skin.wear,
-      rarity: skin.rarity,
-      image: skin.image,
-      price: skin.price || 0,
-      current_price: skin.price || purchaseInfo.purchasePrice || 0,
-      purchase_price: purchaseInfo.purchasePrice || 0,
-      marketplace: purchaseInfo.marketplace || "Steam Market",
-      fee_percentage: purchaseInfo.feePercentage || 0,
-      notes: purchaseInfo.notes || "",
-      is_stat_trak: skin.isStatTrak || false,
-      trade_lock_days: tradeLockDays,
-      trade_lock_until: tradeLockUntil,
-      collection_id: skin.collection?.id,
-      collection_name: skin.collection?.name,
-      float_value: skin.floatValue || 0,
-      acquired_date: new Date().toISOString(),
-      currency_code: purchaseInfo.currency || "USD",
-      is_in_user_inventory: true // Explicitly set this to true for new items
-    };
-    
-    const { data, error } = await supabase
-      .from('inventory')
-      .insert(insertData)
-      .select()
-      .single();
-    
-    if (error) {
-      console.error("Error adding skin to inventory:", error);
-      return null;
-    }
-    
-    const transactionSuccess = await addTransaction({
-      id: `trans-${Date.now()}`,
-      type: 'add',
-      itemId: inventoryId,
-      weaponName: skin.weapon || "Unknown",
-      skinName: skinName,
-      date: new Date().toISOString(),
-      price: purchaseInfo.purchasePrice || 0,
-      notes: purchaseInfo.notes || "",
-      currency: purchaseInfo.currency || "USD"
+      // Handle strings (especially those with commas)
+      if (typeof value === 'string') {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      // Handle nested objects/arrays by stringifying
+      if (typeof value === 'object') {
+        return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+      }
+      return value;
     });
-    
-    if (!transactionSuccess) {
-      console.warn("Failed to record transaction for added skin");
-    }
-    
-    const mappedItem = mapSupabaseToInventoryItem(data);
-    if (mappedItem) {
-      // Ensure isInUserInventory is set correctly
-      mappedItem.isInUserInventory = true;
-    }
-    
-    return mappedItem;
-  } catch (error) {
-    console.error("Error adding skin to inventory:", error);
-    return null;
+    csvRows.push(values.join(','));
   }
+  
+  return csvRows.join('\n');
 };
 
-export const updateInventoryItem = async (updatedItem: InventoryItem): Promise<boolean> => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      console.error("No user session found");
-      return false;
+/**
+ * Downloads data as a file
+ */
+export const downloadData = (
+  data: any,
+  format: 'json' | 'csv',
+  filename: string = 'export'
+): void => {
+  const date = new Date().toISOString().split('T')[0];
+  const fullFilename = `${filename}-${date}.${format}`;
+  
+  let content: string;
+  let type: string;
+  
+  if (format === 'csv') {
+    // If data is not an array but has properties that are arrays, use the first array found
+    if (!Array.isArray(data)) {
+      for (const key in data) {
+        if (Array.isArray(data[key])) {
+          data = data[key];
+          break;
+        }
+      }
     }
-    
-    const { error } = await supabase
-      .from('inventory')
-      .update({
-        current_price: updatedItem.currentPrice,
-        notes: updatedItem.notes,
-        float_value: updatedItem.floatValue,
-        is_stat_trak: updatedItem.isStatTrak
-      })
-      .eq('inventory_id', updatedItem.inventoryId)
-      .eq('user_id', session.user.id);
-    
-    if (error) {
-      console.error("Error updating inventory item:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error updating item:", error);
-    return false;
+    content = convertToCSV(Array.isArray(data) ? data : [data]);
+    type = 'text/csv';
+  } else {
+    content = JSON.stringify(data, null, 2);
+    type = 'application/json';
   }
-};
-
-export const sellSkin = async (inventoryId: string, sellData: SellData): Promise<boolean> => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      console.error("No user session found");
-      return false;
-    }
-
-    const { data: skinData, error: skinError } = await supabase
-      .from('inventory')
-      .select('weapon, name, currency_code')
-      .eq('inventory_id', inventoryId)
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-    
-    const weaponName = getSkinProperty(skinData, 'weapon', "Unknown");
-    const skinName = getSkinProperty(skinData, 'name', "Unknown Skin");
-    const originalCurrency = getSkinProperty(skinData, 'currency_code', "USD");
-    
-    if (skinError) {
-      console.error("Error getting skin info:", skinError);
-    }
-    
-    const { error: removeError } = await supabase
-      .from('inventory')
-      .delete()
-      .eq('inventory_id', inventoryId)
-      .eq('user_id', session.user.id);
-    
-    if (removeError) {
-      console.error("Error removing skin:", removeError);
-      return false;
-    }
-    
-    const transactionSuccess = await addTransaction({
-      id: `trans-${Date.now()}`,
-      type: 'sell',
-      itemId: inventoryId,
-      weaponName: weaponName,
-      skinName: skinName,
-      date: sellData.soldDate || new Date().toISOString(),
-      price: sellData.soldPrice,
-      notes: `${sellData.soldNotes || ""} (${sellData.soldCurrency || "USD"})`,
-      currency: sellData.soldCurrency || originalCurrency
-    });
-    
-    if (!transactionSuccess) {
-      console.error("Failed to record sell transaction");
-      return false;
-    }
-    
-    console.log("Sold skin successfully");
-    return true;
-  } catch (error) {
-    console.error("Error selling skin:", error);
-    return false;
-  }
+  
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fullFilename;
+  link.click();
+  
+  // Clean up
+  URL.revokeObjectURL(url);
 };
