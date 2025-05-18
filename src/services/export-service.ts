@@ -1,35 +1,17 @@
 
-import { getUserInventory } from "@/services/inventory/inventory-functions";
-import { getUserTransactions } from "@/services/inventory/transactions-service";
+import { getUserInventory, getUserTransactions } from "@/services/inventory";
 import { InventoryItem, Transaction } from "@/types/skin";
 import { calculateInventoryValue, calculateProfitLoss } from "@/utils/financial-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { mapSupabaseToInventoryItem, mapSupabaseToTransaction } from "@/services/inventory/inventory-mapper";
-
-export type ExportDataType = 'inventory' | 'transactions' | 'financial' | 'all';
-
-export interface ExportOptions {
-  format: 'json' | 'csv';
-  type: ExportDataType;
-  includeDetails: boolean;
-}
-
-export interface ExportSummary {
-  totalItems: number;
-  activeSkins: number;
-  totalValue: number;
-  totalProfit: number;
-  totalLoss: number;
-  netProfit: number;
-  transactionCount: number;
-  exportDate: string;
-}
+import { ExportOptions, ExportSummary } from "@/services/inventory/inventory-service";
 
 /**
  * Prepares and returns data for export based on specified options
  */
 export const prepareExportData = async (options: ExportOptions): Promise<{ data: any, summary: ExportSummary }> => {
   const { data: { session } } = await supabase.auth.getSession();
+  
   if (!session) {
     throw new Error("User not authenticated");
   }
@@ -49,6 +31,7 @@ export const prepareExportData = async (options: ExportOptions): Promise<{ data:
   if (isAdmin) {
     // Admins can export data for all users or specific users
     console.log("Admin user detected - can export all user data");
+    
     // For now, we'll continue to use the regular function (user's own data)
     // In a real implementation, you'd add parameters to specify which user's data to export
     inventory = await getUserInventory();
@@ -61,7 +44,7 @@ export const prepareExportData = async (options: ExportOptions): Promise<{ data:
   }
   
   // Filter active inventory items
-  const activeItems = inventory.filter(item => item.isInUserInventory);
+  const activeItems = inventory.filter((item) => item.isInUserInventory);
   
   // Calculate summary data
   const totalValue = calculateInventoryValue(activeItems);
@@ -77,10 +60,9 @@ export const prepareExportData = async (options: ExportOptions): Promise<{ data:
     transactionCount: transactions.length,
     exportDate: new Date().toISOString()
   };
-
-  // Prepare the export data based on selected type
-  let exportData: any;
   
+  // Prepare the export data based on selected type
+  let exportData;
   switch (options.type) {
     case 'inventory':
       exportData = activeItems;
@@ -91,7 +73,7 @@ export const prepareExportData = async (options: ExportOptions): Promise<{ data:
     case 'financial':
       exportData = {
         summary,
-        transactions: transactions.filter(t => t.type === 'sell' || t.type === 'add')
+        transactions: transactions.filter((t) => t.type === 'sell' || t.type === 'add')
       };
       break;
     case 'all':
@@ -102,18 +84,19 @@ export const prepareExportData = async (options: ExportOptions): Promise<{ data:
         summary
       };
   }
-
-  return { data: exportData, summary };
+  
+  return {
+    data: exportData,
+    summary
+  };
 };
 
 /**
  * Admin function to export data for a specific user or all users
  */
-export const prepareAdminExportData = async (
-  options: ExportOptions, 
-  targetUserId?: string
-): Promise<{ data: any, summary: ExportSummary }> => {
+export const prepareAdminExportData = async (options: ExportOptions, targetUserId?: string): Promise<{ data: any, summary: ExportSummary }> => {
   const { data: { session } } = await supabase.auth.getSession();
+  
   if (!session) {
     throw new Error("User not authenticated");
   }
@@ -148,11 +131,11 @@ export const prepareAdminExportData = async (
   if (transactionsResult.error) throw new Error(`Error fetching transactions: ${transactionsResult.error.message}`);
   
   // Map data to appropriate types
-  const inventory = inventoryResult.data.map(item => mapSupabaseToInventoryItem(item)).filter(Boolean) as InventoryItem[];
-  const transactions = transactionsResult.data.map(item => mapSupabaseToTransaction(item)).filter(Boolean) as Transaction[];
+  const inventory = inventoryResult.data.map((item) => mapSupabaseToInventoryItem(item)).filter(Boolean) as InventoryItem[];
+  const transactions = transactionsResult.data.map((item) => mapSupabaseToTransaction(item)).filter(Boolean) as Transaction[];
   
   // Continue with the same logic as prepareExportData
-  const activeItems = inventory.filter(item => item.isInUserInventory);
+  const activeItems = inventory.filter((item) => item.isInUserInventory);
   const totalValue = calculateInventoryValue(activeItems);
   const { profit, loss } = calculateProfitLoss(transactions);
   
@@ -168,8 +151,7 @@ export const prepareAdminExportData = async (
   };
   
   // Prepare export data
-  let exportData: any;
-  
+  let exportData;
   switch (options.type) {
     case 'inventory':
       exportData = activeItems;
@@ -180,7 +162,7 @@ export const prepareAdminExportData = async (
     case 'financial':
       exportData = {
         summary,
-        transactions: transactions.filter(t => t.type === 'sell' || t.type === 'add')
+        transactions: transactions.filter((t) => t.type === 'sell' || t.type === 'add')
       };
       break;
     case 'all':
@@ -191,8 +173,11 @@ export const prepareAdminExportData = async (
         summary
       };
   }
-
-  return { data: exportData, summary };
+  
+  return {
+    data: exportData,
+    summary
+  };
 };
 
 /**
@@ -202,7 +187,7 @@ export const convertToCSV = (data: any[]): string => {
   if (!Array.isArray(data) || data.length === 0) {
     return '';
   }
-
+  
   // Extract headers from the first object
   const headers = Object.keys(data[0]);
   const csvRows = [];
@@ -212,22 +197,27 @@ export const convertToCSV = (data: any[]): string => {
   
   // Add data rows
   for (const row of data) {
-    const values = headers.map(header => {
+    const values = headers.map((header) => {
       const value = row[header];
+      
       // Handle null/undefined values
       if (value === null || value === undefined) {
         return '';
       }
+      
       // Handle strings (especially those with commas)
       if (typeof value === 'string') {
         return `"${value.replace(/"/g, '""')}"`;
       }
+      
       // Handle nested objects/arrays by stringifying
       if (typeof value === 'object') {
         return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
       }
+      
       return value;
     });
+    
     csvRows.push(values.join(','));
   }
   
@@ -237,16 +227,12 @@ export const convertToCSV = (data: any[]): string => {
 /**
  * Downloads data as a file
  */
-export const downloadData = (
-  data: any,
-  format: 'json' | 'csv',
-  filename: string = 'export'
-): void => {
+export const downloadData = (data: any, format: 'json' | 'csv', filename = 'export'): void => {
   const date = new Date().toISOString().split('T')[0];
   const fullFilename = `${filename}-${date}.${format}`;
   
-  let content: string;
-  let type: string;
+  let content;
+  let type;
   
   if (format === 'csv') {
     // If data is not an array but has properties that are arrays, use the first array found
@@ -258,6 +244,7 @@ export const downloadData = (
         }
       }
     }
+    
     content = convertToCSV(Array.isArray(data) ? data : [data]);
     type = 'text/csv';
   } else {

@@ -1,8 +1,10 @@
 
+// Export all inventory-related functions
 export * from './inventory-functions';
 export * from './inventory-service';
 export * from './transactions-service';
 export * from './value-service';
+export * from './inventory-mapper';
 
 // Add a debug utility to help identify issues with inventory items
 export const debugInventoryItem = (item: any, label = "Inventory Item") => {

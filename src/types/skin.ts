@@ -101,13 +101,13 @@ export interface SkinFilter {
 }
 
 export interface SellData {
-  soldDate?: string;  // Changed from date to soldDate
-  soldPrice: number;  // Changed from soldPrice to soldPrice
-  soldMarketplace: string;  // Changed from soldMarketplace to soldMarketplace
+  soldDate?: string;  
+  soldPrice: number;  
+  soldMarketplace: string;  
   soldFeePercentage: number;
-  soldNotes?: string;  // Changed from notes to soldNotes
+  soldNotes?: string;  
   profit?: number;
-  soldCurrency?: string;  // Changed from currency to soldCurrency
+  soldCurrency?: string;
 }
 
 export interface PriceHistoryItem {

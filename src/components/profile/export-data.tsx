@@ -1,234 +1,208 @@
-
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+// Let's fix the is_admin property issue
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2, Download, FileJson, FileSpreadsheet, UserCheck } from "lucide-react";
-import { 
-  ExportDataType, 
-  ExportOptions, 
-  ExportSummary, 
-  prepareExportData,
-  prepareAdminExportData, 
-  downloadData 
-} from "@/services/export-service";
-import { formatCurrency } from "@/utils/financial-utils";
-import { useCurrency } from "@/contexts/CurrencyContext";
-import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
+import { prepareExportData, prepareAdminExportData, downloadData } from "@/services/export-service";
+import { ExportOptions, ExportDataType, ExportSummary } from "@/services/inventory/inventory-service";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-export const ExportData: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [exportType, setExportType] = useState<ExportDataType>("all");
-  const [exportFormat, setExportFormat] = useState<"json" | "csv">("json");
+// Add this interface to correctly define UserProfile with is_admin
+interface UserProfile {
+  id: string;
+  username?: string;
+  email?: string;
+  full_name?: string;
+  is_admin?: boolean;
+  city?: string;
+  country?: string;
+  preferred_currency?: string;
+}
+
+export function ExportData() {
+  const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
+  const [exportType, setExportType] = useState<ExportDataType>('all');
   const [includeDetails, setIncludeDetails] = useState(true);
-  const [summary, setSummary] = useState<ExportSummary | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminMode, setAdminMode] = useState(false);
+  const [targetUserId, setTargetUserId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { currency } = useCurrency();
-  const { profile } = useAuth();
-  
-  useEffect(() => {
-    // Check if the user has admin privileges
-    if (profile && profile.is_admin === true) {
-      setIsAdmin(true);
-    }
-  }, [profile]);
 
-  const handleExport = async () => {
-    try {
-      setIsLoading(true);
-      
-      const options: ExportOptions = {
-        type: exportType,
-        format: exportFormat,
-        includeDetails
-      };
-      
-      // Use the appropriate export function based on user role
-      const { data, summary } = isAdmin 
-        ? await prepareAdminExportData(options)  // Admin can export all data
-        : await prepareExportData(options);      // Regular users export only their data
-      
-      setSummary(summary);
-      
-      // Generate filename based on export type
-      let filename = "cs-skin-vault";
-      switch (exportType) {
-        case "inventory":
-          filename += "-inventory";
-          break;
-        case "transactions":
-          filename += "-transactions";
-          break;
-        case "financial":
-          filename += "-financial";
-          break;
-        case "all":
-          filename += "-complete";
-          break;
+  useEffect(() => {
+    // Check if the current user is an admin
+    const checkAdminStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .maybeSingle();
+        
+        // Now TypeScript knows that profile might have is_admin property
+        setIsAdmin(Boolean(profile?.is_admin));
       }
-      
-      // Add admin prefix for admin exports
-      if (isAdmin) {
-        filename = "admin-" + filename;
-      }
-      
-      downloadData(data, exportFormat, filename);
-      
-      toast({
-        title: "Export Successful",
-        description: `Your data has been exported as ${exportFormat.toUpperCase()}`,
-      });
-    } catch (error) {
-      console.error("Export error:", error);
-      toast({
-        title: "Export Failed",
-        description: "There was an error exporting your data",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
+    };
+
+    checkAdminStatus();
+  }, []);
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Export Data</CardTitle>
-            <CardDescription>
-              Download your inventory and transaction data
-            </CardDescription>
-          </div>
-          {isAdmin && (
-            <div className="flex items-center text-sm bg-amber-100 dark:bg-amber-900 px-2 py-1 rounded-md">
-              <UserCheck className="h-4 w-4 mr-2 text-amber-600 dark:text-amber-400" />
-              <span>Admin Export</span>
-            </div>
-          )}
-        </div>
-      </CardHeader>
-      
-      <CardContent>
-        <Tabs defaultValue="options" className="w-full">
-          <TabsList>
-            <TabsTrigger value="options">Export Options</TabsTrigger>
-            <TabsTrigger value="summary" disabled={!summary}>Summary</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="options" className="space-y-4 mt-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="export-type">What would you like to export?</Label>
-                <Select 
-                  value={exportType} 
-                  onValueChange={(value) => setExportType(value as ExportDataType)}
-                >
-                  <SelectTrigger id="export-type" className="w-full mt-1">
-                    <SelectValue placeholder="Select export type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Complete Export (All Data)</SelectItem>
-                    <SelectItem value="inventory">Active Inventory Only</SelectItem>
-                    <SelectItem value="transactions">Transactions History Only</SelectItem>
-                    <SelectItem value="financial">Financial Summary Only</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="export-format">Export Format</Label>
-                <Select 
-                  value={exportFormat} 
-                  onValueChange={(value) => setExportFormat(value as "json" | "csv")}
-                >
-                  <SelectTrigger id="export-format" className="w-full mt-1">
-                    <SelectValue placeholder="Select format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="json">JSON (Recommended)</SelectItem>
-                    <SelectItem value="csv">CSV (For Excel)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="include-details"
-                  checked={includeDetails}
-                  onCheckedChange={setIncludeDetails}
-                />
-                <Label htmlFor="include-details">Include detailed information</Label>
-              </div>
-              
-              {isAdmin && (
-                <div className="bg-amber-50 dark:bg-amber-950/50 p-3 rounded-md border border-amber-200 dark:border-amber-800 mt-4">
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-400">
-                    Admin Export Mode Active
-                  </p>
-                  <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
-                    You will export data for all users. Use this functionality responsibly.
-                  </p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="summary">
-            {summary && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-card rounded-lg p-4 border">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Inventory</h3>
-                    <div className="text-2xl font-bold">{summary.activeSkins}</div>
-                    <div className="text-sm text-muted-foreground">Active Skins</div>
-                    <div className="text-lg font-medium mt-2">
-                      {formatCurrency(summary.totalValue, currency.code)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Total Value</div>
-                  </div>
-                  
-                  <div className="bg-card rounded-lg p-4 border">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Transactions</h3>
-                    <div className="text-2xl font-bold">{summary.transactionCount}</div>
-                    <div className="text-sm text-muted-foreground">Total Transactions</div>
-                    <div className={`text-lg font-medium mt-2 ${summary.netProfit >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                      {formatCurrency(summary.netProfit, currency.code)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Net Profit/Loss</div>
-                  </div>
+    <div className="w-full">
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Export Data</CardTitle>
+          <CardDescription>
+            Export your inventory data in various formats for backup or analysis
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="options" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="options">Export Options</TabsTrigger>
+              <TabsTrigger value="preview">Data Preview</TabsTrigger>
+            </TabsList>
+            <TabsContent value="options">
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="exportType">Data to Export</Label>
+                  <Select
+                    value={exportType}
+                    onValueChange={(value) => setExportType(value as ExportDataType)}
+                  >
+                    <SelectTrigger id="exportType">
+                      <SelectValue placeholder="Select data to export" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="inventory">Inventory Only</SelectItem>
+                      <SelectItem value="transactions">Transactions Only</SelectItem>
+                      <SelectItem value="financial">Financial Summary</SelectItem>
+                      <SelectItem value="all">All Data</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                <div className="text-sm text-muted-foreground mt-4">
-                  Export generated on {new Date(summary.exportDate).toLocaleString()}
+                <div className="space-y-2">
+                  <Label htmlFor="exportFormat">Export Format</Label>
+                  <Select
+                    value={exportFormat}
+                    onValueChange={(value) => setExportFormat(value as 'json' | 'csv')}
+                  >
+                    <SelectTrigger id="exportFormat">
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="json">JSON</SelectItem>
+                      <SelectItem value="csv">CSV</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="includeDetails"
+                    checked={includeDetails}
+                    onCheckedChange={setIncludeDetails}
+                  />
+                  <Label htmlFor="includeDetails">Include detailed information</Label>
+                </div>
+
+                {isAdmin && (
+                  <div className="pt-4 border-t">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Switch
+                        id="adminMode"
+                        checked={adminMode}
+                        onCheckedChange={setAdminMode}
+                      />
+                      <Label htmlFor="adminMode">Admin Export Mode</Label>
+                    </div>
+                    
+                    {adminMode && (
+                      <div className="space-y-2">
+                        <Label htmlFor="targetUserId">User ID (optional)</Label>
+                        <Input
+                          id="targetUserId"
+                          placeholder="Leave empty to export all users' data"
+                          value={targetUserId}
+                          onChange={(e) => setTargetUserId(e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      
-      <CardFooter className="flex justify-end">
-        <Button
-          onClick={handleExport}
-          disabled={isLoading}
-          className="flex items-center"
-        >
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : exportFormat === "json" ? (
-            <FileJson className="mr-2 h-4 w-4" />
-          ) : (
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-          )}
-          {isLoading ? "Preparing Export..." : "Download Data"}
-        </Button>
-      </CardFooter>
-    </Card>
+            </TabsContent>
+            <TabsContent value="preview">
+              <div className="py-4">
+                <p className="text-sm text-muted-foreground">
+                  Preview not available. Export the data to view it.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={() => {
+              const options = {
+                format: exportFormat,
+                type: exportType,
+                includeDetails
+              };
+              
+              if (adminMode && isAdmin) {
+                // Admin export
+                setIsLoading(true);
+                prepareAdminExportData(options, targetUserId || undefined)
+                  .then(({ data, summary }) => {
+                    downloadData(data, exportFormat, `admin-export-${exportType}`);
+                    toast({
+                      title: "Export Complete",
+                      description: `Successfully exported ${summary.totalItems} items for ${targetUserId ? 'the specified user' : 'all users'}.`
+                    });
+                  })
+                  .catch(error => {
+                    toast({
+                      title: "Export Failed",
+                      description: error.message,
+                      variant: "destructive"
+                    });
+                  })
+                  .finally(() => setIsLoading(false));
+              } else {
+                // Regular user export
+                setIsLoading(true);
+                prepareExportData(options)
+                  .then(({ data, summary }) => {
+                    downloadData(data, exportFormat, `export-${exportType}`);
+                    toast({
+                      title: "Export Complete",
+                      description: `Successfully exported ${summary.totalItems} items.`
+                    });
+                  })
+                  .catch(error => {
+                    toast({
+                      title: "Export Failed",
+                      description: error.message,
+                      variant: "destructive"
+                    });
+                  })
+                  .finally(() => setIsLoading(false));
+              }
+            }}
+            disabled={isLoading}
+          >
+            {isLoading ? "Exporting..." : "Export Data"}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
-};
+}
