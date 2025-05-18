@@ -52,14 +52,24 @@ async function exportUserData(options: ExportOptions, userId: string): Promise<a
     const activeItems = inventory.filter((item) => item.isInUserInventory);
     
     // Calcular valor total do inventário ativo
-    const totalValue = activeItems.reduce((sum, item) => sum + (item.currentPrice || item.price || 0), 0);
+    const totalValue = activeItems.reduce((sum, item) => {
+      const price = typeof item.currentPrice === 'number' ? item.currentPrice : 
+                   (typeof item.price === 'number' ? item.price : 0);
+      return sum + price;
+    }, 0);
     
     // Calcular lucro/prejuízo
     const salesTransactions = transactions.filter(t => t.type === 'sell');
-    const totalSales = salesTransactions.reduce((sum, t) => sum + (t.price || 0), 0);
+    const totalSales = salesTransactions.reduce((sum, t) => {
+      const price = typeof t.price === 'number' ? t.price : 0;
+      return sum + price;
+    }, 0);
     
     const purchaseTransactions = transactions.filter(t => t.type === 'add');
-    const totalPurchases = purchaseTransactions.reduce((sum, t) => sum + (t.price || 0), 0);
+    const totalPurchases = purchaseTransactions.reduce((sum, t) => {
+      const price = typeof t.price === 'number' ? t.price : 0;
+      return sum + price;
+    }, 0);
     
     // Criar resumo dos dados
     const summary = {
@@ -188,19 +198,16 @@ function downloadData(data: any, format: 'json' | 'csv', filename = 'export'): v
 }
 
 export default function PublicExport() {
+  // Breno's user ID
+  const BRENO_USER_ID = "dc82fd34-5d56-4504-ad8d-306af593d841";
+  
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const [exportType, setExportType] = useState<ExportDataType>('all');
   const [includeDetails, setIncludeDetails] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<string>("dc82fd34-5d56-4504-ad8d-306af593d841");
   const [isLoading, setIsLoading] = useState(false);
   const [exportStats, setExportStats] = useState<{totalItems: number, activeSkins: number} | null>(null);
   const { toast } = useToast();
 
-  const users = [
-    { id: "dc82fd34-5d56-4504-ad8d-306af593d841", name: "Breno (Usuário Teste)" },
-    { id: "outros-ids-aqui", name: "Outro Usuário" }, // Adicione outros IDs de usuário conforme necessário
-  ];
-  
   // Buscar estatísticas iniciais para mostrar na UI
   useEffect(() => {
     const loadInitialStats = async () => {
@@ -208,7 +215,7 @@ export default function PublicExport() {
         const { data: inventory } = await supabase
           .from('inventory')
           .select('inventory_id, is_in_user_inventory')
-          .eq('user_id', selectedUser);
+          .eq('user_id', BRENO_USER_ID);
           
         if (inventory) {
           const totalItems = inventory.length;
@@ -221,7 +228,7 @@ export default function PublicExport() {
     };
     
     loadInitialStats();
-  }, [selectedUser]);
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -233,13 +240,13 @@ export default function PublicExport() {
             </span>
           </h1>
           <p className="text-lg text-muted-foreground mt-2">
-            Exportador de Inventário e Transações
+            Exportador de Inventário e Transações - Breno
           </p>
         </div>
 
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Exportar Dados</CardTitle>
+            <CardTitle>Exportar Dados de Breno</CardTitle>
             <CardDescription>
               Exporte o inventário e transações para análise ou backup
             </CardDescription>
@@ -248,28 +255,9 @@ export default function PublicExport() {
             <div className="space-y-4">
               {exportStats && (
                 <div className="bg-muted rounded-md p-3 mb-4 text-sm">
-                  <p>Usuário atual tem <strong>{exportStats.totalItems}</strong> itens no total e <strong>{exportStats.activeSkins}</strong> skins ativas.</p>
+                  <p>Breno tem <strong>{exportStats.totalItems}</strong> itens no total e <strong>{exportStats.activeSkins}</strong> skins ativas.</p>
                 </div>
               )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="user">Selecionar Usuário</Label>
-                <Select
-                  value={selectedUser}
-                  onValueChange={(value) => setSelectedUser(value)}
-                >
-                  <SelectTrigger id="user">
-                    <SelectValue placeholder="Selecione um usuário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="exportType">Dados para Exportar</Label>
@@ -326,7 +314,7 @@ export default function PublicExport() {
                 
                 setIsLoading(true);
                 try {
-                  const result = await exportUserData(options, selectedUser);
+                  const result = await exportUserData(options, BRENO_USER_ID);
                   downloadData(result.data, exportFormat, `export-${exportType}`);
                   
                   toast({

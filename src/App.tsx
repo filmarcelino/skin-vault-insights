@@ -3,27 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Layout } from "@/components/layout/layout";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { CurrencyProvider } from "@/contexts/CurrencyContext";
-import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
-import { LanguageProvider } from "@/contexts/LanguageContext";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
 import PublicExport from "./pages/PublicExport";
-import Index from "./pages/Index";
-import Inventory from "./pages/Inventory";
-import Analytics from "./pages/Analytics";
-import AddSkin from "./pages/AddSkin";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import Subscription from "./pages/Subscription";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import RequireAuth from "./components/auth/require-auth";
-import Landing from "./pages/Landing";
-import SearchPage from "./pages/Search";
 
 // Set up React Query with 15 minutes staleTime
 const queryClient = new QueryClient({
@@ -41,74 +23,19 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <LanguageProvider>
-          <AuthProvider>
-            <CurrencyProvider>
-              <SubscriptionProvider>
-                <div className="min-h-screen bg-background text-foreground antialiased">
-                  <Toaster />
-                  <Sonner />
-                  <HomeScreenPopup />
-                  <BrowserRouter>
-                    <Routes>
-                      {/* Rota pública de exportação como página principal */}
-                      <Route path="/" element={<PublicExport />} />
-                      <Route path="/export" element={<PublicExport />} />
-                      
-                      {/* Outras rotas públicas existentes */}
-                      <Route path="/landing" element={<Landing />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/reset-password" element={<ResetPassword />} />
-                      
-                      {/* Rotas protegidas existentes */}
-                      <Route path="/dashboard" element={
-                        <RequireAuth>
-                          <Layout><Index /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/inventory" element={
-                        <RequireAuth>
-                          <Layout><Inventory /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/add" element={
-                        <RequireAuth>
-                          <Layout><AddSkin /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/search" element={
-                        <RequireAuth>
-                          <Layout><SearchPage /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/analytics" element={
-                        <RequireAuth>
-                          <Layout><Analytics /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/profile" element={
-                        <RequireAuth>
-                          <Layout><Profile /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/settings" element={
-                        <RequireAuth>
-                          <Layout><Settings /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="/subscription" element={
-                        <RequireAuth>
-                          <Layout><Subscription /></Layout>
-                        </RequireAuth>
-                      } />
-                      <Route path="*" element={<PublicExport />} />
-                    </Routes>
-                  </BrowserRouter>
-                </div>
-              </SubscriptionProvider>
-            </CurrencyProvider>
-          </AuthProvider>
-        </LanguageProvider>
+        <div className="min-h-screen bg-background text-foreground antialiased">
+          <Toaster />
+          <Sonner />
+          <HomeScreenPopup />
+          <BrowserRouter>
+            <Routes>
+              {/* Apenas página de exportação pública */}
+              <Route path="/" element={<PublicExport />} />
+              <Route path="/export" element={<PublicExport />} />
+              <Route path="*" element={<PublicExport />} />
+            </Routes>
+          </BrowserRouter>
+        </div>
       </TooltipProvider>
     </QueryClientProvider>
   );
