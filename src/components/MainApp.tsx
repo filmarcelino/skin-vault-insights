@@ -2,7 +2,7 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "@/components/layout/layout";
-import { RequireAuth } from "@/components/auth/require-auth";
+import RequireAuth from "@/components/auth/require-auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loading } from "@/components/ui/loading";
 
@@ -21,7 +21,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 
 export function MainApp() {
-  const { user, isLoading } = useAuth();
+  const { user, loading: isLoading } = useAuth();
   
   // Show loading screen while auth state is being determined
   if (isLoading) {

@@ -8,7 +8,7 @@ import { type InventoryItem, type Skin } from "@/types/skin";
 export const useSkins = (params?: { weaponType?: string; search?: string }) => {
   return useQuery({
     queryKey: ["skins", params?.weaponType || "all", params?.search || ""],
-    queryFn: () => fetchSkins(),
+    queryFn: () => fetchSkins(params), // Pass params to fetchSkins
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 };

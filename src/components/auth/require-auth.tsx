@@ -12,10 +12,11 @@ interface RequireAuthProps {
   adminOnly?: boolean;
 }
 
+// Change to default export to fix the import issue in MainApp.tsx
 const RequireAuth = ({ children, adminOnly = false }: RequireAuthProps) => {
   const { 
     user, 
-    isAuthLoading, 
+    loading: isAuthLoading, 
     isProfileLoading, 
     session, 
     isAuthenticated, 
@@ -164,4 +165,5 @@ const RequireAuth = ({ children, adminOnly = false }: RequireAuthProps) => {
   return <>{children}</>;
 };
 
+// Export as default
 export default RequireAuth;
