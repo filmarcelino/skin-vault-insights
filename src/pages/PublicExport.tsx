@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,35 +8,51 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ExportOptions, ExportDataType } from "@/services/inventory/inventory-service";
+import { InventoryItem, Transaction } from "@/types/skin";
+import { mapSupabaseToInventoryItem, mapSupabaseToTransaction } from "@/services/inventory/inventory-mapper";
 
-// Função simplificada para exportar dados
-async function exportData(options: ExportOptions, userId: string): Promise<any> {
+// Função para exportar dados completos de um usuário específico
+async function exportUserData(options: ExportOptions, userId: string): Promise<any> {
   try {
-    // Buscar dados de inventário do usuário específico
+    console.log(`Exportando dados para o usuário ID: ${userId}`);
+    
+    // Buscar TODOS os itens de inventário do usuário (incluindo vendidos)
     const inventoryQuery = await supabase
       .from('inventory')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
-    // Buscar transações do usuário específico
+    if (inventoryQuery.error) {
+      console.error("Erro ao buscar inventário:", inventoryQuery.error);
+      throw new Error(`Erro ao buscar inventário: ${inventoryQuery.error.message}`);
+    }
+    
+    console.log(`Itens no inventário encontrados: ${inventoryQuery.data?.length || 0}`);
+    
+    // Buscar TODAS as transações do usuário
     const transactionsQuery = await supabase
       .from('transactions')
       .select('*')
       .eq('user_id', userId)
       .order('date', { ascending: false });
     
-    if (inventoryQuery.error) throw new Error(`Erro ao buscar inventário: ${inventoryQuery.error.message}`);
-    if (transactionsQuery.error) throw new Error(`Erro ao buscar transações: ${transactionsQuery.error.message}`);
+    if (transactionsQuery.error) {
+      console.error("Erro ao buscar transações:", transactionsQuery.error);
+      throw new Error(`Erro ao buscar transações: ${transactionsQuery.error.message}`);
+    }
     
-    const inventory = inventoryQuery.data || [];
-    const transactions = transactionsQuery.data || [];
+    console.log(`Transações encontradas: ${transactionsQuery.data?.length || 0}`);
     
-    // Filtrar itens ativos do inventário
-    const activeItems = inventory.filter((item) => item.is_in_user_inventory);
+    // Mapear dados para os tipos corretos
+    const inventory = inventoryQuery.data?.map(item => mapSupabaseToInventoryItem(item)).filter(Boolean) as InventoryItem[] || [];
+    const transactions = transactionsQuery.data?.map(item => mapSupabaseToTransaction(item)).filter(Boolean) as Transaction[] || [];
     
-    // Calcular valor total do inventário
-    const totalValue = activeItems.reduce((sum, item) => sum + (item.current_price || 0), 0);
+    // Filtrar itens ativos do inventário para algumas estatísticas
+    const activeItems = inventory.filter((item) => item.isInUserInventory);
+    
+    // Calcular valor total do inventário ativo
+    const totalValue = activeItems.reduce((sum, item) => sum + (item.currentPrice || item.price || 0), 0);
     
     // Calcular lucro/prejuízo
     const salesTransactions = transactions.filter(t => t.type === 'sell');
@@ -45,26 +61,23 @@ async function exportData(options: ExportOptions, userId: string): Promise<any> 
     const purchaseTransactions = transactions.filter(t => t.type === 'add');
     const totalPurchases = purchaseTransactions.reduce((sum, t) => sum + (t.price || 0), 0);
     
-    const profit = totalSales;
-    const loss = totalPurchases;
-    
     // Criar resumo dos dados
     const summary = {
       totalItems: inventory.length,
       activeSkins: activeItems.length,
       totalValue,
-      totalProfit: profit,
-      totalLoss: loss,
-      netProfit: profit - loss,
+      totalProfit: totalSales,
+      totalLoss: totalPurchases,
+      netProfit: totalSales - totalPurchases,
       transactionCount: transactions.length,
       exportDate: new Date().toISOString()
     };
     
-    // Preparar os dados para exportação
+    // Preparar os dados para exportação com base nas opções
     let exportData;
     switch (options.type) {
       case 'inventory':
-        exportData = activeItems;
+        exportData = inventory;
         break;
       case 'transactions':
         exportData = transactions;
@@ -78,7 +91,7 @@ async function exportData(options: ExportOptions, userId: string): Promise<any> 
       case 'all':
       default:
         exportData = {
-          inventory: activeItems,
+          inventory,
           transactions,
           summary
         };
@@ -148,7 +161,7 @@ function downloadData(data: any, format: 'json' | 'csv', filename = 'export'): v
     // Se os dados não são um array, mas têm propriedades que são arrays, use o primeiro array encontrado
     if (!Array.isArray(data)) {
       for (const key in data) {
-        if (Array.isArray(data[key])) {
+        if (Array.isArray(data[key]) && data[key].length > 0) {
           data = data[key];
           break;
         }
@@ -178,14 +191,37 @@ export default function PublicExport() {
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const [exportType, setExportType] = useState<ExportDataType>('all');
   const [includeDetails, setIncludeDetails] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<string>("dc82fd34-5d56-4504-ad8d-306af593d841"); // ID do usuário teste (Breno)
+  const [selectedUser, setSelectedUser] = useState<string>("dc82fd34-5d56-4504-ad8d-306af593d841");
   const [isLoading, setIsLoading] = useState(false);
+  const [exportStats, setExportStats] = useState<{totalItems: number, activeSkins: number} | null>(null);
   const { toast } = useToast();
 
   const users = [
     { id: "dc82fd34-5d56-4504-ad8d-306af593d841", name: "Breno (Usuário Teste)" },
     { id: "outros-ids-aqui", name: "Outro Usuário" }, // Adicione outros IDs de usuário conforme necessário
   ];
+  
+  // Buscar estatísticas iniciais para mostrar na UI
+  useEffect(() => {
+    const loadInitialStats = async () => {
+      try {
+        const { data: inventory } = await supabase
+          .from('inventory')
+          .select('inventory_id, is_in_user_inventory')
+          .eq('user_id', selectedUser);
+          
+        if (inventory) {
+          const totalItems = inventory.length;
+          const activeSkins = inventory.filter(item => item.is_in_user_inventory).length;
+          setExportStats({ totalItems, activeSkins });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar estatísticas iniciais:", error);
+      }
+    };
+    
+    loadInitialStats();
+  }, [selectedUser]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -210,11 +246,17 @@ export default function PublicExport() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {exportStats && (
+                <div className="bg-muted rounded-md p-3 mb-4 text-sm">
+                  <p>Usuário atual tem <strong>{exportStats.totalItems}</strong> itens no total e <strong>{exportStats.activeSkins}</strong> skins ativas.</p>
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="user">Selecionar Usuário</Label>
                 <Select
                   value={selectedUser}
-                  onValueChange={setSelectedUser}
+                  onValueChange={(value) => setSelectedUser(value)}
                 >
                   <SelectTrigger id="user">
                     <SelectValue placeholder="Selecione um usuário" />
@@ -239,8 +281,8 @@ export default function PublicExport() {
                     <SelectValue placeholder="Selecione os dados para exportar" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="inventory">Apenas Inventário</SelectItem>
-                    <SelectItem value="transactions">Apenas Transações</SelectItem>
+                    <SelectItem value="inventory">Todo o Inventário (ativo e vendido)</SelectItem>
+                    <SelectItem value="transactions">Todas as Transações</SelectItem>
                     <SelectItem value="financial">Resumo Financeiro</SelectItem>
                     <SelectItem value="all">Todos os Dados</SelectItem>
                   </SelectContent>
@@ -284,12 +326,12 @@ export default function PublicExport() {
                 
                 setIsLoading(true);
                 try {
-                  const result = await exportData(options, selectedUser);
+                  const result = await exportUserData(options, selectedUser);
                   downloadData(result.data, exportFormat, `export-${exportType}`);
                   
                   toast({
                     title: "Exportação Concluída",
-                    description: `Exportados ${result.summary.totalItems} itens com sucesso.`
+                    description: `Exportados ${result.summary.totalItems} itens no total, incluindo ${result.summary.activeSkins} skins ativas.`
                   });
                 } catch (error) {
                   console.error("Erro na exportação:", error);

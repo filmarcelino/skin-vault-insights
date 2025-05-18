@@ -25,7 +25,7 @@ import RequireAuth from "./components/auth/require-auth";
 import Landing from "./pages/Landing";
 import SearchPage from "./pages/Search";
 
-// Set up React Query with 15 minutes staleTime instead of 5 minutes
+// Set up React Query with 15 minutes staleTime
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -51,7 +51,7 @@ const App = () => {
                   <HomeScreenPopup />
                   <BrowserRouter>
                     <Routes>
-                      {/* Nova rota pública de exportação como página principal */}
+                      {/* Rota pública de exportação como página principal */}
                       <Route path="/" element={<PublicExport />} />
                       <Route path="/export" element={<PublicExport />} />
                       
