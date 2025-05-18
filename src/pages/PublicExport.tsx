@@ -5,18 +5,31 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ExportOptions, ExportDataType } from "@/services/inventory/inventory-service";
 import { InventoryItem, Transaction } from "@/types/skin";
 import { mapSupabaseToInventoryItem, mapSupabaseToTransaction } from "@/services/inventory/inventory-mapper";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Download } from "lucide-react";
+import { AlertCircle, Download, RefreshCcw, Search } from "lucide-react";
+
+// Lista de usuários importantes com IDs e nomes
+const USERS = [
+  {
+    id: "e2bb0941-694a-411f-948b-1c4267849b3b",
+    name: "Breno",
+    email: "brenokivegas@gmail.com",
+    fullName: "Oliveira"
+  },
+  // Adicione outros usuários conforme necessário
+];
 
 // Função para exportar dados completos de todos os usuários ou de um usuário específico
 async function exportUserData(options: ExportOptions, userId?: string): Promise<any> {
   try {
     console.log(`Exportando dados ${userId ? `para o usuário ID: ${userId}` : 'para todos os usuários'}`);
+    console.log(`Tipo de exportação: ${options.type}, Formato: ${options.format}`);
     
     // Construir a query base para o inventário
     let inventoryQuery = supabase
@@ -26,10 +39,12 @@ async function exportUserData(options: ExportOptions, userId?: string): Promise<
     
     // Se um ID de usuário específico foi fornecido, filtrar por ele
     if (userId) {
+      console.log(`Filtrando por user_id: ${userId}`);
       inventoryQuery = inventoryQuery.eq('user_id', userId);
     }
     
-    // Executar a consulta do inventário
+    // Executar a consulta do inventário com mais detalhes de log
+    console.log("Executando consulta de inventário...");
     const inventoryResult = await inventoryQuery;
     
     if (inventoryResult.error) {
@@ -38,6 +53,28 @@ async function exportUserData(options: ExportOptions, userId?: string): Promise<
     }
     
     console.log(`Itens no inventário encontrados: ${inventoryResult.data?.length || 0}`);
+    if (inventoryResult.data?.length === 0) {
+      // Verificar se o usuário existe na tabela profiles
+      const { data: userProfile, error: userError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, username')
+        .eq('id', userId)
+        .single();
+        
+      if (userError) {
+        console.log(`Usuário com ID ${userId} não encontrado na tabela profiles`);
+      } else {
+        console.log(`Usuário encontrado na tabela profiles:`, userProfile);
+      }
+      
+      // Tentar buscar diretamente da tabela auth.users (pode não ter permissão)
+      try {
+        const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+        console.log("Dados do usuário em auth:", authUser);
+      } catch (e) {
+        console.log("Sem permissão para acessar dados de auth.users");
+      }
+    }
     
     // Construir a query base para transações
     let transactionsQuery = supabase
@@ -51,6 +88,7 @@ async function exportUserData(options: ExportOptions, userId?: string): Promise<
     }
     
     // Executar a consulta de transações
+    console.log("Executando consulta de transações...");
     const transactionsResult = await transactionsQuery;
     
     if (transactionsResult.error) {
@@ -66,6 +104,7 @@ async function exportUserData(options: ExportOptions, userId?: string): Promise<
     
     // Filtrar itens ativos do inventário para algumas estatísticas
     const activeItems = inventory.filter((item) => item.isInUserInventory);
+    console.log(`Itens ativos no inventário: ${activeItems.length}`);
     
     // Calcular valor total do inventário ativo
     const totalValue = activeItems.reduce((sum, item) => {
@@ -130,6 +169,35 @@ async function exportUserData(options: ExportOptions, userId?: string): Promise<
   } catch (error) {
     console.error("Erro ao exportar dados:", error);
     throw error;
+  }
+}
+
+// Função para buscar usuários
+async function searchUsers(searchTerm: string) {
+  console.log(`Buscando usuários com termo: "${searchTerm}"`);
+  
+  if (!searchTerm || searchTerm.trim().length < 3) {
+    console.log("Termo de busca muito curto, ignorando");
+    return [];
+  }
+  
+  try {
+    // Busca por usuários na tabela profiles
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, username, full_name, email')
+      .or(`username.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      
+    if (error) {
+      console.error("Erro ao buscar usuários:", error);
+      return [];
+    }
+    
+    console.log(`Encontrados ${data?.length || 0} usuários`);
+    return data || [];
+  } catch (err) {
+    console.error("Erro ao buscar usuários:", err);
+    return [];
   }
 }
 
@@ -213,15 +281,6 @@ function downloadData(data: any, format: 'json' | 'csv', filename = 'export'): v
   URL.revokeObjectURL(url);
 }
 
-// Lista de usuários importantes com IDs e nomes
-const USERS = [
-  {
-    id: "e2bb0941-694a-411f-948b-1c4267849b3b",
-    name: "Breno"
-  },
-  // Adicione outros usuários conforme necessário
-];
-
 export default function PublicExport() {
   const [selectedUserId, setSelectedUserId] = useState<string>(USERS[0].id);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
@@ -232,53 +291,117 @@ export default function PublicExport() {
   const [exportStats, setExportStats] = useState<{totalItems: number, activeSkins: number, transactionCount: number} | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Adicionar estado para busca de usuários
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [userList, setUserList] = useState<any[]>(USERS);
 
-  // Buscar estatísticas iniciais para mostrar na UI
-  useEffect(() => {
-    const loadInitialStats = async () => {
-      try {
-        setError(null);
-        setIsLoading(true);
-        
-        // Buscar inventário e transações para estatísticas iniciais do usuário selecionado
-        const userId = exportAllUsers ? undefined : selectedUserId;
-        
-        // Use nossa função exportUserData para obter os dados (vai fazer queries corretamente)
-        const result = await exportUserData(
-          { format: 'json', type: 'all', includeDetails: true }, 
-          userId
-        );
-        
-        if (!result || !result.summary) {
-          throw new Error("Não foi possível carregar estatísticas");
-        }
-        
-        setExportStats({
-          totalItems: result.summary.totalItems || 0,
-          activeSkins: result.summary.activeSkins || 0,
-          transactionCount: result.summary.transactionCount || 0
-        });
-        
-        console.log(`Estatísticas carregadas: ${result.summary.totalItems} itens, ${result.summary.activeSkins} ativos, ${result.summary.transactionCount} transações`);
-        
-        if (result.summary.totalItems === 0 && result.summary.transactionCount === 0) {
-          setError("Nenhum dado encontrado. Verifique se o ID do usuário está correto.");
-        }
-      } catch (err: any) {
-        console.error("Erro ao carregar estatísticas:", err);
-        setError(`Erro ao carregar dados: ${err.message || 'Erro desconhecido'}`);
+  // Função para buscar usuários
+  const handleSearch = async () => {
+    if (searchTerm.trim().length < 3) {
+      toast({
+        title: "Termo de busca muito curto",
+        description: "Digite pelo menos 3 caracteres para buscar",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsSearching(true);
+    setError(null);
+    
+    try {
+      const results = await searchUsers(searchTerm);
+      setSearchResults(results);
+      
+      if (results.length === 0) {
         toast({
-          title: "Erro ao carregar dados",
-          description: err.message || "Não foi possível carregar os dados do inventário",
+          title: "Nenhum usuário encontrado",
+          description: `Nenhum resultado para "${searchTerm}"`,
           variant: "destructive"
         });
-      } finally {
-        setIsLoading(false);
+      } else {
+        // Adicionar resultados à lista de usuários se não estiverem lá
+        const updatedUsers = [...userList];
+        
+        results.forEach(user => {
+          if (!updatedUsers.some(u => u.id === user.id)) {
+            updatedUsers.push({
+              id: user.id,
+              name: user.username || user.full_name,
+              email: user.email,
+              fullName: user.full_name
+            });
+          }
+        });
+        
+        setUserList(updatedUsers);
+        
+        toast({
+          title: "Busca concluída",
+          description: `Encontrados ${results.length} usuários`
+        });
       }
-    };
-    
+    } catch (err: any) {
+      setError(`Erro na busca: ${err.message || "Erro desconhecido"}`);
+      toast({
+        title: "Erro na busca",
+        description: err.message || "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Buscar estatísticas iniciais para mostrar na UI
+  const loadInitialStats = async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      
+      // Buscar inventário e transações para estatísticas iniciais do usuário selecionado
+      const userId = exportAllUsers ? undefined : selectedUserId;
+      
+      // Use nossa função exportUserData para obter os dados (vai fazer queries corretamente)
+      const result = await exportUserData(
+        { format: 'json', type: 'all', includeDetails: true }, 
+        userId
+      );
+      
+      if (!result || !result.summary) {
+        throw new Error("Não foi possível carregar estatísticas");
+      }
+      
+      setExportStats({
+        totalItems: result.summary.totalItems || 0,
+        activeSkins: result.summary.activeSkins || 0,
+        transactionCount: result.summary.transactionCount || 0
+      });
+      
+      console.log(`Estatísticas carregadas: ${result.summary.totalItems} itens, ${result.summary.activeSkins} ativos, ${result.summary.transactionCount} transações`);
+      
+      if (result.summary.totalItems === 0 && result.summary.transactionCount === 0) {
+        setError("Nenhum dado encontrado. Verifique se o ID do usuário está correto.");
+      }
+    } catch (err: any) {
+      console.error("Erro ao carregar estatísticas:", err);
+      setError(`Erro ao carregar dados: ${err.message || 'Erro desconhecido'}`);
+      toast({
+        title: "Erro ao carregar dados",
+        description: err.message || "Não foi possível carregar os dados do inventário",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     loadInitialStats();
-  }, [selectedUserId, exportAllUsers, toast]);
+  }, [selectedUserId, exportAllUsers]);
 
   const handleExport = async () => {
     setIsLoading(true);
@@ -302,7 +425,7 @@ export default function PublicExport() {
         throw new Error("Nenhum item ou transação encontrada para exportar");
       }
       
-      const userName = exportAllUsers ? "todos" : (USERS.find(u => u.id === selectedUserId)?.name || "usuario");
+      const userName = exportAllUsers ? "todos" : (userList.find(u => u.id === selectedUserId)?.name || "usuario");
       downloadData(result.data, exportFormat, `${userName}-export-${exportType}`);
       
       toast({
@@ -320,6 +443,14 @@ export default function PublicExport() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const refreshStats = () => {
+    loadInitialStats();
+    toast({
+      title: "Atualizando estatísticas",
+      description: "Buscando dados mais recentes..."
+    });
   };
 
   return (
@@ -357,7 +488,18 @@ export default function PublicExport() {
               
               {exportStats && (
                 <div className="bg-muted rounded-md p-3 mb-4">
-                  <p className="font-medium mb-1">Estatísticas dos Dados:</p>
+                  <div className="flex justify-between">
+                    <p className="font-medium mb-1">Estatísticas dos Dados:</p>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={refreshStats} 
+                      disabled={isLoading}
+                    >
+                      <RefreshCcw className="h-4 w-4 mr-1" />
+                      Atualizar
+                    </Button>
+                  </div>
                   <ul className="text-sm space-y-1">
                     <li><strong>Total de Itens:</strong> {exportStats.totalItems}</li>
                     <li><strong>Skins Ativas:</strong> {exportStats.activeSkins}</li>
@@ -365,6 +507,27 @@ export default function PublicExport() {
                   </ul>
                 </div>
               )}
+
+              {/* Seção de busca de usuários */}
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="searchUser">Buscar Usuário por Nome ou Email</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="searchUser" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Digite nome, sobrenome ou email"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleSearch}
+                    disabled={isSearching || searchTerm.trim().length < 3}
+                    variant="outline"
+                  >
+                    {isSearching ? "Buscando..." : <Search className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
 
               <div className="flex items-center space-x-2 mb-4">
                 <Switch
@@ -386,13 +549,25 @@ export default function PublicExport() {
                       <SelectValue placeholder="Selecione o usuário" />
                     </SelectTrigger>
                     <SelectContent>
-                      {USERS.map(user => (
+                      {userList.map(user => (
                         <SelectItem key={user.id} value={user.id}>
-                          {user.name}
+                          {user.name} {user.email ? `(${user.email})` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  
+                  {selectedUserId && (
+                    <div className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+                      <p><strong>ID:</strong> {selectedUserId}</p>
+                      {userList.find(u => u.id === selectedUserId)?.email && (
+                        <p><strong>Email:</strong> {userList.find(u => u.id === selectedUserId)?.email}</p>
+                      )}
+                      {userList.find(u => u.id === selectedUserId)?.fullName && (
+                        <p><strong>Nome completo:</strong> {userList.find(u => u.id === selectedUserId)?.fullName}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
