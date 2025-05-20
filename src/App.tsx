@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HomeScreenPopup } from "@/components/ui/home-screen-popup";
-import PublicExport from "./pages/PublicExport";
+import UnderConstruction from "./pages/UnderConstruction";
 
 // Set up React Query with 15 minutes staleTime
 const queryClient = new QueryClient({
@@ -18,7 +18,7 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  console.log("App component rendering - Export Tool Only Mode");
+  console.log("App component rendering - Under Construction Mode");
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -29,9 +29,8 @@ const App = () => {
           <HomeScreenPopup />
           <BrowserRouter>
             <Routes>
-              {/* Todas as rotas apontam para a página de exportação do Breno */}
-              <Route path="/" element={<PublicExport />} />
-              <Route path="/export" element={<PublicExport />} />
+              {/* All routes point to the Under Construction page */}
+              <Route path="/" element={<UnderConstruction />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>

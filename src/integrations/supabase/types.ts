@@ -229,11 +229,11 @@ export type Database = {
           id: string
           item_id: string
           notes: string | null
-          price: number | null
           skin_name: string | null
           transaction_id: string
           type: string
           user_id: string
+          value: number | null
           weapon_name: string | null
         }
         Insert: {
@@ -243,11 +243,11 @@ export type Database = {
           id?: string
           item_id: string
           notes?: string | null
-          price?: number | null
           skin_name?: string | null
           transaction_id: string
           type: string
           user_id: string
+          value?: number | null
           weapon_name?: string | null
         }
         Update: {
@@ -257,11 +257,11 @@ export type Database = {
           id?: string
           item_id?: string
           notes?: string | null
-          price?: number | null
           skin_name?: string | null
           transaction_id?: string
           type?: string
           user_id?: string
+          value?: number | null
           weapon_name?: string | null
         }
         Relationships: []
